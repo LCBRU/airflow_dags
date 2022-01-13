@@ -183,7 +183,7 @@ def create_dag_task(dag, source_database, destination_database):
 
 dag = DAG(
     dag_id="datalake_mysql_import",
-    schedule_interval="@daily",
+    schedule_interval="0 22 * * *",
     default_args=default_args,
     catchup=False,
 )
