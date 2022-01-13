@@ -9,13 +9,24 @@ IF OBJECT_ID(N'dbo.__etl_tables', N'U') IS NOT NULL
         DROP TABLE dbo.__etl_tables
     END;
 
-SELECT @SQL = '
-    SELECT table_name, COALESCE(update_time, create_time) AS update_time
-    FROM information_schema.tables
-    WHERE table_type = "BASE TABLE"
-        AND table_schema = "' + @source_database + '"
-    ;
-    '
+IF EXISTS(SELECT 1 FROM _etl_tables WHERE name = '_brc__tables')
+  BEGIN
+    SELECT @SQL = '
+        SELECT table_name, update_time
+        FROM ' + @source_database + '._brc__tables
+        ;
+        '      
+  END
+ELSE
+  BEGIN
+    SELECT @SQL = '
+        SELECT table_name, COALESCE(update_time, create_time) AS update_time
+        FROM information_schema.tables
+        WHERE table_type = "BASE TABLE"
+            AND table_schema = "' + @source_database + '"
+        ;
+        '      
+  END
 
 SELECT @OPENQUERY = '
     SELECT table_name, update_time

@@ -159,7 +159,7 @@ def create_database_copy_dag(parent_dag_id, sub_task_id, source_database, destin
 
 default_args = {
     "owner": "airflow",
-    "reties": 1,
+    "reties": 3,
     "retry_delay": timedelta(minutes=5),
     "start_date": datetime(2020, 1, 1)
 }
