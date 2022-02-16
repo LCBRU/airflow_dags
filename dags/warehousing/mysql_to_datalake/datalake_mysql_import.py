@@ -164,7 +164,7 @@ default_args = {
     "start_date": datetime(2020, 1, 1)
 }
 
-def create_dag_task(dag, source_database, destination_database):
+def create_database_copy_subdag(dag, source_database, destination_database):
     task_id = f"{source_database}__to__{destination_database}"
 
     SubDagOperator(
@@ -188,16 +188,16 @@ dag = DAG(
     catchup=False,
 )
 
-create_dag_task(dag, 'civicrmlive_docker4716', 'datalake_civicrm')
-create_dag_task(dag, 'drupallive_docker4716', 'datalake_civicrm_drupal')
-create_dag_task(dag, 'identity', 'datalake_identity')
-create_dag_task(dag, 'briccs_northampton', 'datalake_onyx_northampton')
-create_dag_task(dag, 'briccs', 'datalake_onyx_uhl')
-create_dag_task(dag, 'uol_openspecimen', 'datalake_openspecimen')
-create_dag_task(dag, 'uol_easyas_redcap', 'datalake_redcap_easyas')
-create_dag_task(dag, 'redcap_genvasc', 'datalake_redcap_genvasc')
-create_dag_task(dag, 'uol_survey_redcap', 'datalake_redcap_internet')
-create_dag_task(dag, 'redcap6170_briccsext', 'datalake_redcap_n3')
-create_dag_task(dag, 'redcap_national', 'datalake_redcap_national')
-create_dag_task(dag, 'redcap6170_briccs', 'datalake_redcap_uhl')
-create_dag_task(dag, 'uol_crf_redcap', 'datalake_redcap_uol')
+create_database_copy_subdag(dag, 'civicrmlive_docker4716', 'datalake_civicrm')
+create_database_copy_subdag(dag, 'drupallive_docker4716', 'datalake_civicrm_drupal')
+create_database_copy_subdag(dag, 'identity', 'datalake_identity')
+create_database_copy_subdag(dag, 'briccs_northampton', 'datalake_onyx_northampton')
+create_database_copy_subdag(dag, 'briccs', 'datalake_onyx_uhl')
+create_database_copy_subdag(dag, 'uol_openspecimen', 'datalake_openspecimen')
+create_database_copy_subdag(dag, 'uol_easyas_redcap', 'datalake_redcap_easyas')
+create_database_copy_subdag(dag, 'redcap_genvasc', 'datalake_redcap_genvasc')
+create_database_copy_subdag(dag, 'uol_survey_redcap', 'datalake_redcap_internet')
+create_database_copy_subdag(dag, 'redcap6170_briccsext', 'datalake_redcap_n3')
+create_database_copy_subdag(dag, 'redcap_national', 'datalake_redcap_national')
+create_database_copy_subdag(dag, 'redcap6170_briccs', 'datalake_redcap_uhl')
+create_database_copy_subdag(dag, 'uol_crf_redcap', 'datalake_redcap_uol')

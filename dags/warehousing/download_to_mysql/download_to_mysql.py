@@ -162,7 +162,7 @@ default_args = {
 }
 
 def create_dag_task(dag, source_url, destination_database):
-    task_id = f"{source_url}__to__{destination_database}"
+    task_id = f"into__{destination_database}"
 
     SubDagOperator(
         task_id=task_id,
@@ -180,7 +180,7 @@ def create_dag_task(dag, source_url, destination_database):
 
 dag = DAG(
     dag_id="download_to_mysql",
-    schedule_interval="None",
+    schedule_interval=None,
     default_args=default_args,
     catchup=False,
 )
