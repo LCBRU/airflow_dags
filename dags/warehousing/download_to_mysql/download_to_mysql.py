@@ -210,6 +210,21 @@ dag = DAG(
 
 create_dag_task(
     dag=dag,
+    source_url='https://catissue-live.lcbru.le.ac.uk/publish/catissue.db',
+    destination_database='uol_openspecimen',
+)
+create_dag_task(
+    dag=dag,
     source_url='https://crf.lcbru.le.ac.uk/publish/redcap.db',
     destination_database='uol_crf_redcap',
+)
+create_dag_task(
+    dag=dag,
+    source_url='https://redcap.lcbru.le.ac.uk/publish/redcap.db',
+    destination_database='uol_survey_redcap',
+)
+create_dag_task(
+    dag=dag,
+    source_url='https://easy-as.lbrc.le.ac.uk/publish/redcap.db',
+    destination_database='uol_easyas_redcap',
 )
