@@ -58,7 +58,11 @@ def _download_and_restore(destination_database, source_url):
 def _download_file(url, output_filename, username, password):
     logging.info("_download_file: Started")
 
+    logging.info(f"Downloading: {url}")
+
     with requests.get(url, stream=True, auth=(username, password)) as r:
+        logging.info(f"Response: {url} = {r.status_code}")
+
         with open(output_filename, 'wb') as f:
             shutil.copyfileobj(r.raw, f)
 
