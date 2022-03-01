@@ -1,72 +1,72 @@
 import fileinput
 import gzip
-import os
 import re
 import subprocess
 import tempfile
 import requests
 import shutil
-from datetime import timedelta, datetime
-from airflow import DAG
+import logging
 from airflow.operators.python_operator import PythonOperator
-from airflow.operators.subdag import SubDagOperator
 from airflow.providers.mysql.hooks.mysql import MySqlHook
-from itertools import groupby
 from airflow.models import Variable
+from warehousing.tools import create_sub_dag_task
 
 
 LIVE_DB_CONNECTION_NAME = 'LIVE_DB'
-CUR_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
-def download_and_restore(destination_database, source_url):
+def _download_and_restore(destination_database, source_url):
+    logging.info("_download_and_restore: Started")
+
     downloaded_filename = tempfile.NamedTemporaryFile()
     decrypted_filename = tempfile.NamedTemporaryFile()
     unzipped_filename = tempfile.NamedTemporaryFile()
 
-    download_file(
+    _download_file(
         url=source_url,
         output_filename=downloaded_filename.name,
         username=Variable.get("ETL_DOWNLOAD_USERNAME"),
         password=Variable.get("ETL_DOWNLOAD_PASSWORD"),
     )
 
-    decrypt_file(
+    _decrypt_file(
         input_filename=downloaded_filename.name,
         output_filename=decrypted_filename.name,
         password=Variable.get("ETL_ENCRYPTION_PASSWORD"),
     )
 
-    unzip_file(
+    _unzip_file(
         input_filename=decrypted_filename.name,
         output_filename=unzipped_filename.name,
     )
 
-    amend_database_name(
+    _amend_database_name(
         input_filename=unzipped_filename.name,
     )
 
-    drop_database(destination_database)
-    create_database(destination_database)
-    restore_database(destination_database, unzipped_filename.name)
+    _drop_database(destination_database)
+    _create_database(destination_database)
+    _restore_database(destination_database, unzipped_filename.name)
 
     downloaded_filename.close()
     decrypted_filename.close()
     unzipped_filename.close()
 
+    logging.info("_download_and_restore: Ended")
 
-def download_file(url, output_filename, username, password):
-    print("Downloading files")
+
+def _download_file(url, output_filename, username, password):
+    logging.info("_download_file: Started")
 
     with requests.get(url, stream=True, auth=(username, password)) as r:
         with open(output_filename, 'wb') as f:
             shutil.copyfileobj(r.raw, f)
 
-    print("Done downloading files")
+    logging.info("_download_file: Ended")
 
 
-def decrypt_file(input_filename, output_filename, password):
-    print("Decrypting files")
+def _decrypt_file(input_filename, output_filename, password):
+    logging.info("_decrypt_file: Started")
 
     proc = subprocess.run([
         'gpg',
@@ -84,21 +84,21 @@ def decrypt_file(input_filename, output_filename, password):
     if proc.returncode != 0:
         raise Exception('Could not decrypt file error code = {}.'.format(proc.returncode))
 
-    print("Done decrypting files")
+    logging.info("_decrypt_file: Ended")
 
 
-def unzip_file(input_filename, output_filename):
-    print("Unzipping files")
+def _unzip_file(input_filename, output_filename):
+    logging.info("_unzip_file: Started")
 
     with gzip.open(input_filename, 'rb') as f_in:
         with open(output_filename, 'wb') as f_out:
             shutil.copyfileobj(f_in, f_out)
 
-    print("Done unzipping files")
+    logging.info("_unzip_file: Ended")
 
 
-def amend_database_name(input_filename):
-    print("Amending database name")
+def _amend_database_name(input_filename):
+    logging.info("_amend_database_name: Started")
 
     create_db = re.compile('create\s*database', re.IGNORECASE)
     use_db = re.compile('use\s', re.IGNORECASE)
@@ -110,27 +110,37 @@ def amend_database_name(input_filename):
                 processed = processed.lower()
                 print(processed, end='')
 
-    print("Done amending database name")
+    logging.info("_amend_database_name: Ended")
 
 
-def drop_database(destination_database):
+def _drop_database(destination_database):
+    logging.info("_drop_database: Started")
+
     sql = 'DROP DATABASE IF EXISTS {};'.format(destination_database)
     mysql = MySqlHook(mysql_conn_id=LIVE_DB_CONNECTION_NAME)
     conn = mysql.get_conn()
     cursor = conn.cursor()
     cursor.execute(sql)
 
+    logging.info("_drop_database: Ended")
 
-def create_database(destination_database):
+
+def _create_database(destination_database):
+    logging.info("_create_database: Started")
+
     sql = 'CREATE DATABASE {};'.format(destination_database)
     mysql = MySqlHook(mysql_conn_id=LIVE_DB_CONNECTION_NAME)
     conn = mysql.get_conn()
     cursor = conn.cursor()
     cursor.execute(sql)
 
+    logging.info("_create_database: Ended")
 
-def restore_database(destination_database, input_filename):
-    proc = run_mysql('USE {};\nSOURCE {}'.format(
+
+def _restore_database(destination_database, input_filename):
+    logging.info("_restore_database: Started")
+
+    proc = _run_mysql('USE {};\nSOURCE {}'.format(
         destination_database,
         input_filename,
     ))
@@ -141,8 +151,10 @@ def restore_database(destination_database, input_filename):
             proc.returncode,
         ))
 
+    logging.info("_restore_database: Ended")
 
-def run_mysql(command):
+
+def _run_mysql(command):
     mysqlhook = MySqlHook(mysql_conn_id=LIVE_DB_CONNECTION_NAME)
     conn = mysqlhook.get_connection(LIVE_DB_CONNECTION_NAME)
 
@@ -160,71 +172,29 @@ def run_mysql(command):
         capture_output=True,
     )
 
-    print(result.stdout)
-    print(result.stderr)
-
     return result
 
 
-def create_dag_task(dag, source_url, destination_database):
-    sub_task_id=f'download_and_restore_{destination_database}'
-
-    subdag = DAG(
-        dag_id=f"{dag.dag_id}.{sub_task_id}",
-        default_args=dag.default_args,
-    )
-
-    PythonOperator(
-        task_id="download_and_restore",
-        python_callable=download_and_restore,
-        dag=subdag,
-        op_kwargs={
-            'destination_database': destination_database,
-            'source_url': source_url,
-        },
-    )
-
-    SubDagOperator(
-        task_id=sub_task_id,
-        subdag=subdag,
-        default_args=dag.default_args,
-        dag=dag,
-    )
-
-
-default_args = {
-    "owner": "airflow",
-    "reties": 1,
-    "retry_delay": timedelta(minutes=5),
-    "start_date": datetime(2020, 1, 1)
+details = {
+    'uol_openspecimen': 'https://catissue-live.lcbru.le.ac.uk/publish/catissue.db',
+    'uol_easyas_redcap': 'https://easy-as.lbrc.le.ac.uk/publish/redcap.db',
+    'uol_crf_redcap': 'https://crf.lcbru.le.ac.uk/publish/redcap.db',
+    'uol_survey_redcap': 'https://redcap.lcbru.le.ac.uk/publish/redcap.db',
 }
 
 
-dag = DAG(
-    dag_id="download_to_mysql",
-    schedule_interval=None,
-    default_args=default_args,
-    catchup=False,
-)
+def create_download_to_mysql_dag(dag):
+    parent_subdag = create_sub_dag_task(dag, 'download_to_mysql')
 
-
-create_dag_task(
-    dag=dag,
-    source_url='https://catissue-live.lcbru.le.ac.uk/publish/catissue.db',
-    destination_database='uol_openspecimen',
-)
-create_dag_task(
-    dag=dag,
-    source_url='https://crf.lcbru.le.ac.uk/publish/redcap.db',
-    destination_database='uol_crf_redcap',
-)
-create_dag_task(
-    dag=dag,
-    source_url='https://redcap.lcbru.le.ac.uk/publish/redcap.db',
-    destination_database='uol_survey_redcap',
-)
-create_dag_task(
-    dag=dag,
-    source_url='https://easy-as.lbrc.le.ac.uk/publish/redcap.db',
-    destination_database='uol_easyas_redcap',
-)
+    for destination, source in details.items():
+        PythonOperator(
+            task_id=f"download_and_restore__{destination}",
+            python_callable=_download_and_restore,
+            dag=parent_subdag.subdag,
+            op_kwargs={
+                'destination_database': destination,
+                'source_url': source,
+            },
+        )
+    
+    return parent_subdag

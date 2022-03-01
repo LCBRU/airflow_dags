@@ -1,18 +1,16 @@
-import os
-from datetime import timedelta, datetime
-from airflow import DAG
+import logging
 from airflow.operators.mssql_operator import MsSqlOperator
 from airflow.providers.microsoft.mssql.hooks.mssql import MsSqlHook
 from airflow.operators.python_operator import PythonOperator
-from airflow.operators.subdag import SubDagOperator
 from itertools import groupby
-
+from warehousing.tools import create_sub_dag_task, sql_path
 
 DWH_CONNECTION_NAME = 'DWH'
-CUR_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
 def _query_mssql(connection_name, sql, parameters=None):
+    logging.info("_query_mssql: Started")
+
     if not parameters:
         parameters = {}
 
@@ -20,18 +18,27 @@ def _query_mssql(connection_name, sql, parameters=None):
     conn = mysql.get_conn()
     cursor = conn.cursor()
     cursor.execute(sql, parameters)
+
+    logging.info("_query_mssql: Ended")
+
     return cursor
 
 
 def _ddl_mssql(connection_name, sql):
+    logging.info("_ddl_mssql: Started")
+
     mysql = MsSqlHook(mssql_conn_id=connection_name)
     conn = mysql.get_conn()
     cursor = conn.cursor()
     cursor.execute(sql)
     conn.commit()
 
+    logging.info("_ddl_mssql: Ended")
 
-def create_indexes_procedure(destination_database, source_database):
+
+def _create_indexes_procedure(destination_database, source_database):
+    logging.info("_create_indexes_procedure: Started")
+
     create_index_template = '''
         CREATE INDEX {index_name}
         ON {table_name} ({columns});
@@ -42,7 +49,7 @@ def create_indexes_procedure(destination_database, source_database):
         'D': 'DESCENDING',
     }
 
-    with open(f'{CUR_DIR}/sql/get_index_details.sql') as sql:
+    with open(sql_path() / 'mysql_to_datalake/QUERY__source_index_details.sql') as sql:
         cursor =  _query_mssql(
             DWH_CONNECTION_NAME,
             sql.read(),
@@ -87,50 +94,57 @@ def create_indexes_procedure(destination_database, source_database):
 
     sql = f'USE {destination_database};\n\n{sql}'
 
-    print(sql)
-
     _ddl_mssql(DWH_CONNECTION_NAME, sql)
 
+    logging.info("_create_indexes_procedure: Ended")
 
-def create_database_copy_dag(parent_dag_id, sub_task_id, source_database, destination_database, args):
-    result = DAG(
-        dag_id=f"{parent_dag_id}.{sub_task_id}",
-        default_args=args,
-    )
+
+def _create_database_copy_dag(dag, source_database, destination_database):
+    logging.info("_create_database_copy_dag: Started")
 
     create_etl_tables = MsSqlOperator(
         task_id='CREATE__etl_tables',
         mssql_conn_id=DWH_CONNECTION_NAME,
-        sql="sql/CREATE__etl_tables.sql",
+        sql="sql/mysql_to_datalake/CREATE__etl_tables.sql",
         autocommit=True,
         database=destination_database,
-        dag=result,
+        dag=dag,
     )
 
     recreate_etl_tables = MsSqlOperator(
         task_id='recreate_etl_tables',
         mssql_conn_id=DWH_CONNECTION_NAME,
-        sql="sql/recreate_etl_tables.sql",
+        sql="sql/mysql_to_datalake/INSERT__etl_tables.sql",
         autocommit=True,
         database=destination_database,
-        dag=result,
+        dag=dag,
         parameters={'source_database': source_database},
     )
 
     copy_tables = MsSqlOperator(
         task_id='copy_tables',
         mssql_conn_id=DWH_CONNECTION_NAME,
-        sql="sql/copy_tables.sql",
+        sql="sql/mysql_to_datalake/INSERT__tables.sql",
         autocommit=True,
         database=destination_database,
-        dag=result,
+        dag=dag,
         parameters={'source_database': source_database},
+    )
+
+    change_text_columns_to_varchar = MsSqlOperator(
+        task_id='change_text_columns_to_varchar',
+        mssql_conn_id=DWH_CONNECTION_NAME,
+        sql="sql/mysql_to_datalake/UPDATE__tables__alter_text_to_varchar.sql",
+        autocommit=True,
+        database=destination_database,
+        dag=dag,
+        parameters={},
     )
 
     create_indexes = PythonOperator(
         task_id="create_indexes",
-        python_callable=create_indexes_procedure,
-        dag=result,
+        python_callable=_create_indexes_procedure,
+        dag=dag,
         op_kwargs={
             'destination_database': destination_database,
             'source_database': source_database,
@@ -140,10 +154,10 @@ def create_database_copy_dag(parent_dag_id, sub_task_id, source_database, destin
     mark_updated = MsSqlOperator(
         task_id='mark_updated',
         mssql_conn_id=DWH_CONNECTION_NAME,
-        sql="sql/mark_updated.sql",
+        sql="sql/mysql_to_datalake/UPDATE__etl_tables__last_copied.sql",
         autocommit=True,
         database=destination_database,
-        dag=result,
+        dag=dag,
         parameters={'source_database': source_database},
     )
 
@@ -151,53 +165,41 @@ def create_database_copy_dag(parent_dag_id, sub_task_id, source_database, destin
         create_etl_tables >>
         recreate_etl_tables >>
         copy_tables >>
+        change_text_columns_to_varchar >>
         create_indexes >>
         mark_updated
     )
 
-    return result
+    logging.info("_create_database_copy_dag: Ended")
 
-default_args = {
-    "owner": "airflow",
-    "reties": 3,
-    "retry_delay": timedelta(minutes=5),
-    "start_date": datetime(2020, 1, 1)
+
+details = {
+    'civicrmlive_docker4716': 'datalake_civicrm',
+    'drupallive_docker4716': 'datalake_civicrm_drupal',
+    'identity': 'datalake_identity',
+    'briccs_northampton': 'datalake_onyx_northampton',
+    'briccs': 'datalake_onyx_uhl',
+    'uol_openspecimen': 'datalake_openspecimen',
+    'uol_easyas_redcap': 'datalake_redcap_easyas',
+    'redcap_genvasc': 'datalake_redcap_genvasc',
+    'uol_survey_redcap': 'datalake_redcap_internet',
+    'redcap6170_briccsext': 'datalake_redcap_n3',
+    'redcap_national': 'datalake_redcap_national',
+    'redcap6170_briccs': 'datalake_redcap_uhl',
+    'uol_crf_redcap': 'datalake_redcap_uol',
 }
 
-def create_database_copy_subdag(dag, source_database, destination_database):
-    task_id = f"{source_database}__to__{destination_database}"
 
-    SubDagOperator(
-        task_id=task_id,
-        subdag=create_database_copy_dag(
-            parent_dag_id=dag.dag_id,
-            sub_task_id=task_id,
-            source_database=source_database,
-            destination_database=destination_database,
-            args=dag.default_args
-        ),
-        default_args=dag.default_args,
-        dag=dag,
-    )
+def create_datalake_mysql_import_dag(dag):
+    parent_subdag = create_sub_dag_task(dag, 'datalake_mysql_import')
 
+    for source, destination in details.items():
+        subdag = create_sub_dag_task(parent_subdag.subdag, f'{source}__to__{destination}')
 
-dag = DAG(
-    dag_id="datalake_mysql_import",
-    schedule_interval="0 22 * * *",
-    default_args=default_args,
-    catchup=False,
-)
+        _create_database_copy_dag(
+            dag=subdag.subdag,
+            source_database=source,
+            destination_database=destination,
+        )
 
-create_database_copy_subdag(dag, 'civicrmlive_docker4716', 'datalake_civicrm')
-create_database_copy_subdag(dag, 'drupallive_docker4716', 'datalake_civicrm_drupal')
-create_database_copy_subdag(dag, 'identity', 'datalake_identity')
-create_database_copy_subdag(dag, 'briccs_northampton', 'datalake_onyx_northampton')
-create_database_copy_subdag(dag, 'briccs', 'datalake_onyx_uhl')
-create_database_copy_subdag(dag, 'uol_openspecimen', 'datalake_openspecimen')
-create_database_copy_subdag(dag, 'uol_easyas_redcap', 'datalake_redcap_easyas')
-create_database_copy_subdag(dag, 'redcap_genvasc', 'datalake_redcap_genvasc')
-create_database_copy_subdag(dag, 'uol_survey_redcap', 'datalake_redcap_internet')
-create_database_copy_subdag(dag, 'redcap6170_briccsext', 'datalake_redcap_n3')
-create_database_copy_subdag(dag, 'redcap_national', 'datalake_redcap_national')
-create_database_copy_subdag(dag, 'redcap6170_briccs', 'datalake_redcap_uhl')
-create_database_copy_subdag(dag, 'uol_crf_redcap', 'datalake_redcap_uol')
+    return parent_subdag
