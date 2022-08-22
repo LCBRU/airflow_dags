@@ -191,7 +191,7 @@ details = {
 
 
 def create_datalake_mysql_import_dag(dag):
-    parent_subdag = create_sub_dag_task(dag, 'datalake_mysql_import')
+    parent_subdag = create_sub_dag_task(dag, 'datalake_mysql_import', run_on_failures=True)
 
     for source, destination in details.items():
         subdag = create_sub_dag_task(parent_subdag.subdag, f'{source}__to__{destination}')
