@@ -31,7 +31,7 @@ download_crfm_studies = create_download_crf_manager_studies(dag)
 wh_central_merge_data = create_wh_central_merge_data_dag(dag)
 
 download_to_mysql >> datalake_mysql_import
-download_edge_studies >> download_crfm_studies
+download_edge_studies << download_crfm_studies
 download_edge_studies >> datalake_mysql_import
 download_crfm_studies >> datalake_mysql_import
 datalake_mysql_import >> wh_central_merge_data
