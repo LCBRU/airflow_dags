@@ -15,9 +15,10 @@ from lbrc_edge import EdgeSiteStudy
 def _download_edge_studies():
     logging.info("_download_edge_studies: Started")
 
-    with get_selenium(os.environ['AIRFLOW_VAR_EDGE_BASE_URL']) as s:
-        _login(s)
-        _get_studies(s)
+    s = get_selenium(os.environ['AIRFLOW_VAR_EDGE_BASE_URL'])
+    _login(s)
+    _get_studies(s)
+    s.close()
 
     logging.info("_download_edge_studies: Ended")
 

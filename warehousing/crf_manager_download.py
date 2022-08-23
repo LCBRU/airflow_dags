@@ -30,9 +30,10 @@ class CrfmStudy(Base):
 def _download_crf_manager_studies():
     logging.info("_download_crf_manager_studies: Started")
 
-    with get_selenium(os.environ['AIRFLOW_VAR_CRFM_BASE_URL']) as s:
-        _login(s)
-        _get_studies(s)
+    s = get_selenium(os.environ['AIRFLOW_VAR_CRFM_BASE_URL'])
+    _login(s)
+    _get_studies(s)
+    s.close()
 
     logging.info("_download_crf_manager_studies: Ended")
 
