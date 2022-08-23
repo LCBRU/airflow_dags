@@ -18,6 +18,7 @@ def _download_edge_studies():
     s = get_selenium(os.environ['AIRFLOW_VAR_EDGE_BASE_URL'])
     _login(s)
     _get_studies(s)
+    s.close()
 
     logging.info("_download_edge_studies: Ended")
 

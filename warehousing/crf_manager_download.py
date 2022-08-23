@@ -33,6 +33,7 @@ def _download_crf_manager_studies():
     s = get_selenium(os.environ['AIRFLOW_VAR_CRFM_BASE_URL'])
     _login(s)
     _get_studies(s)
+    s.close()
 
     logging.info("_download_crf_manager_studies: Ended")
 
