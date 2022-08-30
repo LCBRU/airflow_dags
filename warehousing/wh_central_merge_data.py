@@ -20,6 +20,15 @@ def _create_merge_data_dag(dag):
         dag=dag,
     )
 
+    insert__redcap_project_participant_identifier = MsSqlOperator(
+        task_id='INSERT__redcap_project_participant_identifier',
+        mssql_conn_id=DWH_CONNECTION_NAME,
+        sql="sql/wh_central_merge_data/INSERT__redcap_project_participant_identifier.sql",
+        autocommit=True,
+        database='warehouse_central',
+        dag=dag,
+    )
+
     logging.info("_create_merge_data_dag: Ended")
 
 
