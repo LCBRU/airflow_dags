@@ -34,5 +34,5 @@ BEGIN
         ON crif.database_name = ''?''
         AND crif.project_id = rd.project_id 
         AND crif.field_name = rd.field_name
-    WHERE LEN(LTRIM(RTRIM(COALESCE(rd.value, '')))) > 0
+    WHERE LEN(LTRIM(RTRIM(COALESCE(rd.value, '''')))) > 0
 END'
