@@ -29,6 +29,15 @@ def _create_merge_data_dag(dag):
         dag=dag,
     )
 
+    create_database__wh_study = MsSqlOperator(
+        task_id='CREATE_DATABASE__WH_Study',
+        mssql_conn_id=DWH_CONNECTION_NAME,
+        sql="sql/wh_central_merge_data/CREATE_DATABASE__WH_Study.sql",
+        autocommit=True,
+        database='warehouse_central',
+        dag=dag,
+    )
+
     logging.info("_create_merge_data_dag: Ended")
 
 
