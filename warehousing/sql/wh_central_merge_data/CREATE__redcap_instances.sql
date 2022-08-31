@@ -15,7 +15,7 @@ BEGIN
 	FROM  
 	(
         SELECT *   
-        FROM ?.dbo.redcap_config rc 
+        FROM [?].dbo.redcap_config rc 
 	) AS SourceTable  
 	PIVOT
 	(  

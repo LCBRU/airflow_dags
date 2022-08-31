@@ -47,7 +47,7 @@
 		        rd.record,
 		        crif.cfg_participant_id_type_id,
 		        RTRIM(LTRIM(rd.value))
-		    FROM ?.dbo.redcap_data rd
+		    FROM [?].dbo.redcap_data rd
 		    JOIN warehouse_central.dbo.cfg_redcap_id_fields crif
 		        ON crif.database_name = ''?''
 		        AND crif.project_id = rd.project_id 
