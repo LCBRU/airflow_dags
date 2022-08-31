@@ -19,6 +19,9 @@ BEGIN
 	SET @sql = N'CREATE DATABASE [wh_study_' + @name + ']'
 	EXECUTE sp_executesql @sql
 	
+	SET @sql = N'ALTER DATABASE [wh_study_' + @name + '] SET RECOVERY SIMPLE'
+	EXECUTE sp_executesql @sql
+	
 	FETCH NEXT FROM db_cursor INTO @name
 END 
 
