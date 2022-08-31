@@ -1,5 +1,5 @@
 		IF OBJECT_ID(N'dbo.redcap_project_participant_identifier', N'U') IS NOT NULL  
-		    DROP TABLE dbo.redcap_project_participant_identifier;
+		    DROP TABLE warehouse_central.dbo.redcap_project_participant_identifier;
 		
 		CREATE TABLE redcap_project_participant_identifier (
             id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,

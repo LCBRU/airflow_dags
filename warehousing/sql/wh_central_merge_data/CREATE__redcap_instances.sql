@@ -1,5 +1,5 @@
 IF OBJECT_ID(N'dbo.redcap_instances', N'U') IS NOT NULL  
-    DROP TABLE dbo.redcap_instances;
+    DROP TABLE warehouse_central.dbo.redcap_instances;
 
 CREATE TABLE warehouse_central.dbo.redcap_instances (
     datalake_db VARCHAR(255),
