@@ -39,6 +39,7 @@ def _create_merge_data_dag(dag):
     )
 
     insert__redcap_project_participant_identifier >> create_database__wh_study
+    create__redcap_instances >> create_database__wh_study
 
     logging.info("_create_merge_data_dag: Ended")
 
