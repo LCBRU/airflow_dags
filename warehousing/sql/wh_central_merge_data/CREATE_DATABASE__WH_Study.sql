@@ -27,3 +27,49 @@ END
 
 CLOSE db_cursor  
 DEALLOCATE db_cursor 
+
+
+EXEC sp_MSforeachdb
+@command1='IF ''?'' LIKE ''wh_study_%''
+BEGIN
+	CREATE TABLE [?].dbo.redcap_form (
+		id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+		name NVARCHAR(100) NOT NULL UNIQUE
+	);
+
+	CREATE TABLE [?].dbo.redcap_form_section (
+		id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+		form_id INT NOT NULL,
+		name NVARCHAR(100) NOT NULL,
+		INDEX idx__redcap_form_section__name (name),
+		FOREIGN KEY (form_id) REFERENCES redcap_form(id),
+		UNIQUE (form_id, name)
+	);
+
+	CREATE TABLE [?].dbo.redcap_field (
+		id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+		form_section_id INT NOT NULL,
+		ordinal INT NOT NULL,
+		name NVARCHAR(100) NOT NULL,
+		label NVARCHAR(MAX) NOT NULL,
+		type VARCHAR(50) NOT NULL,
+		validation_type VARCHAR(255) NULL,
+		INDEX idx__redcap_field__form_section (form_section_id),
+		INDEX idx__redcap_field__ordinal (ordinal),
+		INDEX idx__redcap_field__name (name),
+		FOREIGN KEY (form_section_id) REFERENCES redcap_form_section(id),
+		UNIQUE (form_section_id, name)
+	);
+
+	CREATE TABLE [?].dbo.redcap_field_enum (
+		id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+		field_id INT NOT NULL,
+		value INT NOT NULL,
+		name NVARCHAR(100) NOT NULL,
+		INDEX idx__redcap_field_enum__field (field_id),
+		INDEX idx__redcap_field_enum__name (name),
+		UNIQUE (field_id, value),
+		UNIQUE (field_id, name)
+	);
+
+END'
