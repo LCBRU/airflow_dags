@@ -53,6 +53,7 @@ BEGIN
 		name NVARCHAR(100) NOT NULL,
 		label NVARCHAR(MAX) NOT NULL,
 		type VARCHAR(50) NOT NULL,
+		units VARCHAR(50) NULL,
 		validation_type VARCHAR(255) NULL,
 		INDEX idx__redcap_field__form_section (form_section_id),
 		INDEX idx__redcap_field__ordinal (ordinal),
