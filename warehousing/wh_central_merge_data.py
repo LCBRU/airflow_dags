@@ -38,8 +38,18 @@ def _create_merge_data_dag(dag):
         dag=dag,
     )
 
+    create__redcap_metatdata_tables = MsSqlOperator(
+        task_id='CREATE__REDCap_metatdata_tables',
+        mssql_conn_id=DWH_CONNECTION_NAME,
+        sql="sql/wh_central_merge_data/CREATE__REDCap_metatdata_tables.sql",
+        autocommit=True,
+        database='warehouse_central',
+        dag=dag,
+    )
+
     insert__redcap_project_participant_identifier >> create_database__wh_study
     create__redcap_instances >> create_database__wh_study
+    create_database__wh_study >> create__redcap_metatdata_tables
 
     logging.info("_create_merge_data_dag: Ended")
 
