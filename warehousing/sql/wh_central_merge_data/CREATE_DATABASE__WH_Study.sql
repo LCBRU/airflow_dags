@@ -10,7 +10,7 @@ FETCH NEXT FROM db_cursor INTO @name
 
 WHILE @@FETCH_STATUS = 0  
 BEGIN
-	SET @sql = N'IF DB_ID(''[wh_study_' + @name + ']'') IS NULL CREATE DATABASE [wh_study_' + @name + ']'
+	SET @sql = N'IF DB_ID(''wh_study_' + @name + ''') IS NULL CREATE DATABASE [wh_study_' + @name + ']'
 	EXECUTE sp_executesql @sql
 	
 	SET @sql = N'ALTER DATABASE [wh_study_' + @name + '] SET RECOVERY SIMPLE'
