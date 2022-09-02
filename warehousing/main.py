@@ -14,7 +14,7 @@ default_args = {
     "retry_delay": timedelta(minutes=5),
     "start_date": datetime(2020, 1, 1),
 	'email': os.environ.get('ERROR_EMAIL_ADDRESS', '').split(';'),
-	'email_on_failure': True,
+	'email_on_failure': False,
 }
 
 dag = DAG(
