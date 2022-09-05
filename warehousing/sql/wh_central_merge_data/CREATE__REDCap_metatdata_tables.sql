@@ -1,16 +1,27 @@
+EXEC sp_MSforeachdb @command1='
+IF ''?'' LIKE ''wh_study_%''
+BEGIN
+	IF OBJECT_ID(N''[?].dbo.redcap_field_enum'') IS NOT NULL
+		DROP TABLE [?].dbo.redcap_field_enum
+
+	IF OBJECT_ID(N''[?].dbo.redcap_field'') IS NOT NULL
+		DROP TABLE [?].dbo.redcap_field
+
+	IF OBJECT_ID(N''[?].dbo.redcap_form_section'') IS NOT NULL
+		DROP TABLE [?].dbo.redcap_form_section
+
+	IF OBJECT_ID(N''[?].dbo.redcap_form'') IS NOT NULL
+		DROP TABLE [?].dbo.redcap_form
+END'
+
+
 EXEC sp_MSforeachdb
 @command1='IF ''?'' LIKE ''wh_study_%''
 BEGIN
-	IF OBJECT_ID(N''[?].dbo.redcap_form'') IS NOT NULL
-		DROP TABLE [?].dbo.redcap_form
-
 	CREATE TABLE [?].dbo.redcap_form (
 		id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
 		name NVARCHAR(100) NOT NULL UNIQUE
 	);
-
-	IF OBJECT_ID(N''[?].dbo.redcap_form_section'') IS NOT NULL
-		DROP TABLE [?].dbo.redcap_form_section
 
 	CREATE TABLE [?].dbo.redcap_form_section (
 		id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
@@ -20,9 +31,6 @@ BEGIN
 		FOREIGN KEY (form_id) REFERENCES redcap_form(id),
 		UNIQUE (form_id, name)
 	);
-
-	IF OBJECT_ID(N''[?].dbo.redcap_field'') IS NOT NULL
-		DROP TABLE [?].dbo.redcap_field
 
 	CREATE TABLE [?].dbo.redcap_field (
 		id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
@@ -40,9 +48,6 @@ BEGIN
 		UNIQUE (form_section_id, name)
 	);
 
-	IF OBJECT_ID(N''[?].dbo.redcap_field_enum'') IS NOT NULL
-		DROP TABLE [?].dbo.redcap_field_enum
-
 	CREATE TABLE [?].dbo.redcap_field_enum (
 		id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
 		field_id INT NOT NULL,
@@ -53,5 +58,4 @@ BEGIN
 		UNIQUE (field_id, value),
 		UNIQUE (field_id, name)
 	);
-
 END'
