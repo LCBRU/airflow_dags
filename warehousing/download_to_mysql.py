@@ -9,7 +9,7 @@ import logging
 from airflow.operators.python_operator import PythonOperator
 from airflow.providers.mysql.hooks.mysql import MySqlHook
 from airflow.models import Variable
-from warehousing.tools import create_sub_dag_task
+from tools import create_sub_dag_task
 
 
 LIVE_DB_CONNECTION_NAME = 'LIVE_DB'
