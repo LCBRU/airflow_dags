@@ -14,7 +14,7 @@ default_args = {
 }
 
 dag = DAG(
-    dag_id="load_warehouse",
+    dag_id="exports",
     schedule_interval=os.environ.get('SCHEDULE_LOAD_WAREHOUSE', None) or None,
     default_args=default_args,
     catchup=False,
