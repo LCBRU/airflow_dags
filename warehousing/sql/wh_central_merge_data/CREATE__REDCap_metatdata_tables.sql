@@ -12,15 +12,41 @@ BEGIN
 
 	IF OBJECT_ID(N''[?].dbo.redcap_form'') IS NOT NULL
 		DROP TABLE [?].dbo.redcap_form
+
+	IF OBJECT_ID(N''[?].dbo.redcap_project'') IS NOT NULL
+		DROP TABLE [?].dbo.redcap_project
+
+	IF OBJECT_ID(N''[?].dbo.redcap_instance'') IS NOT NULL
+		DROP TABLE [?].dbo.redcap_instance
 END'
 
 
 EXEC sp_MSforeachdb
 @command1='IF ''?'' LIKE ''wh_study_%''
 BEGIN
+	CREATE TABLE [?].dbo.redcap_instance (
+		id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+		datalake_database NVARCHAR(100) NOT NULL UNIQUE
+	);
+
+	CREATE TABLE [?].dbo.redcap_project (
+		id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+		instance_id INT NOT NULL,
+		redcap_project_id INT NOT NULL,
+		name NVARCHAR(100) NOT NULL,
+		INDEX idx__redcap_project__name (name),
+		FOREIGN KEY (instance_id) REFERENCES redcap_instance(id),
+		UNIQUE (instance_id, redcap_project_id),
+		UNIQUE (instance_id, name)
+	);
+
 	CREATE TABLE [?].dbo.redcap_form (
 		id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
-		name NVARCHAR(100) NOT NULL UNIQUE
+		project_id INT NOT NULL,
+		name NVARCHAR(100) NOT NULL,
+		INDEX idx__redcap_form__name (name),
+		FOREIGN KEY (project_id) REFERENCES redcap_project(id),
+		UNIQUE (project_id, name)
 	);
 
 	CREATE TABLE [?].dbo.redcap_form_section (

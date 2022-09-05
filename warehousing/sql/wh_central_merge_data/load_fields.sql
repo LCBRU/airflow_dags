@@ -104,3 +104,23 @@ FROM #fields f
 CROSS APPLY STRING_SPLIT(REPLACE(f.element_enum, '\n', '|'), '|')
 WHERE LEN(TRIM(COALESCE(f.element_enum, ''))) > 0
     AND element_type <> 'calc'
+
+
+SELECT COUNT(*)
+FROM (
+	SELECT
+		rl.log_event_id,
+		CONVERT(DATETIME2, FORMAT(rl.ts, '####-##-## ##:##:##'), 120) AS log_datetime,
+		rl.project_id,
+		rl.[user],
+		rl.event,
+		rl.pk AS record,
+		TRIM(LEFT(value, PATINDEX('%=%', value + '=') - 1)) field_name,
+		TRIM(REPLACE(RIGHT(value, LEN(value) - PATINDEX('%=%', value + '=')), '''', '')) value
+	FROM datalake_redcap_uhl.dbo.redcap_log_event rl
+		CROSS APPLY STRING_SPLIT(REPLACE(rl.data_values, CHAR(10), ''), ',')
+	WHERE rl.event IN ('INSERT', 'UPDATE', 'DELETE')
+		AND rl.object_type = 'redcap_data'
+		AND LEN(TRIM(COALESCE(rl.data_values, ''))) > 0
+) x
+;

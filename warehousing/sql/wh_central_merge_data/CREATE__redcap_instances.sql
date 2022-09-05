@@ -28,7 +28,7 @@ BEGIN
 	(
         SELECT *   
         FROM [?].dbo.redcap_config rc 
-	) AS SourceTable  
+	) AS SourceTable
 	PIVOT
 	(  
         MIN(value)
