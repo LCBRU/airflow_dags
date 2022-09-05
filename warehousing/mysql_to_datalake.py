@@ -3,7 +3,9 @@ from airflow.operators.mssql_operator import MsSqlOperator
 from airflow.providers.microsoft.mssql.hooks.mssql import MsSqlHook
 from airflow.operators.python_operator import PythonOperator
 from itertools import groupby
-from tools import create_sub_dag_task, sql_path
+from tools import create_sub_dag_task
+from warehousing import sql_path
+
 
 DWH_CONNECTION_NAME = 'DWH'
 

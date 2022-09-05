@@ -1,4 +1,3 @@
-from pathlib import Path
 from airflow import DAG
 from airflow.operators.subdag import SubDagOperator
 
@@ -21,7 +20,3 @@ def create_sub_dag_task(dag, sub_task_id, run_on_failures=False):
         dag=dag,
         **params,
     )
-
-
-def sql_path():
-    return Path(__file__).parent.absolute() / 'sql'
