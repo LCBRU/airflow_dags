@@ -26,7 +26,7 @@ EXEC sp_MSforeachdb
 BEGIN
 	CREATE TABLE [?].dbo.meta__redcap_instance (
 		id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
-		datalake_database NVARCHAR(MAX) NOT NULL UNIQUE
+		datalake_database NVARCHAR(500) NOT NULL UNIQUE
 	);
 END'
 
@@ -37,7 +37,7 @@ BEGIN
 		id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
 		meta_instance_id INT NOT NULL,
 		redcap_project_id INT NOT NULL,
-		name NVARCHAR(MAX) NOT NULL,
+		name NVARCHAR(500) NOT NULL,
 		INDEX idx__redcap_project__name (name),
 		FOREIGN KEY (meta_instance_id) REFERENCES meta__redcap_instance(id),
 		UNIQUE (meta_instance_id, redcap_project_id),
@@ -51,7 +51,7 @@ BEGIN
 	CREATE TABLE [?].dbo.meta__redcap_form (
 		id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
 		meta_project_id INT NOT NULL,
-		name NVARCHAR(MAX) NOT NULL,
+		name NVARCHAR(500) NOT NULL,
 		INDEX idx__redcap_form__name (name),
 		FOREIGN KEY (meta_project_id) REFERENCES meta__redcap_project(id),
 		UNIQUE (meta_project_id, name)
@@ -64,7 +64,7 @@ BEGIN
 	CREATE TABLE [?].dbo.meta__redcap_form_section (
 		id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
 		meta_form_id INT NOT NULL,
-		name NVARCHAR(MAX) NOT NULL,
+		name NVARCHAR(500) NOT NULL,
 		INDEX idx__redcap_form_section__name (name),
 		FOREIGN KEY (meta_form_id) REFERENCES meta__redcap_form(id),
 		UNIQUE (meta_form_id, name)
@@ -78,7 +78,7 @@ BEGIN
 		id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
 		meta_form_section_id INT NOT NULL,
 		ordinal INT NOT NULL,
-		name NVARCHAR(MAX) NOT NULL,
+		name NVARCHAR(500) NOT NULL,
 		label NVARCHAR(MAX) NOT NULL,
 		type VARCHAR(50) NOT NULL,
 		units VARCHAR(50) NULL,
@@ -98,7 +98,7 @@ BEGIN
 		id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
 		meta_field_id INT NOT NULL,
 		value INT NOT NULL,
-		name NVARCHAR(MAX) NOT NULL,
+		name NVARCHAR(500) NOT NULL,
 		INDEX idx__redcap_field_enum__field (meta_field_id),
 		INDEX idx__redcap_field_enum__name (name),
 		UNIQUE (meta_field_id, value),
