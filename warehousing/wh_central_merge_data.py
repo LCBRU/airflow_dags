@@ -44,9 +44,29 @@ def _create_merge_data_dag(dag):
         dag=dag,
     )
 
+    delete__wh_study__meta_redcap = MsSqlOperator(
+        task_id='DELETE__wh_study__meta_redcap',
+        mssql_conn_id=DWH_CONNECTION_NAME,
+        sql="sql/wh_central_merge_data/DELETE__wh_study__meta_redcap.sql",
+        autocommit=True,
+        database='warehouse_central',
+        dag=dag,
+    )
+
+    insert__wh_study__meta_redcap_instance = MsSqlOperator(
+        task_id='INSERT__wh_study__meta_redcap_instance',
+        mssql_conn_id=DWH_CONNECTION_NAME,
+        sql="sql/wh_central_merge_data/INSERT__wh_study__meta_redcap_instance.sql",
+        autocommit=True,
+        database='warehouse_central',
+        dag=dag,
+    )
+
     insert__redcap_project_participant_identifier >> create_database__wh_study
     create__redcap_instances >> create_database__wh_study
     create_database__wh_study >> create__redcap_metatdata_tables
+    create__redcap_metatdata_tables >> delete__wh_study__meta_redcap
+    delete__wh_study__meta_redcap >> insert__wh_study__meta_redcap_instance
 
     logging.info("_create_merge_data_dag: Ended")
 

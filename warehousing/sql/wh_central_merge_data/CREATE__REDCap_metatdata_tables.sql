@@ -28,7 +28,11 @@ BEGIN
 		id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
 		datalake_database NVARCHAR(100) NOT NULL UNIQUE
 	);
+END'
 
+EXEC sp_MSforeachdb
+@command1='IF ''?'' LIKE ''wh_study_%''
+BEGIN
 	CREATE TABLE [?].dbo.meta__redcap_project (
 		id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
 		meta_instance_id INT NOT NULL,
@@ -39,7 +43,11 @@ BEGIN
 		UNIQUE (meta_instance_id, redcap_project_id),
 		UNIQUE (meta_instance_id, name)
 	);
+END'
 
+EXEC sp_MSforeachdb
+@command1='IF ''?'' LIKE ''wh_study_%''
+BEGIN
 	CREATE TABLE [?].dbo.meta__redcap_form (
 		id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
 		meta_project_id INT NOT NULL,
@@ -48,7 +56,11 @@ BEGIN
 		FOREIGN KEY (meta_project_id) REFERENCES meta__redcap_project(id),
 		UNIQUE (meta_project_id, name)
 	);
+END'
 
+EXEC sp_MSforeachdb
+@command1='IF ''?'' LIKE ''wh_study_%''
+BEGIN
 	CREATE TABLE [?].dbo.meta__redcap_form_section (
 		id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
 		meta_form_id INT NOT NULL,
@@ -77,7 +89,11 @@ BEGIN
 		FOREIGN KEY (meta_form_section_id) REFERENCES meta__redcap_form_section(id),
 		UNIQUE (meta_form_section_id, name)
 	);
+END'
 
+EXEC sp_MSforeachdb
+@command1='IF ''?'' LIKE ''wh_study_%''
+BEGIN
 	CREATE TABLE [?].dbo.meta__redcap_field_enum (
 		id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
 		meta_field_id INT NOT NULL,
