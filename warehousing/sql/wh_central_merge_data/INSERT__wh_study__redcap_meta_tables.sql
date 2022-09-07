@@ -52,26 +52,26 @@ BEGIN
 		SELECT
 			rm.project_id,
 			rp.project_name,
-		    rm.field_name,
-		    rm.form_name,
-		    rm.field_order,
-		    rm.field_units,
-		    COALESCE(
-		        (
-		            SELECT TOP 1 rms.element_preceding_header
-		            FROM dl_db.dbo.redcap_metadata rms
-		            WHERE rms.project_id = rm.project_id
-		                AND rms.form_name = rm.form_name
-		                AND rms.field_order <= rm.field_order
-		                AND rms.element_preceding_header IS NOT NULL
-		            ORDER BY rms.field_order DESC
-		        ),
-		        ''
-		    ) AS element_preceding_header,
-		    rm.element_type,
-		    rm.element_label,
-		    rm.element_enum,
-		    rm.element_validation_type
+			rm.field_name,
+			rm.form_name,
+			rm.field_order,
+			rm.field_units,
+			COALESCE(
+				(
+					SELECT TOP 1 rms.element_preceding_header
+					FROM dl_db.dbo.redcap_metadata rms
+					WHERE rms.project_id = rm.project_id
+						AND rms.form_name = rm.form_name
+						AND rms.field_order <= rm.field_order
+						AND rms.element_preceding_header IS NOT NULL
+					ORDER BY rms.field_order DESC
+				),
+				''
+			) AS element_preceding_header,
+			rm.element_type,
+			rm.element_label,
+			rm.element_enum,
+			rm.element_validation_type
 		FROM dl_db.dbo.redcap_metadata rm
 		JOIN dl_db.dbo.redcap_projects rp
 			ON rp.project_id = rm.project_id
@@ -127,8 +127,8 @@ BEGIN
 		SET form_id = rf.id
 		FROM #fields f
 		JOIN study_db.dbo.meta__redcap_form rf
-		    ON rf.name = f.form_name
-		    AND rf.meta_project_id = f.project_id
+			ON rf.name = f.form_name
+			AND rf.meta_project_id = f.project_id
 		"
 	
 	SET @sql = REPLACE(REPLACE(@sql, 'study_db', @destination_name), 'dl_db', @datalake_database)
@@ -148,8 +148,8 @@ BEGIN
 		SET form_section_id = rfs.id
 		FROM #fields f
 		JOIN study_db.dbo.meta__redcap_form_section rfs
-		    ON rfs.name = f.element_preceding_header
-		    AND rfs.meta_form_id = f.form_id
+			ON rfs.name = f.element_preceding_header
+			AND rfs.meta_form_id = f.form_id
 		"
 	
 	SET @sql = REPLACE(REPLACE(@sql, 'study_db', @destination_name), 'dl_db', @datalake_database)
@@ -158,13 +158,13 @@ BEGIN
 	SET @sql = "
 		INSERT INTO study_db.dbo.meta__redcap_field (meta_form_section_id, ordinal, name, label, type, units, validation_type)
 		SELECT
-		    form_section_id,
-		    field_order,
-		    field_name,
-		    element_label,
-		    element_type,
-		    field_units,
-		    element_validation_type
+			form_section_id,
+			field_order,
+			field_name,
+			element_label,
+			element_type,
+			field_units,
+			element_validation_type
 		FROM #fields
 		"
 	
@@ -176,9 +176,9 @@ BEGIN
 		SET field_id = rf.id
 		FROM #fields f
 		JOIN study_db.dbo.meta__redcap_field rf
-		    ON rf.meta_form_section_id = f.form_section_id
-		    AND rf.ordinal = f.field_order
-		    AND rf.name = f.field_name
+			ON rf.meta_form_section_id = f.form_section_id
+			AND rf.ordinal = f.field_order
+			AND rf.name = f.field_name
 		"
 	
 	SET @sql = REPLACE(REPLACE(@sql, 'study_db', @destination_name), 'dl_db', @datalake_database)
@@ -187,13 +187,13 @@ BEGIN
 	SET @sql = "
 		INSERT INTO study_db.dbo.meta__redcap_field_enum (meta_field_id, value, name)
 		SELECT
-		    f.field_id,
-		    CONVERT(INT, TRIM(LEFT(value, PATINDEX('%,%', value + ',') - 1))),
-		    TRIM(RIGHT(value, LEN(value) - PATINDEX('%,%', value + ',')))
+			f.field_id,
+			CONVERT(INT, TRIM(LEFT(value, PATINDEX('%,%', value + ',') - 1))),
+			TRIM(RIGHT(value, LEN(value) - PATINDEX('%,%', value + ',')))
 		FROM #fields f
 		CROSS APPLY STRING_SPLIT(REPLACE(f.element_enum, '\n', '|'), '|')
 		WHERE LEN(TRIM(COALESCE(f.element_enum, ''))) > 0
-		    AND element_type <> 'calc'
+			AND element_type <> 'calc'
 		"
 	
 	SET @sql = REPLACE(REPLACE(@sql, 'study_db', @destination_name), 'dl_db', @datalake_database)
