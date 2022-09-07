@@ -17,21 +17,21 @@ BEGIN
 	SET @destination_name = '[wh_study_' + @study_name + ']'
 
 	CREATE TABLE #fields (
-	    redcap_project_id INT,
-	    project_name VARCHAR(100),
-	    field_name VARCHAR(100),
-	    form_name VARCHAR(100),
-	    field_order INT,
-	    field_units VARCHAR(50),
-	    element_preceding_header VARCHAR(MAX),
-	    element_type VARCHAR(50),
-	    element_label VARCHAR(MAX),
-	    element_enum VARCHAR(MAX),
-	    element_validation_type VARCHAR(255),
-	    form_id INT,
-	    form_section_id INT,
-	    field_id INT,
-	    project_id INT,
+		redcap_project_id INT,
+		project_name VARCHAR(100),
+		field_name VARCHAR(100),
+		form_name VARCHAR(100),
+		field_order INT,
+		field_units VARCHAR(50),
+		element_preceding_header VARCHAR(MAX),
+		element_type VARCHAR(50),
+		element_label VARCHAR(MAX),
+		element_enum VARCHAR(MAX),
+		element_validation_type VARCHAR(255),
+		form_id INT,
+		form_section_id INT,
+		field_id INT,
+		project_id INT,
 		instance_id INT
 	)
 	
@@ -39,15 +39,15 @@ BEGIN
 		INSERT INTO #fields (
 			redcap_project_id,
 			project_name,
-		    field_name,
-		    form_name,
-		    field_order,
-		    field_units,
-		    element_preceding_header,
-		    element_type,
-		    element_label,
-		    element_enum,
-		    element_validation_type
+			field_name,
+			form_name,
+			field_order,
+			field_units,
+			element_preceding_header,
+			element_type,
+			element_label,
+			element_enum,
+			element_validation_type
 		)
 		SELECT
 			rm.project_id,
