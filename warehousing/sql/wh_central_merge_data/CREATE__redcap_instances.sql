@@ -1,9 +1,10 @@
-IF OBJECT_ID(N'dbo.redcap_instances', N'U') IS NOT NULL  
-    DROP TABLE warehouse_central.dbo.redcap_instances;
+IF OBJECT_ID(N'redcap_instances', N'U') IS NOT NULL  
+    DROP TABLE meta_redcap_instances;
 
-CREATE TABLE warehouse_central.dbo.redcap_instances (
-    datalake_database VARCHAR(255),
-    source_database VARCHAR(255),
+CREATE TABLE meta_redcap_instances (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    datalake_database VARCHAR(255) UNIQUE,
+    source_database VARCHAR(255) UNIQUE,
     redcap_version VARCHAR(255),
     redcap_base_url VARCHAR(2000)
 )
@@ -11,7 +12,7 @@ CREATE TABLE warehouse_central.dbo.redcap_instances (
 EXEC sp_MSforeachdb
 @command1='IF ''?'' LIKE ''datalake_redcap_%''
 BEGIN 
-	INSERT INTO warehouse_central.dbo.redcap_instances (datalake_database, source_database, redcap_version, redcap_base_url)
+	INSERT INTO warehouse_central.dbo.meta_redcap_instances (datalake_database, source_database, redcap_version, redcap_base_url)
 	SELECT
         ''?'' datalake_db,
         CASE ''?''

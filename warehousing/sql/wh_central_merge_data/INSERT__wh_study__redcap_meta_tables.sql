@@ -1,20 +1,24 @@
 SET QUOTED_IDENTIFIER OFF;
 	
+DECLARE @project_id INT
 DECLARE @study_name NVARCHAR(500)
 DECLARE @destination_name NVARCHAR(500)
 DECLARE @datalake_database NVARCHAR(500)
 DECLARE @sql NVARCHAR(MAX) 
+DECLARE @ParmDefinition NVARCHAR(500)
 
 DECLARE db_cursor CURSOR FOR 
-SELECT DISTINCT study_name, datalake_database
+SELECT DISTINCT study_name, datalake_database, redcap_project_id
 FROM datalake_redcap_project_mappings
 
 OPEN db_cursor  
-FETCH NEXT FROM db_cursor INTO @study_name, @datalake_database
+FETCH NEXT FROM db_cursor INTO @study_name, @datalake_database, @project_id
 
 WHILE @@FETCH_STATUS = 0  
 BEGIN
 	SET @destination_name = '[wh_study_' + @study_name + ']'
+	
+	PRINT @project_id
 
 	CREATE TABLE #fields (
 		redcap_project_id INT,
@@ -75,11 +79,12 @@ BEGIN
 		FROM dl_db.dbo.redcap_metadata rm
 		JOIN dl_db.dbo.redcap_projects rp
 			ON rp.project_id = rm.project_id
-		WHERE rm.project_id = 31
+		WHERE rm.project_id = @project_id
 		"
-	
-	SET @sql = REPLACE(REPLACE(@sql, 'study_db', @destination_name), 'dl_db', @datalake_database)
-	EXECUTE sp_executesql @sql
+	SET @sql = REPLACE(@sql, 'dl_db', @datalake_database)
+	SET @ParmDefinition = N'@project_id INT'
+
+	EXECUTE sp_executesql @sql, @ParmDefinition, @project_id = @project_id
 
 	SET @sql = "
 		UPDATE f
@@ -202,7 +207,7 @@ BEGIN
 
 	DROP TABLE #fields;
 
-	FETCH NEXT FROM db_cursor INTO @study_name, @datalake_database
+	FETCH NEXT FROM db_cursor INTO @study_name, @datalake_database, @project_id
 END 
 
 CLOSE db_cursor
