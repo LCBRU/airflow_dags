@@ -8,65 +8,75 @@ DWH_CONNECTION_NAME = 'DWH'
 def _create_merge_data_dag(dag):
     logging.info("_create_merge_data_dag: Started")
 
-    create__redcap_instances = MsSqlOperator(
-        task_id='CREATE__redcap_instances',
+    drop__meta_redcap_tables = MsSqlOperator(
+        task_id='DROP__meta_redcap_tables',
         mssql_conn_id=DWH_CONNECTION_NAME,
-        sql="sql/wh_central_merge_data/CREATE__redcap_instances.sql",
+        sql="sql/wh_central_merge_data/DROP__meta_redcap_tables.sql",
         autocommit=True,
         database='warehouse_central',
         dag=dag,
     )
 
-    insert__redcap_project_participant_identifier = MsSqlOperator(
-        task_id='INSERT__redcap_project_participant_identifier',
+    create__meta_redcap_instance = MsSqlOperator(
+        task_id='CREATE__meta_redcap_instance',
         mssql_conn_id=DWH_CONNECTION_NAME,
-        sql="sql/wh_central_merge_data/INSERT__redcap_project_participant_identifier.sql",
+        sql="sql/wh_central_merge_data/CREATE__meta_redcap_instance.sql",
         autocommit=True,
         database='warehouse_central',
         dag=dag,
     )
 
-    create_database__wh_study = MsSqlOperator(
-        task_id='CREATE_DATABASE__WH_Study',
+    create__meta_redcap_project = MsSqlOperator(
+        task_id='CREATE__meta_redcap_project',
         mssql_conn_id=DWH_CONNECTION_NAME,
-        sql="sql/wh_central_merge_data/CREATE_DATABASE__WH_Study.sql",
+        sql="sql/wh_central_merge_data/CREATE__meta_redcap_project.sql",
         autocommit=True,
         database='warehouse_central',
         dag=dag,
     )
 
-    create__redcap_metatdata_tables = MsSqlOperator(
-        task_id='CREATE__REDCap_metatdata_tables',
+    create__meta_redcap_form = MsSqlOperator(
+        task_id='CREATE__meta_redcap_form',
         mssql_conn_id=DWH_CONNECTION_NAME,
-        sql="sql/wh_central_merge_data/CREATE__REDCap_metatdata_tables.sql",
+        sql="sql/wh_central_merge_data/CREATE__meta_redcap_form.sql",
         autocommit=True,
         database='warehouse_central',
         dag=dag,
     )
 
-    delete__wh_study__meta_redcap = MsSqlOperator(
-        task_id='DELETE__wh_study__meta_redcap',
+    create__meta_redcap_form_section = MsSqlOperator(
+        task_id='CREATE__meta_redcap_form_section',
         mssql_conn_id=DWH_CONNECTION_NAME,
-        sql="sql/wh_central_merge_data/DELETE__wh_study__meta_redcap.sql",
+        sql="sql/wh_central_merge_data/CREATE__meta_redcap_form_section.sql",
         autocommit=True,
         database='warehouse_central',
         dag=dag,
     )
 
-    insert__wh_study__meta_redcap_instance = MsSqlOperator(
-        task_id='INSERT__wh_study__meta_redcap_instance',
+    create__meta_redcap_field = MsSqlOperator(
+        task_id='CREATE__meta_redcap_field',
         mssql_conn_id=DWH_CONNECTION_NAME,
-        sql="sql/wh_central_merge_data/INSERT__wh_study__meta_redcap_instance.sql",
+        sql="sql/wh_central_merge_data/CREATE__meta_redcap_field.sql",
         autocommit=True,
         database='warehouse_central',
         dag=dag,
     )
 
-    insert__redcap_project_participant_identifier >> create_database__wh_study
-    create__redcap_instances >> create_database__wh_study
-    create_database__wh_study >> create__redcap_metatdata_tables
-    create__redcap_metatdata_tables >> delete__wh_study__meta_redcap
-    delete__wh_study__meta_redcap >> insert__wh_study__meta_redcap_instance
+    create__meta_redcap_field_enum = MsSqlOperator(
+        task_id='CREATE__meta_redcap_field_enum',
+        mssql_conn_id=DWH_CONNECTION_NAME,
+        sql="sql/wh_central_merge_data/CREATE__meta_redcap_field_enum.sql",
+        autocommit=True,
+        database='warehouse_central',
+        dag=dag,
+    )
+
+    drop__meta_redcap_tables >> create__meta_redcap_instance
+    create__meta_redcap_instance >> create__meta_redcap_project
+    create__meta_redcap_project >> create__meta_redcap_form
+    create__meta_redcap_form >> create__meta_redcap_form_section
+    create__meta_redcap_form_section >> create__meta_redcap_field
+    create__meta_redcap_field >> create__meta_redcap_field_enum
 
     logging.info("_create_merge_data_dag: Ended")
 
