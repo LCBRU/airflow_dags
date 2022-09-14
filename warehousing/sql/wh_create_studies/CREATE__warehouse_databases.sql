@@ -5,7 +5,7 @@ DECLARE @db_name VARCHAR(255)
 DECLARE TABLE_CURSOR CURSOR
     LOCAL STATIC READ_ONLY FORWARD_ONLY
 FOR
-SELECT DISTINCT 'wh_' + TRANSLATE(LOWER(study_name), ' -', '__')
+SELECT DISTINCT dbo.study_database_name(study_name)
 FROM datalake_redcap_project_mappings drpm
 
 OPEN TABLE_CURSOR
@@ -14,10 +14,12 @@ WHILE @@FETCH_STATUS = 0
 BEGIN
     PRINT 'Dropping ' + @db_name
 
-    SELECT @SQL = 'DROP DATABASE ' + QUOTENAME(@db_name) + '';
-
     IF DB_ID(@db_name) IS NOT NULL
         BEGIN
+            SELECT @SQL = 'ALTER DATABASE ' + QUOTENAME(@db_name) + ' SET SINGLE_USER WITH ROLLBACK IMMEDIATE';
+            EXEC sp_executesql @SQL;
+
+            SELECT @SQL = 'DROP DATABASE ' + QUOTENAME(@db_name) + '';
             EXEC sp_executesql @SQL;
         END;
 
@@ -27,6 +29,9 @@ BEGIN
     EXEC sp_executesql @SQL
 
     SELECT @SQL = 'ALTER DATABASE ' + QUOTENAME(@db_name) + ' SET RECOVERY SIMPLE';
+    EXEC sp_executesql @SQL
+
+    SELECT @SQL = 'ALTER DATABASE ' + QUOTENAME(@db_name) + ' SET MULTI_USER';
     EXEC sp_executesql @SQL
 
     FETCH NEXT FROM TABLE_CURSOR INTO @db_name

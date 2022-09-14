@@ -6,6 +6,7 @@ from warehousing.download_to_mysql import create_download_to_mysql_dag
 from warehousing.edge_download import create_download_edge_studies
 from warehousing.mysql_to_datalake import create_datalake_mysql_import_dag
 from warehousing.wh_central_merge_data import create_wh_central_merge_data_dag
+from warehousing.wh_create_studies import create_wh_create_studies
 
 
 default_args = {
@@ -29,9 +30,11 @@ download_to_mysql = create_download_to_mysql_dag(dag)
 download_edge_studies = create_download_edge_studies(dag)
 download_crfm_studies = create_download_crf_manager_studies(dag)
 wh_central_merge_data = create_wh_central_merge_data_dag(dag)
+wh_create_studies = create_wh_create_studies(dag)
 
 download_to_mysql >> datalake_mysql_import
 download_edge_studies << download_crfm_studies
 download_edge_studies >> datalake_mysql_import
 download_crfm_studies >> datalake_mysql_import
 datalake_mysql_import >> wh_central_merge_data
+wh_central_merge_data >> wh_create_studies
