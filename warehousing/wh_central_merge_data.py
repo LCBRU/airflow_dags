@@ -71,12 +71,55 @@ def _create_merge_data_dag(dag):
         dag=dag,
     )
 
+    create__redcap_participant = MsSqlOperator(
+        task_id='CREATE__redcap_participant',
+        mssql_conn_id=DWH_CONNECTION_NAME,
+        sql="sql/wh_central_merge_data/CREATE__redcap_participant.sql",
+        autocommit=True,
+        database='warehouse_central',
+        dag=dag,
+    )
+
+    create__meta_redcap_arm = MsSqlOperator(
+        task_id='CREATE__meta_redcap_arm',
+        mssql_conn_id=DWH_CONNECTION_NAME,
+        sql="sql/wh_central_merge_data/CREATE__meta_redcap_arm.sql",
+        autocommit=True,
+        database='warehouse_central',
+        dag=dag,
+    )
+
+    create__meta_redcap_event = MsSqlOperator(
+        task_id='CREATE__meta_redcap_event',
+        mssql_conn_id=DWH_CONNECTION_NAME,
+        sql="sql/wh_central_merge_data/CREATE__meta_redcap_event.sql",
+        autocommit=True,
+        database='warehouse_central',
+        dag=dag,
+    )
+
+    create__redcap_data = MsSqlOperator(
+        task_id='CREATE__redcap_data',
+        mssql_conn_id=DWH_CONNECTION_NAME,
+        sql="sql/wh_central_merge_data/CREATE__redcap_data.sql",
+        autocommit=True,
+        database='warehouse_central',
+        dag=dag,
+    )
+
     drop__meta_redcap_tables >> create__meta_redcap_instance
     create__meta_redcap_instance >> create__meta_redcap_project
     create__meta_redcap_project >> create__meta_redcap_form
     create__meta_redcap_form >> create__meta_redcap_form_section
     create__meta_redcap_form_section >> create__meta_redcap_field
     create__meta_redcap_field >> create__meta_redcap_field_enum
+    create__meta_redcap_project >> create__meta_redcap_arm
+    create__meta_redcap_arm >> create__meta_redcap_event
+
+    create__meta_redcap_project >> create__redcap_participant
+    create__redcap_participant >> create__redcap_data
+    create__meta_redcap_event >> create__redcap_data
+    create__meta_redcap_field_enum >> create__redcap_data
 
     logging.info("_create_merge_data_dag: Ended")
 

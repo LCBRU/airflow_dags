@@ -2,18 +2,18 @@ SET QUOTED_IDENTIFIER OFF
 
 CREATE TABLE meta__redcap_field_enum (
     id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
-    meta__field_id INT NOT NULL,
+    meta__redcap_field_id INT NOT NULL,
     value NVARCHAR(500) NOT NULL,
     name NVARCHAR(500) NOT NULL,
-    INDEX idx__redcap_field_enum__field (meta__field_id),
+    INDEX idx__redcap_field_enum__field (meta__redcap_field_id),
     INDEX idx__redcap_field_enum__name (name),
-    UNIQUE (meta__field_id, value)
+    UNIQUE (meta__redcap_field_id, value)
 )
 
 EXEC sp_MSforeachdb
 @command1="IF '?' LIKE 'datalake_redcap_%'
 BEGIN
-	INSERT INTO warehouse_central.dbo.meta__redcap_field_enum (meta__field_id, value, name)
+	INSERT INTO warehouse_central.dbo.meta__redcap_field_enum (meta__redcap_field_id, value, name)
     SELECT
         rfd.id,
         rfe.value,
