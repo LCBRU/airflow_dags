@@ -13,6 +13,6 @@ JOIN warehouse_central.dbo.meta__redcap_form_section rfs
 JOIN warehouse_central.dbo.meta__redcap_field rfd
 	ON rfd.meta__form_section_id = rfs.id
 JOIN warehouse_central.dbo.meta__redcap_field_enum rfe
-	ON rfe.meta__field_id = rfd.id
+	ON rfe.meta__redcap_field_id = rfd.id
 WHERE m.study_name = %(study_name)s
 ;

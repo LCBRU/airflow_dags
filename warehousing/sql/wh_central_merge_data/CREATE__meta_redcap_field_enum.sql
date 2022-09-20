@@ -62,4 +62,40 @@ BEGIN
         AND rfd.ordinal = rfe.field_order
 END"
 
+INSERT INTO warehouse_central.dbo.meta__redcap_field_enum (meta__redcap_field_id, value, name)
+SELECT
+	mrf.id,
+	0,
+	'No'
+FROM meta__redcap_field mrf 
+WHERE type = 'yesno'
+
+UNION
+
+SELECT
+	mrf.id,
+	1,
+	'Yes'
+FROM meta__redcap_field mrf 
+WHERE type = 'yesno'
+
+UNION
+
+SELECT
+	mrf.id,
+	0,
+	'False'
+FROM meta__redcap_field mrf 
+WHERE type = 'truefalse'
+
+UNION
+
+SELECT
+	mrf.id,
+	1,
+	'True'
+FROM meta__redcap_field mrf 
+WHERE type = 'truefalse'
+;
+
 SET QUOTED_IDENTIFIER ON;
