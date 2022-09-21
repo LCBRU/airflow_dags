@@ -11,7 +11,7 @@ def _create_screening_dag(dag):
     query__screening_extract = MsSqlOperator(
         task_id='query__screening_extract',
         mssql_conn_id=DWH_CONNECTION_NAME,
-        sql="SELECT * FROM DWBRICCS.[dbo].[LCBRU_Results_easy_AS_severe_list]",
+        sql="SELECT * FROM DWBRICCS.[dbo].[LCBRU_Results_easy_AS_severe_list_a]",
         autocommit=True,
         database='dwbriccs',
         dag=dag,
