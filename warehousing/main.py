@@ -1,6 +1,4 @@
-import os
-from datetime import timedelta, datetime
-from airflow import DAG
+from tools import create_dag
 from warehousing.crf_manager_download import create_download_crf_manager_studies
 from warehousing.download_to_mysql import create_download_to_mysql_dag
 from warehousing.edge_download import create_download_edge_studies
@@ -9,21 +7,7 @@ from warehousing.wh_central_merge_data import create_wh_central_merge_data_dag
 from warehousing.wh_create_studies import create_wh_create_studies
 
 
-default_args = {
-    "owner": "airflow",
-    "reties": 3,
-    "retry_delay": timedelta(minutes=5),
-    "start_date": datetime(2020, 1, 1),
-	'email': os.environ.get('ERROR_EMAIL_ADDRESS', '').split(';'),
-	'email_on_failure': False,
-}
-
-dag = DAG(
-    dag_id="load_warehouse",
-    schedule_interval=os.environ.get('SCHEDULE_LOAD_WAREHOUSE', None) or None,
-    default_args=default_args,
-    catchup=False,
-)
+dag = create_dag(title='load_warehouse', schedule_name='SCHEDULE_LOAD_WAREHOUSE')
 
 datalake_mysql_import = create_datalake_mysql_import_dag(dag)
 download_to_mysql = create_download_to_mysql_dag(dag)
