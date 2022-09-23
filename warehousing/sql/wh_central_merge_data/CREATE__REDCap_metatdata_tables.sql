@@ -35,7 +35,7 @@ EXEC sp_MSforeachdb
 BEGIN
 	CREATE TABLE [?].dbo.meta__redcap_project (
 		id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
-		meta_instance_id INT NOT NULL,
+		meta_redcap_instance_id INT NOT NULL,
 		redcap_project_id INT NOT NULL,
 		name NVARCHAR(500) NOT NULL,
 		INDEX idx__redcap_project__name (name),

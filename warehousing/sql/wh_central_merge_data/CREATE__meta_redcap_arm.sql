@@ -25,7 +25,7 @@ BEGIN
     JOIN warehouse_central.dbo.meta__redcap_instance mri
         ON mri.datalake_database = '?'
     JOIN warehouse_central.dbo.meta__redcap_project mrp 
-        ON mrp.meta__instance_id = mri.id 
+        ON mrp.meta__redcap_instance_id = mri.id 
         AND mrp.redcap_project_id = rea.project_id 
 END"
 

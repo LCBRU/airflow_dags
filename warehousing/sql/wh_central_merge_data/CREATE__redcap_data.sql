@@ -2,7 +2,7 @@ SET QUOTED_IDENTIFIER OFF;
 
 CREATE TABLE dbo.redcap_value (
     id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
-    meta__instance_id INT NOT NULL,
+    meta__redcap_instance_id INT NOT NULL,
     meta__redcap_project_id INT NOT NULL,
     meta__redcap_arm_id INT NOT NULL,
     meta__redcap_event_id INT NOT NULL,
@@ -20,7 +20,7 @@ CREATE TABLE dbo.redcap_value (
     decimal_value DECIMAL(38,6) NULL,
     boolean_value BIT NULL,
     file_number INT NULL,
-    FOREIGN KEY (meta__instance_id) REFERENCES meta__redcap_instance(id),
+    FOREIGN KEY (meta__redcap_instance_id) REFERENCES meta__redcap_instance(id),
     FOREIGN KEY (meta__redcap_project_id) REFERENCES meta__redcap_project(id),
     FOREIGN KEY (meta__redcap_arm_id) REFERENCES meta__redcap_arm(id),
     FOREIGN KEY (meta__redcap_event_id) REFERENCES meta__redcap_event(id),
@@ -29,7 +29,7 @@ CREATE TABLE dbo.redcap_value (
     FOREIGN KEY (meta__redcap_field_id) REFERENCES meta__redcap_field(id),
     FOREIGN KEY (redcap_participant_id) REFERENCES redcap_participant(id),
     FOREIGN KEY (meta__redcap_field_enum_id) REFERENCES meta__redcap_field_enum(id),
-    INDEX idx__redcap_value__meta__instance_id (meta__instance_id),
+    INDEX idx__redcap_value__meta__redcap_instance_id (meta__redcap_instance_id),
     INDEX idx__redcap_value__meta__redcap_project_id (meta__redcap_project_id),
     INDEX idx__redcap_value__meta__redcap_arm_id (meta__redcap_arm_id),
     INDEX idx__redcap_value__meta__redcap_event_id (meta__redcap_event_id),
@@ -44,7 +44,7 @@ EXEC sp_MSforeachdb
 @command1="IF '?' LIKE 'datalake_redcap_%'
 BEGIN 
 	INSERT INTO warehouse_central.dbo.redcap_value (
-        meta__instance_id,
+        meta__redcap_instance_id,
         meta__redcap_project_id,
         meta__redcap_arm_id,
         meta__redcap_event_id,
@@ -70,7 +70,7 @@ BEGIN
     JOIN warehouse_central.dbo.meta__redcap_instance mri 
         ON mri.datalake_database = 'datalake_redcap_uhl'
     JOIN warehouse_central.dbo.meta__redcap_project mrp 
-        ON mrp.meta__instance_id = mri.id 
+        ON mrp.meta__redcap_instance_id = mri.id 
         AND mrp.redcap_project_id = rd.project_id 
     JOIN warehouse_central.dbo.meta__redcap_arm mra 
         ON mra.meta__redcap_project_id = mrp.id 
@@ -78,11 +78,11 @@ BEGIN
         ON mre.meta__redcap_arm_id = mra.id 
         AND mre.redcap_event_id = rd.event_id 
     JOIN warehouse_central.dbo.meta__redcap_form mrf 
-        ON mrf.meta__project_id = mrp.id 
+        ON mrf.meta__redcap_project_id = mrp.id 
     JOIN warehouse_central.dbo.meta__redcap_form_section mrfs 
-        ON mrfs.meta__form_id = mrf.id 
+        ON mrfs.meta__redcap_form_id = mrf.id 
     JOIN warehouse_central.dbo.meta__redcap_field mrf2 
-        ON mrf2.meta__form_section_id = mrfs.id
+        ON mrf2.meta__redcap_form_section_id = mrfs.id
         AND mrf2.name = rd.field_name
     JOIN warehouse_central.dbo.redcap_participant rp 
         ON rp.meta__redcap_project_id = mrp.id 

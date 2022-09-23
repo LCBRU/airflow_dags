@@ -24,6 +24,7 @@ def _create_redcap_views():
             'CREATE_VIEW__redcap_form_section.sql',
             'CREATE_VIEW__redcap_field.sql',
             'CREATE_VIEW__redcap_field_enum.sql',
+            'CREATE_VIEW__redcap_value.sql',
         ]:
             execute_mssql(
                 DWH_CONNECTION_NAME,
