@@ -1,3 +1,6 @@
+IF OBJECT_ID(N'meta__redcap_data_type') IS NOT NULL
+    DROP TABLE meta__redcap_data_type
+
 IF OBJECT_ID(N'redcap_value') IS NOT NULL
     DROP TABLE redcap_value
 
