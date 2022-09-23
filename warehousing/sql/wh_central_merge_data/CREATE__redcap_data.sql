@@ -11,6 +11,7 @@ CREATE TABLE dbo.redcap_value (
     meta__redcap_field_id INT NOT NULL,
     redcap_participant_id INT NOT NULL,
     meta__redcap_field_enum_id INT NULL,
+    meta__redcap_data_type_id INT NULL,
     [instance] INT NULL,
     text_value NVARCHAR(MAX) NOT NULL,
     datetime_value DATETIME2 NULL,
@@ -29,6 +30,7 @@ CREATE TABLE dbo.redcap_value (
     FOREIGN KEY (meta__redcap_field_id) REFERENCES meta__redcap_field(id),
     FOREIGN KEY (redcap_participant_id) REFERENCES redcap_participant(id),
     FOREIGN KEY (meta__redcap_field_enum_id) REFERENCES meta__redcap_field_enum(id),
+    FOREIGN KEY (meta__redcap_data_type_id) REFERENCES meta__redcap_data_type(id),
     INDEX idx__redcap_value__meta__redcap_instance_id (meta__redcap_instance_id),
     INDEX idx__redcap_value__meta__redcap_project_id (meta__redcap_project_id),
     INDEX idx__redcap_value__meta__redcap_arm_id (meta__redcap_arm_id),
@@ -38,6 +40,7 @@ CREATE TABLE dbo.redcap_value (
     INDEX idx__redcap_value__meta__redcap_field_id (meta__redcap_field_id),
     INDEX idx__redcap_value__redcap_participant_id (redcap_participant_id),
     INDEX idx__redcap_value__meta__redcap_field_enum_id (meta__redcap_field_enum_id),
+    INDEX idx__redcap_value__meta__redcap_data_type_id (meta__redcap_data_type_id),
 );
 
 EXEC sp_MSforeachdb
@@ -51,6 +54,7 @@ BEGIN
         meta__redcap_form_id,
         meta__redcap_form_section_id,
         meta__redcap_field_id,
+        meta__redcap_data_type_id,
         redcap_participant_id,
         [instance],
         text_value
@@ -63,6 +67,7 @@ BEGIN
         mrf.id,
         mrfs.id,
         mrf2.id,
+        mrdt.id,
         rp.id,
         rd.[instance],
         rd.value
@@ -84,62 +89,36 @@ BEGIN
     JOIN warehouse_central.dbo.meta__redcap_field mrf2 
         ON mrf2.meta__redcap_form_section_id = mrfs.id
         AND mrf2.name = rd.field_name
+    JOIN warehouse_central.dbo.meta__redcap_data_type mrdt
+        ON mrdt.id = mrf2.meta__redcap_data_type_id
     JOIN warehouse_central.dbo.redcap_participant rp 
         ON rp.meta__redcap_project_id = mrp.id 
         AND rp.record = rd.record
 END"
 
 UPDATE warehouse_central.dbo.redcap_value
-SET datetime_value = CASE
-        WHEN mrf2.type = 'text'
-            AND mrf2.validation_type IN ('date_ymd', 'date_mdy', 'date_dmy')
-            THEN TRY_CONVERT(DATETIME2, rv.text_value, 102)
-        WHEN mrf2.type = 'text'
-            AND mrf2.validation_type IN ('datetime_ymd', 'datetime_dmy', 'datetime_mdy', 'datetime_seconds_dmy', 'datetime_seconds_mdy', 'datetime_seconds_ymd')
-            THEN TRY_CONVERT(DATETIME2, rv.text_value, 120)
-    END,
-    date_value = CASE
-        WHEN mrf2.type = 'text'
-            AND mrf2.validation_type IN ('date_ymd', 'date_mdy', 'date_dmy')
-            THEN TRY_CONVERT(DATE, rv.text_value, 102)
-        WHEN mrf2.type = 'text'
-            AND mrf2.validation_type IN ('datetime_ymd', 'datetime_dmy', 'datetime_mdy', 'datetime_seconds_dmy', 'datetime_seconds_mdy', 'datetime_seconds_ymd')
-            THEN TRY_CONVERT(DATE, rv.text_value, 120)
-    END,
-    time_value = CASE
-        WHEN mrf2.type = 'text'
-            AND mrf2.validation_type IN ('time', 'time_mm_ss')
-            THEN TRY_CONVERT(TIME, rv.text_value, 108)
-        WHEN mrf2.type = 'text'
-            AND mrf2.validation_type IN ('datetime_ymd', 'datetime_dmy', 'datetime_mdy', 'datetime_seconds_dmy', 'datetime_seconds_mdy', 'datetime_seconds_ymd')
-            THEN TRY_CONVERT(TIME, rv.text_value, 120)
-    END,
-    int_value = CASE
-        WHEN (mrf2.type = 'text' AND mrf2.validation_type IN ('int', 'integer'))
-            OR mrf2.type = 'slider'
-            THEN TRY_CONVERT(INT, rv.text_value)
-    END,
-    decimal_value = CASE
-        WHEN mrf2.type = 'text'
-            AND mrf2.validation_type IN ('float', 'number', 'number_1dp', 'number_2dp', 'number_3dp', 'number_4dp', 'number_comma_decimal', 'number_1dp_comma_decimal', 'number_2dp_comma_decimal', 'number_3dp_comma_decimal', 'number_4dp_comma_decimal')
-            THEN TRY_CONVERT(DEC(38,6), REPLACE(rv.text_value, ',', ''))
-    END,
-    meta__redcap_field_enum_id = CASE
-        WHEN mrf2.type IN ('select', 'radio', 'checkbox', 'yesno', 'truefalse') THEN mrfe.id
-    END,
-    boolean_value = CASE
-        WHEN mrf2.type IN ('yesno', 'truefalse') THEN
-            CASE
-                WHEN rv.text_value = '0' THEN 0
-                WHEN rv.text_value = '1' THEN 1
-            END
-    END,
-    file_number = CASE WHEN mrf2.type = 'file' THEN rv.text_value END        
+SET datetime_value = CASE WHEN rdt.is_datetime = 1 THEN TRY_CONVERT(DATETIME2, rv.text_value, rdt.datetime_format) END,
+    date_value = CASE WHEN rdt.is_date = 1 THEN TRY_CONVERT(DATE, rv.text_value, rdt.datetime_format) END,
+    time_value = CASE WHEN rdt.is_time = 1 THEN TRY_CONVERT(TIME, rv.text_value, rdt.datetime_format) END,
+    int_value = CASE WHEN rdt.is_int = 1 THEN TRY_CONVERT(INT, rv.text_value) END,
+    decimal_value = CASE WHEN rdt.is_decimal = 1 THEN TRY_CONVERT(DEC(38,6), REPLACE(rv.text_value, ',', '')) END,
+    meta__redcap_field_enum_id = CASE WHEN rdt.is_enum = 1 THEN mrfe.id END,
+    boolean_value = CASE WHEN rdt.is_boolean = 1 THEN TRY_CONVERT(BIT, rv.text_value) END,
+    file_number = CASE WHEN rdt.is_file = 1 THEN rv.text_value END
 FROM warehouse_central.dbo.redcap_value rv
-JOIN warehouse_central.dbo.meta__redcap_field mrf2 
-    ON mrf2.id = rv.meta__redcap_field_id 
+JOIN warehouse_central.dbo.meta__redcap_data_type rdt
+	ON rdt.id = rv.meta__redcap_data_type_id
+	AND (	rdt.is_datetime = 1
+		OR 	rdt.is_date = 1
+		OR	rdt.is_time = 1
+		OR	rdt.is_int = 1
+		OR	rdt.is_decimal = 1
+		OR	rdt.is_enum = 1
+		OR	rdt.is_boolean = 1
+		OR	rdt.is_file = 1
+	)
 LEFT JOIN warehouse_central.dbo.meta__redcap_field_enum mrfe 
-    ON mrfe.meta__redcap_field_id = mrf2.id
+    ON mrfe.meta__redcap_field_id = rv.meta__redcap_field_id 
     AND mrfe.value = rv.text_value
 
 

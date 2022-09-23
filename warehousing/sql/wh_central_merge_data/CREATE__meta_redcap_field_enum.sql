@@ -67,8 +67,10 @@ SELECT
 	mrf.id,
 	0,
 	'No'
-FROM meta__redcap_field mrf 
-WHERE type = 'yesno'
+FROM meta__redcap_field mrf
+JOIN meta__redcap_data_type rdt
+    ON rdt.id = mrf.meta__redcap_data_type_id
+WHERE element_type = 'yesno'
 
 UNION
 
@@ -77,7 +79,9 @@ SELECT
 	1,
 	'Yes'
 FROM meta__redcap_field mrf 
-WHERE type = 'yesno'
+JOIN meta__redcap_data_type rdt
+    ON rdt.id = mrf.meta__redcap_data_type_id
+WHERE element_type = 'yesno'
 
 UNION
 
@@ -86,7 +90,9 @@ SELECT
 	0,
 	'False'
 FROM meta__redcap_field mrf 
-WHERE type = 'truefalse'
+JOIN meta__redcap_data_type rdt
+    ON rdt.id = mrf.meta__redcap_data_type_id
+WHERE element_type = 'truefalse'
 
 UNION
 
@@ -95,7 +101,9 @@ SELECT
 	1,
 	'True'
 FROM meta__redcap_field mrf 
-WHERE type = 'truefalse'
+JOIN meta__redcap_data_type rdt
+    ON rdt.id = mrf.meta__redcap_data_type_id
+WHERE element_type = 'truefalse'
 ;
 
 SET QUOTED_IDENTIFIER ON;
