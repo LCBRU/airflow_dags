@@ -12,6 +12,7 @@ CREATE TABLE dbo.redcap_value (
     redcap_participant_id INT NOT NULL,
     meta__redcap_field_enum_id INT NULL,
     meta__redcap_data_type_id INT NULL,
+    redcap_file_id INT NULL,
     [instance] INT NULL,
     text_value NVARCHAR(MAX) NOT NULL,
     datetime_value DATETIME2 NULL,
@@ -20,7 +21,6 @@ CREATE TABLE dbo.redcap_value (
     int_value INT NULL,
     decimal_value DECIMAL(38,6) NULL,
     boolean_value BIT NULL,
-    file_number INT NULL,
     FOREIGN KEY (meta__redcap_instance_id) REFERENCES meta__redcap_instance(id),
     FOREIGN KEY (meta__redcap_project_id) REFERENCES meta__redcap_project(id),
     FOREIGN KEY (meta__redcap_arm_id) REFERENCES meta__redcap_arm(id),
@@ -31,6 +31,7 @@ CREATE TABLE dbo.redcap_value (
     FOREIGN KEY (redcap_participant_id) REFERENCES redcap_participant(id),
     FOREIGN KEY (meta__redcap_field_enum_id) REFERENCES meta__redcap_field_enum(id),
     FOREIGN KEY (meta__redcap_data_type_id) REFERENCES meta__redcap_data_type(id),
+    FOREIGN KEY (redcap_file_id) REFERENCES redcap_file(id),
     INDEX idx__redcap_value__meta__redcap_instance_id (meta__redcap_instance_id),
     INDEX idx__redcap_value__meta__redcap_project_id (meta__redcap_project_id),
     INDEX idx__redcap_value__meta__redcap_arm_id (meta__redcap_arm_id),
@@ -41,6 +42,7 @@ CREATE TABLE dbo.redcap_value (
     INDEX idx__redcap_value__redcap_participant_id (redcap_participant_id),
     INDEX idx__redcap_value__meta__redcap_field_enum_id (meta__redcap_field_enum_id),
     INDEX idx__redcap_value__meta__redcap_data_type_id (meta__redcap_data_type_id),
+    INDEX idx__redcap_value__redcap_file_id (redcap_file_id),
 );
 
 EXEC sp_MSforeachdb
@@ -104,7 +106,7 @@ SET datetime_value = CASE WHEN rdt.is_datetime = 1 THEN TRY_CONVERT(DATETIME2, r
     decimal_value = CASE WHEN rdt.is_decimal = 1 THEN TRY_CONVERT(DEC(38,6), REPLACE(rv.text_value, ',', '')) END,
     meta__redcap_field_enum_id = CASE WHEN rdt.is_enum = 1 THEN mrfe.id END,
     boolean_value = CASE WHEN rdt.is_boolean = 1 THEN TRY_CONVERT(BIT, rv.text_value) END,
-    file_number = CASE WHEN rdt.is_file = 1 THEN rv.text_value END
+    redcap_file_id = CASE WHEN rdt.is_file = 1 THEN rf.id END
 FROM warehouse_central.dbo.redcap_value rv
 JOIN warehouse_central.dbo.meta__redcap_data_type rdt
 	ON rdt.id = rv.meta__redcap_data_type_id
@@ -120,6 +122,10 @@ JOIN warehouse_central.dbo.meta__redcap_data_type rdt
 LEFT JOIN warehouse_central.dbo.meta__redcap_field_enum mrfe 
     ON mrfe.meta__redcap_field_id = rv.meta__redcap_field_id 
     AND mrfe.value = rv.text_value
+LEFT JOIN warehouse_central.dbo.redcap_file rf 
+    ON rf.meta__redcap_instance_id = rv.meta__redcap_instance_id 
+    AND rf.doc_id = TRY_CONVERT(INT, rv.text_value)
+    AND rdt.is_file = 1
 
 
 SET QUOTED_IDENTIFIER ON;

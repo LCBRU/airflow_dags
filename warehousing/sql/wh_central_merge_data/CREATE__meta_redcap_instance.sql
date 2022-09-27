@@ -31,3 +31,4 @@ BEGIN
                 FOR field_name IN ([redcap_version], [redcap_base_url])  
 	) AS PivotTable
 END'
+

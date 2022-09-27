@@ -1,6 +1,9 @@
 IF OBJECT_ID(N'redcap_value') IS NOT NULL
     DROP TABLE redcap_value
 
+IF OBJECT_ID(N'redcap_file') IS NOT NULL
+    DROP TABLE redcap_file
+
 IF OBJECT_ID(N'redcap_participant') IS NOT NULL
     DROP TABLE redcap_participant
 
