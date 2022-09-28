@@ -15,6 +15,8 @@ CREATE TABLE dbo.meta__redcap_data_type (
 );
 
 INSERT INTO meta__redcap_data_type (element_type, element_validation_type, is_datetime, is_date, is_time, is_int, is_decimal, is_enum, is_boolean, is_file, datetime_format)
+SELECT 'text', '', 0, 0, 0, 0, 0, 0, 0, 0, NULL
+UNION
 SELECT 'text', 'date_ymd', 1, 1, 0, 0, 0, 0, 0, 0, 102
 UNION
 SELECT 'text', 'date_mdy', 1, 1, 0, 0, 0, 0, 0, 0, 102

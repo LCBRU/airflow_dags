@@ -125,12 +125,22 @@ def _create_merge_data_dag(dag):
         dag=dag,
     )
 
+    create__redcap_data__unique = MsSqlOperator(
+        task_id='create__redcap_data__unique',
+        mssql_conn_id=DWH_CONNECTION_NAME,
+        sql="sql/wh_central_merge_data/CREATE__redcap_data__unique.sql",
+        autocommit=True,
+        database='warehouse_central',
+        dag=dag,
+    )
+
     update_statistics = MsSqlOperator(
         task_id='update_statistics',
         mssql_conn_id=DWH_CONNECTION_NAME,
         sql="sql/wh_central_merge_data/UPDATE_STATISTICS.sql",
         autocommit=True,
         database='warehouse_central',
+        trigger_rule="all_done",
         dag=dag,
     )
 
@@ -152,7 +162,8 @@ def _create_merge_data_dag(dag):
     create__meta_redcap_event >> create__redcap_data
     create__meta_redcap_field_enum >> create__redcap_data
 
-    create__redcap_data >> update_statistics
+    create__redcap_data >> create__redcap_data__unique
+    create__redcap_data__unique >> update_statistics
 
     logging.info("_create_merge_data_dag: Ended")
 

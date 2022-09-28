@@ -57,7 +57,7 @@ BEGIN
         ON ri.datalake_database = rfd.datalake_database
     JOIN warehouse_central.dbo.meta__redcap_data_type rdt
         ON rdt.element_type = rfd.element_type
-        AND rdt.element_validation_type = rfd.element_validation_type
+        AND rdt.element_validation_type = ISNULL(rfd.element_validation_type, '')
     JOIN warehouse_central.dbo.meta__redcap_project rp
         ON  rp.meta__redcap_instance_id = ri.id
         AND rp.redcap_project_id = rfd.project_id

@@ -13,7 +13,7 @@ CREATE TABLE dbo.redcap_value (
     meta__redcap_field_enum_id INT NULL,
     meta__redcap_data_type_id INT NULL,
     redcap_file_id INT NULL,
-    [instance] INT NULL,
+    [instance] INT NOT NULL,
     text_value NVARCHAR(MAX) NOT NULL,
     datetime_value DATETIME2 NULL,
     date_value DATE NULL,
@@ -71,11 +71,14 @@ BEGIN
         mrf2.id,
         mrdt.id,
         rp.id,
-        rd.[instance],
+        ISNULL(rd.[instance], 1),
         rd.value
-    FROM datalake_redcap_uhl.dbo.redcap_data rd 
+    FROM (
+        SELECT DISTINCT *
+        FROM [?].dbo.redcap_data
+    ) rd 
     JOIN warehouse_central.dbo.meta__redcap_instance mri 
-        ON mri.datalake_database = 'datalake_redcap_uhl'
+        ON mri.datalake_database = '?'
     JOIN warehouse_central.dbo.meta__redcap_project mrp 
         ON mrp.meta__redcap_instance_id = mri.id 
         AND mrp.redcap_project_id = rd.project_id 
