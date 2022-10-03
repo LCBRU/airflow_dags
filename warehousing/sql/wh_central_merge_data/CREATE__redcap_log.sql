@@ -38,7 +38,7 @@ EXEC sp_MSforeachdb
 @command1="IF '?' LIKE 'datalake_redcap_%'
 BEGIN
     INSERT INTO warehouse_central.dbo.temp_redcap_log (datalake_database, project_id, record, event_id, username, action_datetime, action_type, field_name, data_value, [instance])
-    SELECT
+    SELECT DISTINCT
         '?',
         project_id,
 		pk,
@@ -50,7 +50,7 @@ BEGIN
         TRIM(REPLACE(RIGHT(data_value, LEN(data_value) - CHARINDEX('=', data_value)), CHAR(39), '')),
         [instance]
     FROM (
-        SELECT
+        SELECT DISTINCT
             project_id,
             pk,
             ts,

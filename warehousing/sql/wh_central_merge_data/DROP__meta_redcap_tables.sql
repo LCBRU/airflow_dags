@@ -1,3 +1,6 @@
+IF OBJECT_ID(N'temp_redcap_log') IS NOT NULL
+    DROP TABLE temp_redcap_log
+
 IF OBJECT_ID(N'redcap_log') IS NOT NULL
     DROP TABLE redcap_log
 
