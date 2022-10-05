@@ -24,7 +24,7 @@ BEGIN
             COALESCE(
                 (
                     SELECT TOP 1 arms.element_preceding_header
-                    FROM datalake_redcap_uhl.dbo.redcap_metadata arms
+                    FROM [?].dbo.redcap_metadata arms
                     WHERE arms.project_id = arm.project_id
                         AND arms.form_name = arm.form_name
                         AND arms.field_order <= arm.field_order

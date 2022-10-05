@@ -181,6 +181,11 @@ def _create_merge_data_dag(dag):
     create__meta_redcap_event >> create__redcap_data
     create__meta_redcap_field_enum >> create__redcap_data
 
+    create__redcap_participant >> create__redcap_log
+    create__redcap_file >> create__redcap_log
+    create__meta_redcap_event >> create__redcap_log
+    create__meta_redcap_field_enum >> create__redcap_log
+
     create__redcap_data >> create__redcap_log
 
     create__redcap_data >> create__redcap_data__unique

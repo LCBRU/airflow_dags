@@ -17,6 +17,20 @@ CREATE TABLE dbo.meta__redcap_data_type (
 INSERT INTO meta__redcap_data_type (element_type, element_validation_type, is_datetime, is_date, is_time, is_int, is_decimal, is_enum, is_boolean, is_file, datetime_format)
 SELECT 'text', '', 0, 0, 0, 0, 0, 0, 0, 0, NULL
 UNION
+SELECT 'textarea', '', 0, 0, 0, 0, 0, 0, 0, 0, NULL
+UNION
+SELECT 'descriptive', '', 0, 0, 0, 0, 0, 0, 0, 0, NULL
+UNION
+SELECT 'sql', '', 0, 0, 0, 0, 0, 0, 0, 0, NULL
+UNION
+SELECT 'text', 'alpha_only', 0, 0, 0, 0, 0, 0, 0, 0, NULL
+UNION
+SELECT 'text', 'email', 0, 0, 0, 0, 0, 0, 0, 0, NULL
+UNION
+SELECT 'text', 'mrn_10d', 0, 0, 0, 0, 0, 0, 0, 0, NULL
+UNION
+SELECT 'text', 'phone', 0, 0, 0, 0, 0, 0, 0, 0, NULL
+UNION
 SELECT 'text', 'date_ymd', 1, 1, 0, 0, 0, 0, 0, 0, 102
 UNION
 SELECT 'text', 'date_mdy', 1, 1, 0, 0, 0, 0, 0, 0, 102
@@ -46,6 +60,12 @@ UNION
 SELECT 'text', 'integer', 0, 0, 0, 1, 1, 0, 0, 0, NULL
 UNION
 SELECT 'slider', '', 0, 0, 0, 1, 1, 0, 0, 0, NULL
+UNION
+SELECT 'slider', 'number', 0, 0, 0, 1, 1, 0, 0, 0, NULL
+UNION
+SELECT 'slider', 'autocomplete', 0, 0, 0, 1, 1, 0, 0, 0, NULL
+UNION
+SELECT 'calc', '', 0, 0, 0, 0, 1, 0, 0, 0, NULL
 UNION
 SELECT 'text', 'float', 0, 0, 0, 0, 1, 0, 0, 0, NULL
 UNION
@@ -80,3 +100,5 @@ UNION
 SELECT 'truefalse', '', 0, 0, 0, 0, 0, 1, 1, 0, NULL
 UNION
 SELECT 'file', '', 0, 0, 0, 0, 0, 0, 0, 1, NULL
+UNION
+SELECT 'file', 'signature', 0, 0, 0, 0, 0, 0, 0, 1, NULL
