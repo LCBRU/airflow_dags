@@ -60,7 +60,7 @@ BEGIN
         action_type,
         field_name_value
     )
-    SELECT
+    SELECT DISTINCT
         '?' datalake_database,
         log_event_id,
         project_id,
@@ -129,7 +129,7 @@ WHERE field_name LIKE '%(%)'
 -----------------------------------------
 
 INSERT INTO warehouse_central.dbo.redcap_log (meta__redcap_field_id, meta__redcap_field_enum_id, meta__redcap_event_id, redcap_participant_id, username, field_name, action_datetime, action_type, data_value, [instance])
-SELECT
+SELECT DISTINCT
     field.meta__redcap_field_id field_id,
     rfe.id,
     mre.id event_id,
