@@ -6,5 +6,6 @@ ON redcap_log (
     meta__redcap_field_enum_id,
     field_name,
     instance,
-    action_datetime
+    action_datetime,
+    action_type
 );
