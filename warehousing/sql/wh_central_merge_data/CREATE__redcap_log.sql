@@ -5,6 +5,7 @@ IF OBJECT_ID(N'redcap_log') IS NOT NULL
 
 CREATE TABLE redcap_log (
     id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    log_event_id INT NOT NULL,
     meta__redcap_field_id INT NULL,
     meta__redcap_field_enum_id INT NULL,
     meta__redcap_event_id INT NOT NULL,
@@ -13,8 +14,10 @@ CREATE TABLE redcap_log (
     field_name NVARCHAR(500) NOT NULL,
     action_datetime DATETIME NOT NULL,
     action_type NVARCHAR(500) NOT NULL,
+    action_description NVARCHAR(100) NOT NULL,
     data_value NVARCHAR(MAX) NOT NULL,
     [instance] INT NOT NULL,
+    INDEX idx__redcap_log__meta__log_event_id (log_event_id),
     INDEX idx__redcap_log__meta__redcap_field_id (meta__redcap_field_id),
     INDEX idx__redcap_log__meta__redcap_field_enum_id (meta__redcap_field_enum_id),
     INDEX idx__redcap_log__meta__redcap_event_id (meta__redcap_event_id),
@@ -37,6 +40,7 @@ CREATE TABLE temp_redcap_log (
     username NVARCHAR(500) NOT NULL,
     action_datetime DATETIME NOT NULL,
     action_type NVARCHAR(500) NOT NULL,
+    action_description NVARCHAR(100) NOT NULL,
     field_name_value NVARCHAR(MAX) NOT NULL,
     [instance] INT NULL,
     field_name NVARCHAR(MAX) NULL,
@@ -58,6 +62,7 @@ BEGIN
         username,
         action_datetime,
         action_type,
+        action_description,
         field_name_value
     )
     SELECT DISTINCT
@@ -69,9 +74,10 @@ BEGIN
         [user] username,
 		CONVERT(DATETIME, STUFF(STUFF(STUFF(CONVERT(VARCHAR, ts),13,0,':'),11,0,':'),9,0,' ')) [action_datetime],
 		[event] action_type,
+        description,
 		value
     FROM [?].dbo.redcap_log_event
-    CROSS APPLY STRING_SPLIT(REPLACE(data_values, ',' + CHAR(10), '|') , '|')
+    CROSS APPLY STRING_SPLIT(REPLACE(data_values, ''',' + CHAR(10), CHAR(30)) , CHAR(30))
     WHERE object_type = 'redcap_data'
         AND TRIM(event) IN ('DELETE', 'INSERT', 'UPDATE')
         AND pk IS NOT NULL
@@ -90,7 +96,7 @@ FROM temp_redcap_log t
 JOIN (
 	SELECT datalake_database, log_event_id, CONVERT(INT, SUBSTRING(field_name_value, 13, PATINDEX('%[0-9]]%', field_name_value) - 12)) [instance]
 	FROM temp_redcap_log
-	WHERE field_name_value LIKE '![instance = %[1-9]!]%' ESCAPE '!'
+	WHERE field_name_value LIKE '![instance = %[0-9]!]%' ESCAPE '!'
 ) x ON x.datalake_database = t.datalake_database
 	AND x.log_event_id = t.log_event_id
 
@@ -101,7 +107,7 @@ FROM temp_redcap_log t
 WHERE t.[instance] IS NULL
 
 DELETE FROM temp_redcap_log
-WHERE field_name_value LIKE '![instance = %[1-9]!]%' ESCAPE '!'
+WHERE field_name_value LIKE '![instance = %[0-9]!]%' ESCAPE '!'
 
 --------------------------------
 --   Split field name and value
@@ -128,8 +134,9 @@ WHERE field_name LIKE '%(%)'
 --   Insert into Log
 -----------------------------------------
 
-INSERT INTO warehouse_central.dbo.redcap_log (meta__redcap_field_id, meta__redcap_field_enum_id, meta__redcap_event_id, redcap_participant_id, username, field_name, action_datetime, action_type, data_value, [instance])
+INSERT INTO warehouse_central.dbo.redcap_log (log_event_id, meta__redcap_field_id, meta__redcap_field_enum_id, meta__redcap_event_id, redcap_participant_id, username, field_name, action_datetime, action_type, action_description, data_value, [instance])
 SELECT DISTINCT
+    x.log_event_id,
     field.meta__redcap_field_id field_id,
     rfe.id,
     mre.id event_id,
@@ -138,6 +145,7 @@ SELECT DISTINCT
     x.field_name,
     x.action_datetime,
     x.action_type,
+    x.action_description,
     x.value,
     x.[instance]
 FROM warehouse_central.dbo.temp_redcap_log x
