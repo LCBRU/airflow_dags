@@ -11,10 +11,10 @@ FROM (
 	JOIN meta__redcap_instance mri 
 		ON mri.id = mrp.meta__redcap_instance_id
 	JOIN combined_redcap_metadata crm 
-		ON crm.datalake_database_name = mri.datalake_database 
+		ON crm.datalake_database = mri.datalake_database 
 		AND crm.project_id = mrp.redcap_project_id 
 		AND crm.field_name = rl.field_name 
 	WHERE rl.meta__redcap_field_id IS NULL
-		AND crm.datalake_database_name IS NULL
+		AND crm.datalake_database IS NULL
 ) x
 ;

@@ -1,6 +1,6 @@
 CREATE OR ALTER VIEW dq__redcap_projects_without_id AS
 
-    SELECT datalake_database_name, project_id 
+    SELECT datalake_database, project_id 
     FROM merged__redcap_project crp 
 
     EXCEPT

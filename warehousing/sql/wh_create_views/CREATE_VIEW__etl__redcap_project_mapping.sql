@@ -17,7 +17,7 @@ JOIN datalake_identity.dbo.redcap_instance ri
 JOIN meta__redcap_instance wcri
 	ON wcri.source_database = ri.database_name
 JOIN merged__redcap_project crp
-	ON crp.datalake_database_name = wcri.datalake_database
+	ON crp.datalake_database = wcri.datalake_database
 	AND crp.project_id = rp.project_id
 	AND crp.status = 1
 ;

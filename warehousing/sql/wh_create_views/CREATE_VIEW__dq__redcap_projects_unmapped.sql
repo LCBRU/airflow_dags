@@ -2,7 +2,7 @@ CREATE OR ALTER VIEW [dbo].[dq__redcap_projects_unmapped] AS
 SELECT crp.*
 FROM merged__redcap_project crp
 JOIN (
-    SELECT datalake_database_name, project_id
+    SELECT datalake_database, project_id
     FROM merged__redcap_project crp
     WHERE crp.status = 1
     
@@ -15,6 +15,6 @@ JOIN (
     
     SELECT datalake_database, redcap_project_id
     FROM etl__redcap_project_mapping
-) o ON o.datalake_database_name = crp.datalake_database_name
+) o ON o.datalake_database = crp.datalake_database
     AND o.project_id = crp.project_id
 ;

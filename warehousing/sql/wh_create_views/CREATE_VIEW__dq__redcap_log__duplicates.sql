@@ -1,6 +1,6 @@
-CREATE OR ALTER VIEW dq__redcap_value__duplicates AS
+CREATE OR ALTER VIEW dq__redcap_data__duplicates AS
 SELECT rv.*
-FROM desc__redcap_value rv
+FROM desc__redcap_data rv
 JOIN (
 	SELECT 
         meta__redcap_instance_id,
@@ -13,7 +13,7 @@ JOIN (
         redcap_participant_id,
         meta__redcap_field_enum_id,
         instance
-	FROM redcap_value
+	FROM redcap_data
 	GROUP BY
         meta__redcap_instance_id,
         meta__redcap_project_id,

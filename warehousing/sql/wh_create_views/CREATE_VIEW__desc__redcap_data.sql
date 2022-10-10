@@ -1,4 +1,4 @@
-CREATE OR ALTER VIEW desc__redcap_value AS
+CREATE OR ALTER VIEW desc__redcap_data AS
 SELECT
 	rv.id,
 	rv.meta__redcap_instance_id,
@@ -39,7 +39,7 @@ SELECT
 	rv.int_value,
 	rv.decimal_value,
 	rv.boolean_value
-FROM warehouse_central.dbo.redcap_value rv
+FROM warehouse_central.dbo.redcap_data rv
 JOIN warehouse_central.dbo.meta__redcap_instance mri 
 	ON mri.id = rv.meta__redcap_instance_id
 JOIN warehouse_central.dbo.meta__redcap_project mrp 

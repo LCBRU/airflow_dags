@@ -4,8 +4,8 @@ IF OBJECT_ID(N'temp_redcap_log') IS NOT NULL
 IF OBJECT_ID(N'redcap_log') IS NOT NULL
     DROP TABLE redcap_log
 
-IF OBJECT_ID(N'redcap_value') IS NOT NULL
-    DROP TABLE redcap_value
+IF OBJECT_ID(N'redcap_data') IS NOT NULL
+    DROP TABLE redcap_data
 
 IF OBJECT_ID(N'redcap_file') IS NOT NULL
     DROP TABLE redcap_file

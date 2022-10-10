@@ -10,10 +10,13 @@ def _create_views():
     logging.info("_create_views: Started")
 
     for sql_file in [
-        'CREATE_VIEW__etl__redcap_project_mapping.sql',
+        'CREATE_VIEW__merged__redcap_data.sql',
         'CREATE_VIEW__merged__redcap_metadata.sql',
         'CREATE_VIEW__merged__redcap_project.sql',
+        'CREATE_VIEW__etl__redcap_project_mapping.sql',
     ]:
+        logging.info(f'Running: {sql_file}')
+
         execute_mssql(
             DWH_CONNECTION_NAME,
             schema='warehouse_central',
