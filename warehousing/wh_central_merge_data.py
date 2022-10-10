@@ -5,8 +5,10 @@ from tools import create_sub_dag_task
 DWH_CONNECTION_NAME = 'DWH'
 
 
-def _create_merge_data_dag(dag):
+def _create_merge_meta_data_dag(dag):
     logging.info("_create_merge_data_dag: Started")
+
+    parent_subdag = create_sub_dag_task(dag, 'merge_meta_data')
 
     drop__meta_redcap_tables = MsSqlOperator(
         task_id='DROP__meta_redcap_tables',
@@ -14,7 +16,7 @@ def _create_merge_data_dag(dag):
         sql="sql/wh_central_merge_data/DROP__meta_redcap_tables.sql",
         autocommit=True,
         database='warehouse_central',
-        dag=dag,
+        dag=parent_subdag.subdag,
     )
 
     create__meta_redcap_data_type = MsSqlOperator(
@@ -23,7 +25,7 @@ def _create_merge_data_dag(dag):
         sql="sql/wh_central_merge_data/CREATE__meta_redcap_data_type.sql",
         autocommit=True,
         database='warehouse_central',
-        dag=dag,
+        dag=parent_subdag.subdag,
     )
 
     create__meta_redcap_instance = MsSqlOperator(
@@ -32,7 +34,7 @@ def _create_merge_data_dag(dag):
         sql="sql/wh_central_merge_data/CREATE__meta_redcap_instance.sql",
         autocommit=True,
         database='warehouse_central',
-        dag=dag,
+        dag=parent_subdag.subdag,
     )
 
     create__meta_redcap_project = MsSqlOperator(
@@ -41,7 +43,7 @@ def _create_merge_data_dag(dag):
         sql="sql/wh_central_merge_data/CREATE__meta_redcap_project.sql",
         autocommit=True,
         database='warehouse_central',
-        dag=dag,
+        dag=parent_subdag.subdag,
     )
 
     create__meta_redcap_form = MsSqlOperator(
@@ -50,7 +52,7 @@ def _create_merge_data_dag(dag):
         sql="sql/wh_central_merge_data/CREATE__meta_redcap_form.sql",
         autocommit=True,
         database='warehouse_central',
-        dag=dag,
+        dag=parent_subdag.subdag,
     )
 
     create__meta_redcap_form_section = MsSqlOperator(
@@ -59,7 +61,7 @@ def _create_merge_data_dag(dag):
         sql="sql/wh_central_merge_data/CREATE__meta_redcap_form_section.sql",
         autocommit=True,
         database='warehouse_central',
-        dag=dag,
+        dag=parent_subdag.subdag,
     )
 
     create__meta_redcap_field = MsSqlOperator(
@@ -68,7 +70,7 @@ def _create_merge_data_dag(dag):
         sql="sql/wh_central_merge_data/CREATE__meta_redcap_field.sql",
         autocommit=True,
         database='warehouse_central',
-        dag=dag,
+        dag=parent_subdag.subdag,
     )
 
     create__meta_redcap_field_enum = MsSqlOperator(
@@ -77,16 +79,7 @@ def _create_merge_data_dag(dag):
         sql="sql/wh_central_merge_data/CREATE__meta_redcap_field_enum.sql",
         autocommit=True,
         database='warehouse_central',
-        dag=dag,
-    )
-
-    create__redcap_participant = MsSqlOperator(
-        task_id='CREATE__redcap_participant',
-        mssql_conn_id=DWH_CONNECTION_NAME,
-        sql="sql/wh_central_merge_data/CREATE__redcap_participant.sql",
-        autocommit=True,
-        database='warehouse_central',
-        dag=dag,
+        dag=parent_subdag.subdag,
     )
 
     create__meta_redcap_arm = MsSqlOperator(
@@ -95,7 +88,7 @@ def _create_merge_data_dag(dag):
         sql="sql/wh_central_merge_data/CREATE__meta_redcap_arm.sql",
         autocommit=True,
         database='warehouse_central',
-        dag=dag,
+        dag=parent_subdag.subdag,
     )
 
     create__meta_redcap_event = MsSqlOperator(
@@ -104,8 +97,40 @@ def _create_merge_data_dag(dag):
         sql="sql/wh_central_merge_data/CREATE__meta_redcap_event.sql",
         autocommit=True,
         database='warehouse_central',
-        dag=dag,
+        dag=parent_subdag.subdag,
     )
+
+    drop__meta_redcap_tables >> create__meta_redcap_data_type >> create__meta_redcap_instance >> create__meta_redcap_project >> create__meta_redcap_form >> create__meta_redcap_form_section >> create__meta_redcap_field >> create__meta_redcap_field_enum
+    create__meta_redcap_project >> create__meta_redcap_arm >> create__meta_redcap_event
+
+    logging.info("_create_merge_data_dag: Ended")
+
+    return parent_subdag
+
+
+def _create_merge_participant_dag(dag):
+    logging.info("_create_merge_participant_dag: Started")
+
+    parent_subdag = create_sub_dag_task(dag, 'merge_participants')
+
+    create__redcap_participant = MsSqlOperator(
+        task_id='CREATE__redcap_participant',
+        mssql_conn_id=DWH_CONNECTION_NAME,
+        sql="sql/wh_central_merge_data/CREATE__redcap_participant.sql",
+        autocommit=True,
+        database='warehouse_central',
+        dag=parent_subdag.subdag,
+    )
+
+    logging.info("_create_merge_participant_dag: Ended")
+
+    return parent_subdag
+
+
+def _create_merge_file_dag(dag):
+    logging.info("_create_merge_file_dag: Started")
+
+    parent_subdag = create_sub_dag_task(dag, 'merge_files')
 
     create__redcap_file = MsSqlOperator(
         task_id='CREATE__redcap_file',
@@ -113,8 +138,18 @@ def _create_merge_data_dag(dag):
         sql="sql/wh_central_merge_data/CREATE__redcap_file.sql",
         autocommit=True,
         database='warehouse_central',
-        dag=dag,
+        dag=parent_subdag.subdag,
     )
+
+    logging.info("_create_merge_file_dag: Ended")
+
+    return parent_subdag
+
+
+def _create_merge_log_dag(dag):
+    logging.info("_create_merge_log_dag: Started")
+
+    parent_subdag = create_sub_dag_task(dag, 'merge_log')
 
     create__redcap_log = MsSqlOperator(
         task_id='create__redcap_log',
@@ -122,7 +157,7 @@ def _create_merge_data_dag(dag):
         sql="sql/wh_central_merge_data/CREATE__redcap_log.sql",
         autocommit=True,
         database='warehouse_central',
-        dag=dag,
+        dag=parent_subdag.subdag,
     )
 
     create__redcap_log__unique = MsSqlOperator(
@@ -131,8 +166,20 @@ def _create_merge_data_dag(dag):
         sql="sql/wh_central_merge_data/CREATE__redcap_log__unique.sql",
         autocommit=True,
         database='warehouse_central',
-        dag=dag,
+        dag=parent_subdag.subdag,
     )
+
+    create__redcap_log >> create__redcap_log__unique
+
+    logging.info("_create_merge_log_dag: Ended")
+
+    return parent_subdag
+
+
+def _create_merge_data_dag(dag):
+    logging.info("_create_merge_data_dag: Started")
+
+    parent_subdag = create_sub_dag_task(dag, 'merge_data')
 
     create__redcap_data = MsSqlOperator(
         task_id='CREATE__redcap_data',
@@ -140,7 +187,7 @@ def _create_merge_data_dag(dag):
         sql="sql/wh_central_merge_data/CREATE__redcap_data.sql",
         autocommit=True,
         database='warehouse_central',
-        dag=dag,
+        dag=parent_subdag.subdag,
     )
 
     create__redcap_data__unique = MsSqlOperator(
@@ -149,8 +196,20 @@ def _create_merge_data_dag(dag):
         sql="sql/wh_central_merge_data/CREATE__redcap_data__unique.sql",
         autocommit=True,
         database='warehouse_central',
-        dag=dag,
+        dag=parent_subdag.subdag,
     )
+
+    create__redcap_data >> create__redcap_data__unique
+
+    logging.info("_create_merge_data_dag: Ended")
+
+    return parent_subdag
+
+
+def _create_update_statistics_dag(dag):
+    logging.info("_create_update_statistics_dag: Started")
+
+    parent_subdag = create_sub_dag_task(dag, 'update_statistics')
 
     update_statistics = MsSqlOperator(
         task_id='update_statistics',
@@ -159,47 +218,24 @@ def _create_merge_data_dag(dag):
         autocommit=True,
         database='warehouse_central',
         trigger_rule="all_done",
-        dag=dag,
+        dag=parent_subdag.subdag,
     )
 
-    drop__meta_redcap_tables >> create__meta_redcap_data_type
-    create__meta_redcap_data_type >> create__meta_redcap_instance
-    create__meta_redcap_instance >> create__meta_redcap_project
-    create__meta_redcap_project >> create__meta_redcap_form
-    create__meta_redcap_form >> create__meta_redcap_form_section
-    create__meta_redcap_form_section >> create__meta_redcap_field
-    create__meta_redcap_field >> create__meta_redcap_field_enum
-    create__meta_redcap_project >> create__meta_redcap_arm
-    create__meta_redcap_arm >> create__meta_redcap_event
+    logging.info("_create_update_statistics_dag: Ended")
 
-    create__meta_redcap_instance >> create__redcap_file
-
-    create__meta_redcap_project >> create__redcap_participant
-
-    create__redcap_participant >> create__redcap_data
-    create__redcap_file >> create__redcap_data
-    create__meta_redcap_event >> create__redcap_data
-    create__meta_redcap_field_enum >> create__redcap_data
-
-    create__redcap_participant >> create__redcap_log
-    create__redcap_file >> create__redcap_log
-    create__meta_redcap_event >> create__redcap_log
-    create__meta_redcap_field_enum >> create__redcap_log
-
-    create__redcap_data >> create__redcap_log
-
-    create__redcap_data >> create__redcap_data__unique
-    create__redcap_log >> create__redcap_log__unique
-
-    create__redcap_data__unique >> update_statistics
-    create__redcap_log__unique >> update_statistics
-
-    logging.info("_create_merge_data_dag: Ended")
+    return parent_subdag
 
 
 def create_wh_central_merge_data_dag(dag):
     parent_subdag = create_sub_dag_task(dag, 'wh_central_merge_data')
 
-    _create_merge_data_dag(dag=parent_subdag.subdag)
+    meta = _create_merge_meta_data_dag(dag=parent_subdag.subdag)
+    participants = _create_merge_participant_dag(dag=parent_subdag.subdag)
+    files = _create_merge_file_dag(dag=parent_subdag.subdag)
+    logs = _create_merge_log_dag(dag=parent_subdag.subdag)
+    data = _create_merge_data_dag(dag=parent_subdag.subdag)
+    stats = _create_update_statistics_dag(dag=parent_subdag.subdag)
+
+    meta >> participants >> files >> data >> logs >> stats
 
     return parent_subdag

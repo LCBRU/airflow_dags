@@ -76,7 +76,17 @@ BEGIN
 		[event] action_type,
         description,
 		value
-    FROM [?].dbo.redcap_log_event
+    FROM (
+        SELECT * FROM [?].dbo.redcap_log_event
+        UNION
+        SELECT * FROM [?].dbo.redcap_log_event2
+        UNION
+        SELECT * FROM [?].dbo.redcap_log_event3
+        UNION
+        SELECT * FROM [?].dbo.redcap_log_event4
+        UNION
+        SELECT * FROM [?].dbo.redcap_log_event5
+    ) x
     CROSS APPLY STRING_SPLIT(REPLACE(data_values, ''',' + CHAR(10), CHAR(30)) , CHAR(30))
     WHERE object_type = 'redcap_data'
         AND TRIM(event) IN ('DELETE', 'INSERT', 'UPDATE')
