@@ -1,13 +1,41 @@
 import os
 from datetime import timedelta, datetime
 from airflow import DAG
+from tools import create_sub_dag_task
 from warehousing.crf_manager_download import create_download_crf_manager_studies
 from warehousing.download_to_mysql import create_download_to_mysql_dag
 from warehousing.edge_download import create_download_edge_studies
 from warehousing.mysql_to_datalake import create_datalake_mysql_import_dag
 from warehousing.wh_central_merge_data import create_wh_central_merge_data_dag
 from warehousing.wh_create_studies import create_wh_create_studies
+from warehousing.wh_create_postmerge_views import create_wh_create_postmerge_views
+from warehousing.wh_create_premerge_views import create_wh_create_premerge_views
 
+
+def create_download_data(dag):
+    parent_subdag = create_sub_dag_task(dag, 'download_data', run_on_failures=True)
+
+    download_to_mysql = create_download_to_mysql_dag(parent_subdag.subdag)
+    download_edge_studies = create_download_edge_studies(parent_subdag.subdag)
+    download_crfm_studies = create_download_crf_manager_studies(parent_subdag.subdag)
+
+    download_edge_studies << download_crfm_studies
+
+    return parent_subdag
+    
+
+def create_warehouse(dag):
+    parent_subdag = create_sub_dag_task(dag, 'warehouse', run_on_failures=True)
+
+    wh_create_premerge_views = create_wh_create_premerge_views(parent_subdag.subdag)
+    wh_central_merge_data = create_wh_central_merge_data_dag(parent_subdag.subdag)
+    wh_create_postmerge_views = create_wh_create_postmerge_views(parent_subdag.subdag)
+    wh_create_studies = create_wh_create_studies(parent_subdag.subdag)
+
+    wh_create_premerge_views >> wh_central_merge_data >> wh_create_postmerge_views >> wh_create_studies
+
+    return parent_subdag
+    
 
 default_args = {
     "owner": "airflow",
@@ -25,16 +53,8 @@ dag = DAG(
     catchup=False,
 )
 
+download_data = create_download_data(dag)
 datalake_mysql_import = create_datalake_mysql_import_dag(dag)
-download_to_mysql = create_download_to_mysql_dag(dag)
-download_edge_studies = create_download_edge_studies(dag)
-download_crfm_studies = create_download_crf_manager_studies(dag)
-wh_central_merge_data = create_wh_central_merge_data_dag(dag)
-wh_create_studies = create_wh_create_studies(dag)
+warehouse = create_warehouse(dag)
 
-download_to_mysql >> datalake_mysql_import
-download_edge_studies << download_crfm_studies
-download_edge_studies >> datalake_mysql_import
-download_crfm_studies >> datalake_mysql_import
-datalake_mysql_import >> wh_central_merge_data
-wh_central_merge_data >> wh_create_studies
+download_data >> datalake_mysql_import >> warehouse

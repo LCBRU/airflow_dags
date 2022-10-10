@@ -188,7 +188,7 @@ details = {
 
 
 def create_download_to_mysql_dag(dag):
-    parent_subdag = create_sub_dag_task(dag, 'download_to_mysql')
+    parent_subdag = create_sub_dag_task(dag, 'download_to_mysql', run_on_failures=True)
 
     for destination, source in details.items():
         PythonOperator(

@@ -1,3 +1,3 @@
 SELECT DISTINCT dbo.study_database_name(study_name), study_name
-FROM datalake_redcap_project_mappings
+FROM etl__redcap_project_mapping
 ;

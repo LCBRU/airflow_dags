@@ -9,7 +9,7 @@ DECLARE @ParmDefinition NVARCHAR(500)
 
 DECLARE db_cursor CURSOR FOR 
 SELECT DISTINCT study_name, datalake_database, redcap_project_id
-FROM datalake_redcap_project_mappings
+FROM etl__redcap_project_mapping
 
 OPEN db_cursor  
 FETCH NEXT FROM db_cursor INTO @study_name, @datalake_database, @project_id

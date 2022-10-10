@@ -6,7 +6,7 @@ DECLARE TABLE_CURSOR CURSOR
     LOCAL STATIC READ_ONLY FORWARD_ONLY
 FOR
 SELECT DISTINCT dbo.study_database_name(study_name)
-FROM datalake_redcap_project_mappings drpm
+FROM etl__redcap_project_mapping drpm
 
 OPEN TABLE_CURSOR
 FETCH NEXT FROM TABLE_CURSOR INTO @db_name

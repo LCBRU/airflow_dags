@@ -169,7 +169,7 @@ def _boolean_or_none(boolean_element):
 
 
 def create_download_edge_studies(dag):
-    parent_subdag = create_sub_dag_task(dag, 'download_edge_studies')
+    parent_subdag = create_sub_dag_task(dag, 'download_edge_studies', run_on_failures=True)
 
     PythonOperator(
         task_id=f"download_edge_studies",

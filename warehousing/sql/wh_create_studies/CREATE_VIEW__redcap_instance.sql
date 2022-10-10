@@ -1,7 +1,7 @@
 CREATE VIEW meta__redcap_instance AS
 
 SELECT DISTINCT ri.*
-FROM warehouse_central.dbo.datalake_redcap_project_mappings m
+FROM warehouse_central.dbo.etl__redcap_project_mapping m
 JOIN warehouse_central.dbo.meta__redcap_instance ri
 	ON ri.datalake_database = m.datalake_database
 JOIN warehouse_central.dbo.meta__redcap_project rp

@@ -39,15 +39,6 @@ def _create_redcap_views():
 def _create_study_whs(dag):
     logging.info("_create_study_whs: Started")
 
-    create_study_db_name = MsSqlOperator(
-        task_id='create_study_db_name',
-        mssql_conn_id=DWH_CONNECTION_NAME,
-        sql="sql/wh_create_studies/CREATE__study_database_name.sql",
-        autocommit=True,
-        dag=dag,
-        database='warehouse_central',
-    )
-
     create_study_wh_dbs = MsSqlOperator(
         task_id='create_study_wh_dbs',
         mssql_conn_id=DWH_CONNECTION_NAME,
@@ -63,7 +54,6 @@ def _create_study_whs(dag):
         dag=dag,
     )
 
-    create_study_db_name >> create_study_wh_dbs
     create_study_wh_dbs >> create_redcap_views
 
     logging.info("_create_study_whs: Ended")
