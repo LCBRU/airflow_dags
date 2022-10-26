@@ -5,5 +5,10 @@ CREATE OR ALTER VIEW dq__redcap_projects_without_id AS
 
     EXCEPT
 
-    SELECT DISTINCT database_name, redcap_project_id 
-    FROM redcap_project_participant_identifier;
+    SELECT DISTINCT mri.datalake_database , mrp.redcap_project_id  
+    FROM redcap_project_participant_identifier rppi 
+    JOIN meta__redcap_project mrp 
+        ON mrp.id = rppi.meta__redcap_project_id
+    JOIN meta__redcap_instance mri 
+        ON mri.id = mrp.meta__redcap_instance_id 
+    ;

@@ -6,10 +6,7 @@ from warehousing.crf_manager_download import create_download_crf_manager_studies
 from warehousing.download_to_mysql import create_download_to_mysql_dag
 from warehousing.edge_download import create_download_edge_studies
 from warehousing.mysql_to_datalake import create_datalake_mysql_import_dag
-from warehousing.wh_central_merge_data import create_wh_central_merge_data_dag
-from warehousing.wh_create_studies import create_wh_create_studies
-from warehousing.wh_create_postmerge_views import create_wh_create_postmerge_views
-from warehousing.wh_create_premerge_views import create_wh_create_premerge_views
+from warehousing.wh_create import create_warehouse
 
 
 def create_download_data(dag):
@@ -20,19 +17,6 @@ def create_download_data(dag):
     download_crfm_studies = create_download_crf_manager_studies(parent_subdag.subdag)
 
     download_edge_studies << download_crfm_studies
-
-    return parent_subdag
-    
-
-def create_warehouse(dag):
-    parent_subdag = create_sub_dag_task(dag, 'warehouse', run_on_failures=True)
-
-    wh_create_premerge_views = create_wh_create_premerge_views(parent_subdag.subdag)
-    wh_central_merge_data = create_wh_central_merge_data_dag(parent_subdag.subdag)
-    wh_create_postmerge_views = create_wh_create_postmerge_views(parent_subdag.subdag)
-    wh_create_studies = create_wh_create_studies(parent_subdag.subdag)
-
-    wh_create_premerge_views >> wh_central_merge_data >> wh_create_postmerge_views >> wh_create_studies
 
     return parent_subdag
     
