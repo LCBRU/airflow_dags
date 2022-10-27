@@ -15,4 +15,8 @@ SELECT
     cp.short_title,
     cp.activity_status
 FROM datalake_openspecimen.dbo.catissue_collection_protocol cp
+WHERE cp.identifier IN (
+    SELECT DISTINCT collection_protocol_id
+    FROM warehouse_central.dbo.cfg_openspecimen_study_mapping
+)
 ;

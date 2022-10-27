@@ -72,9 +72,8 @@ def _create_merge_openspecimen_dag(dag):
     )
 
     drop__tables >> create__collection_protocol
-    drop__tables >> create__participant
-    create__collection_protocol >> create__registration >> create__specimen_group
-    create__collection_protocol >> create__event >> create__specimen_group >> create__specimen
+    create__collection_protocol >> create__participant >> create__registration >> create__specimen_group
+    create__collection_protocol >> create__event >> create__specimen_group
     create__specimen_group >> create__specimen
 
     logging.info("_create_merge_openspecimen_dag: Ended")

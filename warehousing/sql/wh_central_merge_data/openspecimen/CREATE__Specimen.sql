@@ -34,4 +34,6 @@ SELECT
     s.lineage,
     s.parent_specimen_id
 FROM datalake_openspecimen.dbo.catissue_specimen s
+JOIN warehouse_central.dbo.openspecimen__specimen_group sg
+    ON sg.identifier = s.specimen_collection_group_id
 ;

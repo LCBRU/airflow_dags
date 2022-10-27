@@ -26,4 +26,6 @@ SELECT
     sg.received_timestamp,
     sg.activity_status
 FROM datalake_openspecimen.dbo.catissue_specimen_coll_group sg
+JOIN warehouse_central.dbo.openspecimen__registration r
+    ON r.identifier = sg.collection_protocol_reg_id
 ;

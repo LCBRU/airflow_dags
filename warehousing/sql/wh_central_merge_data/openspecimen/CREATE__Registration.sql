@@ -16,4 +16,6 @@ SELECT
     r.registration_date,
     r.activity_status
 FROM datalake_openspecimen.dbo.catissue_coll_prot_reg r
+JOIN warehouse_central.dbo.openspecimen__collection_protocol cp
+    ON cp.identifier = r.collection_protocol_id
 ;

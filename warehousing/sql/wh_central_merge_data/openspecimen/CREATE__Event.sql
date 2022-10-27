@@ -12,4 +12,6 @@ SELECT
     e.collection_protocol_id,
     e.activity_status
 FROM datalake_openspecimen.dbo.catissue_coll_prot_event e
+JOIN warehouse_central.dbo.openspecimen__collection_protocol cp
+    ON cp.identifier = e.collection_protocol_id
 ;
