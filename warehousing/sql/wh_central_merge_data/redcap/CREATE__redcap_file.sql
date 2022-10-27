@@ -29,9 +29,14 @@ BEGIN
         rem.doc_size,
         rem.file_extension,
         rem.gzipped
-    FROM [?].dbo.redcap_edocs_metadata rem 
+    FROM [?].dbo.redcap_edocs_metadata rem
     JOIN warehouse_central.dbo.meta__redcap_instance mri
         ON mri.datalake_database = '?'
+    WHERE rem.project_id IN (
+        SELECT DISTINCT redcap_project_id
+        FROM warehouse_central.dbo.etl__redcap_project_mapping
+        WHERE source_database_name = '?'
+    )
 END"
 
 SET QUOTED_IDENTIFIER ON;

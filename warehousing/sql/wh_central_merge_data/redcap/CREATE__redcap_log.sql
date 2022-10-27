@@ -92,6 +92,11 @@ BEGIN
         AND TRIM(event) IN ('DELETE', 'INSERT', 'UPDATE')
         AND pk IS NOT NULL
         AND event_id IS NOT NULL
+        AND project_id IN (
+            SELECT DISTINCT redcap_project_id
+            FROM warehouse_central.dbo.etl__redcap_project_mapping
+            WHERE source_database_name = '?'
+        )
 END"
 
 
