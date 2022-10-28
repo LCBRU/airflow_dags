@@ -28,7 +28,7 @@ BEGIN
         WHERE project_id IN (
             SELECT DISTINCT redcap_project_id
             FROM warehouse_central.dbo.etl__redcap_project_mapping
-            WHERE source_database_name = '?'
+            WHERE datalake_database = '?'
         )
     ) rp
     JOIN warehouse_central.dbo.meta__redcap_instance ri
