@@ -15,3 +15,6 @@ IF OBJECT_ID(N'openspecimen__participant') IS NOT NULL
 
 IF OBJECT_ID(N'openspecimen__collection_protocol') IS NOT NULL
     DROP TABLE openspecimen__collection_protocol;
+
+IF OBJECT_ID(N'openspecimen__nanodrop') IS NOT NULL
+    DROP TABLE openspecimen__nanodrop;

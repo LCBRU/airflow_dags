@@ -36,7 +36,18 @@ SELECT
 	s.specimen_class,
 	s.specimen_type,
 	s.lineage,
-	s.parent_specimen_id
+	s.parent_specimen_id,
+	on2.plate_id AS nanodrop_plate_id,
+	on2.well AS nanodrop_well,
+	on2.time_stamp AS nanodrop_timestamp,
+	on2.conc AS nanodrop_conc,
+	on2.a260 AS nanodrop_a260,
+	on2.a280 AS nanodrop_a280,
+	on2.a260_280 AS nanodrop_a20_280,
+	on2.a260_230 AS nanodrop_a260_230,
+	on2.factor_ng_per_ul AS nanodrop_factor_ng_ul,
+	on2.cursor_pos AS nanodrop_cursor_pos,
+	on2.cursor_abs AS nanodrop_abs 
 FROM openspecimen__specimen s
 JOIN openspecimen__specimen_group osg
 	ON osg.identifier = s.specimen_group_id
@@ -48,4 +59,6 @@ JOIN openspecimen__participant op
 	ON op.identifier = or2.participant_id
 JOIN openspecimen__collection_protocol ocp
 	ON ocp.identifier = or2.collection_protocol_id
+LEFT JOIN openspecimen__nanodrop on2 
+	ON on2.specimen_identifier = s.identifier
 ;

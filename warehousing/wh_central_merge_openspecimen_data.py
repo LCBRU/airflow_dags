@@ -71,10 +71,19 @@ def _create_merge_openspecimen_dag(dag):
         dag=dag,
     )
 
+    create__nanodrop = MsSqlOperator(
+        task_id='CREATE__Nanodrop',
+        mssql_conn_id=DWH_CONNECTION_NAME,
+        sql="sql/wh_central_merge_data/openspecimen/CREATE__Nanodrop.sql",
+        autocommit=True,
+        database='warehouse_central',
+        dag=dag,
+    )
+
     drop__tables >> create__collection_protocol
     create__collection_protocol >> create__participant >> create__registration >> create__specimen_group
     create__collection_protocol >> create__event >> create__specimen_group
-    create__specimen_group >> create__specimen
+    create__specimen_group >> create__specimen >> create__nanodrop
 
     logging.info("_create_merge_openspecimen_dag: Ended")
 
