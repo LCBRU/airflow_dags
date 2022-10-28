@@ -18,16 +18,9 @@ def _create_redcap_views():
         logging.info(f'****************************** {study_name}: {study_db}')
 
         for sql_file in [
-            'CREATE_VIEW__meta__redcap_instance.sql',
-            'CREATE_VIEW__meta__redcap_project.sql',
-            'CREATE_VIEW__meta__redcap_form.sql',
-            'CREATE_VIEW__meta__redcap_form_section.sql',
-            'CREATE_VIEW__meta__redcap_field.sql',
-            'CREATE_VIEW__meta__redcap_field_enum.sql',
-            'CREATE_VIEW__redcap_data.sql',
             'CREATE_VIEW__desc__redcap_data.sql',
-            'CREATE_VIEW__redcap_log.sql',
             'CREATE_VIEW__desc__redcap_log.sql',
+            'CREATE_VIEW__desc__openspecimen.sql',
         ]:
             logging.info(f'Running: {sql_file}')
 

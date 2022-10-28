@@ -14,6 +14,7 @@ def _create_views():
         'CREATE_VIEW__merged__redcap_metadata.sql',
         'CREATE_VIEW__merged__redcap_project.sql',
         'CREATE_VIEW__etl__redcap_project_mapping.sql',
+        'CREATE_VIEW__etl__openspecimen_mapping.sql',
     ]:
         logging.info(f'Running: {sql_file}')
 
