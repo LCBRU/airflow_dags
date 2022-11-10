@@ -37,7 +37,7 @@ EXEC sp_executesql @OPENQUERY
 
 UPDATE _etl_tables
 SET extant = 0
-WHERE name NOT IN (SELECT name FROM __etl_tables)
+WHERE name NOT IN (SELECT table_name FROM __etl_tables)
 ;
 
 UPDATE et
@@ -55,4 +55,4 @@ INSERT INTO _etl_tables(name, last_copied, last_updated, extant, exclude)
 SELECT table_name, NULL, update_time, 1, 0
 FROM __etl_tables
 
-DROP TABLE __etl_tables;
+-- DROP TABLE __etl_tables;

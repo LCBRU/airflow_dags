@@ -143,6 +143,7 @@ def _create_database(destination_database):
 
 def _restore_database(destination_database, input_filename):
     logging.info("_restore_database: Started")
+    logging.info("File = {input_filename}")
 
     proc = _run_mysql('USE {};\nSOURCE {}'.format(
         destination_database,
@@ -181,9 +182,9 @@ def _run_mysql(command):
 
 details = {
     'uol_openspecimen': 'https://catissue-live.lcbru.le.ac.uk/publish/catissue.db',
-    'uol_easyas_redcap': 'https://easy-as.lbrc.le.ac.uk/publish/redcap.db',
-    'uol_crf_redcap': 'https://crf.lcbru.le.ac.uk/publish/redcap.db',
-    'uol_survey_redcap': 'https://redcap.lcbru.le.ac.uk/publish/redcap.db',
+    # 'uol_easyas_redcap': 'https://easy-as.lbrc.le.ac.uk/publish/redcap.db',
+    # 'uol_crf_redcap': 'https://crf.lcbru.le.ac.uk/publish/redcap.db',
+    # 'uol_survey_redcap': 'https://redcap.lcbru.le.ac.uk/publish/redcap.db',
 }
 
 
