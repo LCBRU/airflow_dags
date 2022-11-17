@@ -1,10 +1,9 @@
 CREATE OR ALTER VIEW [dbo].[etl__redcap_project_mapping] AS
 SELECT
-        s.name AS study_name,
-        es.name AS redcap_project_name,
+        dbo.study_database_name(s.name) AS study_database,
         rp.project_id AS redcap_project_id,
-        ri.database_name AS source_database_name,
-	wcri.datalake_database
+        ri.id AS meta__redcap_instance_id,
+        wcri.datalake_database
 FROM datalake_identity.dbo.participant_import_definition pid
 JOIN datalake_identity.dbo.study s
         ON s.id = pid.study_id

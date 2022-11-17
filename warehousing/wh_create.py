@@ -1,6 +1,7 @@
 import logging
 from tools import create_sub_dag_task
 from airflow.operators.mssql_operator import MsSqlOperator
+from warehousing.wh_central_merge_civicrm_data import create_wh_central_merge_civicrm_data_dag
 from warehousing.wh_central_merge_openspecimen_data import create_wh_central_merge_openspecimen_data_dag
 from warehousing.wh_create_studies import create_wh_create_studies
 from warehousing.wh_create_postmerge_views import create_wh_create_postmerge_views
@@ -13,6 +14,7 @@ def merge_data(dag):
 
     merge_redcap_data = create_wh_central_merge_redcap_data_dag(parent_subdag.subdag)
     merge_openspecimen_data = create_wh_central_merge_openspecimen_data_dag(parent_subdag.subdag)
+    merge_civicrm_data = create_wh_central_merge_civicrm_data_dag(parent_subdag.subdag)
 
     return parent_subdag
     

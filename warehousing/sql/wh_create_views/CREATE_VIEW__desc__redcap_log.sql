@@ -1,6 +1,7 @@
 CREATE OR ALTER VIEW desc__redcap_log AS
 SELECT
     rl.log_event_id,
+	mri.id AS meta__redcap_instance_id,
 	mri.datalake_database,
 	mrp.name project_name,
 	mrp.redcap_project_id,

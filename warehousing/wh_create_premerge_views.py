@@ -15,6 +15,8 @@ def _create_views():
         'CREATE_VIEW__merged__redcap_project.sql',
         'CREATE_VIEW__etl__redcap_project_mapping.sql',
         'CREATE_VIEW__etl__openspecimen_mapping.sql',
+        'CREATE_VIEW__etl__civicrm_mapping.sql',
+        'CREATE_VIEW__etl__civicrm_custom.sql',
     ]:
         logging.info(f'Running: {sql_file}')
 
@@ -30,11 +32,22 @@ def _create_views():
 def _create_ddl(dag):
     logging.info("_create_views: Started")
 
+    create_study_db_name_function = MsSqlOperator(
+        task_id='create_study_db_name_function',
+        mssql_conn_id=DWH_CONNECTION_NAME,
+        sql="sql/wh_create_views/CREATE__study_database_name.sql",
+        autocommit=True,
+        dag=dag,
+        database='warehouse_central',
+    )
+
     create_views = PythonOperator(
         task_id="create_views",
         python_callable=_create_views,
         dag=dag,
     )
+
+    create_study_db_name_function >> create_views
 
     logging.info("_create_views: Ended")
 
