@@ -1,6 +1,8 @@
 import logging
 from tools import create_sub_dag_task
 from airflow.operators.mssql_operator import MsSqlOperator
+from warehousing.wh_central_cleanup import create_wh_central_cleanup
+from warehousing.wh_central_config import create_wh_central_config
 from warehousing.wh_central_merge_civicrm_data import create_wh_central_merge_civicrm_data_dag
 from warehousing.wh_central_merge_openspecimen_data import create_wh_central_merge_openspecimen_data_dag
 from warehousing.wh_central_merge_participants import create_wh_central_merge_participants
@@ -43,6 +45,8 @@ def _create_update_statistics(dag):
 def create_warehouse(dag):
     parent_subdag = create_sub_dag_task(dag, 'warehouse', run_on_failures=True)
 
+    wh_create_cleanup = create_wh_central_cleanup(parent_subdag.subdag)
+    wh_create_config = create_wh_central_config(parent_subdag.subdag)
     wh_create_premerge_views = create_wh_create_premerge_views(parent_subdag.subdag)
     wh_central_merge_data = merge_data(parent_subdag.subdag)
     wh_central_merge_participants = create_wh_central_merge_participants(parent_subdag.subdag)
@@ -50,7 +54,7 @@ def create_warehouse(dag):
     wh_create_studies = create_wh_create_studies(parent_subdag.subdag)
     update_statistics = _create_update_statistics(parent_subdag.subdag)
 
-    wh_create_premerge_views >> wh_central_merge_data >> wh_central_merge_participants >> wh_create_postmerge_views >> wh_create_studies >> update_statistics
+    wh_create_cleanup >> wh_create_config >> wh_create_premerge_views >> wh_central_merge_data >> wh_central_merge_participants >> wh_create_postmerge_views >> wh_create_studies >> update_statistics
 
     return parent_subdag
     

@@ -9,10 +9,6 @@ def _merge_participants():
     logging.info("_create_views: Started")
 
     for sql_file in [
-        'DROP__participant_tables.sql',
-        'CREATE__cfg_wh_participant_identifier_type.sql',
-        'CREATE__cfg_wh_participant_source.sql',
-        'CREATE__cfg_wh_participant_identifier_table_columns.sql',
         'CREATE__wh_participants.sql',
         'INSERT__wh_participants__redcap.sql',
         'INSERT__wh_participants__table_columns.sql',

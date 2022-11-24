@@ -11,25 +11,6 @@ from warehousing.mysql_to_datalake import _query_mssql
 DWH_CONNECTION_NAME = 'DWH'
 
 
-def _create_drop_civicrm_data_dag(dag):
-    logging.info("_create_drop_civicrm_data_dag: Started")
-
-    parent_subdag = create_sub_dag_task(dag, 'drop_data', run_on_failures=True)
-
-    MsSqlOperator(
-        task_id='DROP__meta_civicrm_tables',
-        mssql_conn_id=DWH_CONNECTION_NAME,
-        sql="sql/wh_central_merge_data/civicrm/DROP__Civicrm.sql",
-        autocommit=True,
-        database='warehouse_central',
-        dag=parent_subdag.subdag,
-    )
-
-    logging.info("_create_drop_civicrm_data_dag: Ended")
-
-    return parent_subdag
-
-
 def _create_merge_civicrm_data_dag(dag):
     logging.info("_create_merge_civicrm_data_dag: Started")
 
@@ -123,7 +104,6 @@ def _copy_custom():
 def create_wh_central_merge_civicrm_data_dag(dag):
     parent_subdag = create_sub_dag_task(dag, 'wh_central_merge_civicrm_data')
 
-    drop = _create_drop_civicrm_data_dag(dag=parent_subdag.subdag)
     merge = _create_merge_civicrm_data_dag(dag=parent_subdag.subdag)
 
     copy_custom = PythonOperator(
@@ -132,6 +112,6 @@ def create_wh_central_merge_civicrm_data_dag(dag):
         dag=parent_subdag.subdag,
     )
 
-    drop >> merge >> copy_custom
+    merge >> copy_custom
 
     return parent_subdag

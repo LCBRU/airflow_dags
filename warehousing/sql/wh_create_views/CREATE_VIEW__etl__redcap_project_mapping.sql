@@ -13,7 +13,7 @@ JOIN datalake_identity.dbo.redcap_project rp
         ON rp.id = es.id
 JOIN datalake_identity.dbo.redcap_instance ri
         ON ri.id = rp.redcap_instance_id
-JOIN meta__redcap_instance wcri
+JOIN cfg_wh_redcap_instance wcri
 	ON wcri.source_database = ri.database_name
 JOIN merged__redcap_project crp
 	ON crp.datalake_database = wcri.datalake_database

@@ -10,15 +10,6 @@ def _create_merge_redcap_metadata_dag(dag):
 
     parent_subdag = create_sub_dag_task(dag, 'merge_metadata', run_on_failures=True)
 
-    drop__meta_redcap_tables = MsSqlOperator(
-        task_id='DROP__meta_redcap_tables',
-        mssql_conn_id=DWH_CONNECTION_NAME,
-        sql="sql/wh_central_merge_data/redcap/DROP__meta_redcap_tables.sql",
-        autocommit=True,
-        database='warehouse_central',
-        dag=parent_subdag.subdag,
-    )
-
     create__meta_redcap_data_type = MsSqlOperator(
         task_id='CREATE__meta_redcap_data_type',
         mssql_conn_id=DWH_CONNECTION_NAME,
@@ -100,8 +91,8 @@ def _create_merge_redcap_metadata_dag(dag):
         dag=parent_subdag.subdag,
     )
 
-    drop__meta_redcap_tables >> create__meta_redcap_instance >> create__meta_redcap_project
-    drop__meta_redcap_tables >> create__meta_redcap_data_type >> create__meta_redcap_field
+    create__meta_redcap_instance >> create__meta_redcap_project
+    create__meta_redcap_data_type >> create__meta_redcap_field
     create__meta_redcap_project >> create__meta_redcap_form >> create__meta_redcap_form_section >> create__meta_redcap_field >> create__meta_redcap_field_enum
     create__meta_redcap_project >> create__meta_redcap_arm >> create__meta_redcap_event
 
