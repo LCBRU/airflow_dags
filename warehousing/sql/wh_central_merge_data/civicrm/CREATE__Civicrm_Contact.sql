@@ -5,11 +5,11 @@ CREATE TABLE civicrm__contact (
     last_name VARCHAR(100),
     gender VARCHAR(10),
     birth_date DATE,
-    nhs_name VARCHAR(255),
+    nhs_number VARCHAR(255),
     uhl_system_number VARCHAR(255)
 )
 
-INSERT INTO civicrm__contact(id, first_name, middle_name, last_name, gender, birth_date, nhs_name, uhl_system_number)
+INSERT INTO civicrm__contact(id, first_name, middle_name, last_name, gender, birth_date, nhs_number, uhl_system_number)
 SELECT
     cc.id,
     cc.first_name,
