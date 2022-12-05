@@ -1,0 +1,15 @@
+{% if cursor | length > 0 %}
+    <h2>REDCap Unmapped Projects</h2>
+    <p>
+        The following REDCap project have not been mapped to a study.
+        Either map the project to a study in the Identity tool.
+        table, or set the REDCap status to other than Online (1).
+    </p>
+    <ul>
+        {% for r in cursor %}
+            <li>
+                {{ r['datalake_database'] }}: <em>{{ r['project_name'] }} ({{ r['project_id'] }})</em>
+            </li>
+        {% endfor %}
+    </ul>
+{% endif %}

@@ -1,6 +1,7 @@
 import logging
 from tools import create_sub_dag_task
 from airflow.operators.mssql_operator import MsSqlOperator
+from warehousing.wh_central_audit import create_wh_central_audit
 from warehousing.wh_central_cleanup import create_wh_central_cleanup
 from warehousing.wh_central_config import create_wh_central_config
 from warehousing.wh_central_merge_civicrm_data import create_wh_central_merge_civicrm_data_dag
@@ -53,6 +54,7 @@ def create_warehouse(dag):
     wh_create_postmerge_views = create_wh_create_postmerge_views(parent_subdag.subdag)
     wh_create_studies = create_wh_create_studies(parent_subdag.subdag)
     update_statistics = _create_update_statistics(parent_subdag.subdag)
+    email_audit = create_wh_central_audit(parent_subdag.subdag)
 
     wh_create_cleanup >> wh_create_config >> wh_create_premerge_views >> wh_central_merge_data >> wh_central_merge_participants >> wh_create_postmerge_views >> wh_create_studies >> update_statistics
 

@@ -6,7 +6,6 @@ from airflow.operators.mssql_operator import MsSqlOperator
 from airflow.operators.python_operator import PythonOperator
 
 from tools import create_sub_dag_task, execute_mssql, query_mssql
-from warehousing.mysql_to_datalake import _query_mssql
 
 DWH_CONNECTION_NAME = 'DWH'
 

@@ -1,0 +1,23 @@
+{% if cursor | length > 0 %}
+    <h2>Initial Study Participant Count Check</h2>
+    <p>
+        There is a mismatch between the expected and actual numbers of
+        REDCap participants loaded into the study data warehouses
+    </p>
+    <ul>
+        {% for r in cursor %}
+            <li>
+                <dl>
+                    <dt>Study</dt>
+                    <dd>{{ r['study_name'] }}</dd>
+                    <dt>REDCap</dt>
+                    <dd>{{ r['datalake_database'] }} - {{ r['project_name'] }} ({{ r['project_id'] }})</dd>
+                    <dt>Expected</dt>
+                    <dd>{{ r['expected_participant_count'] }}</dd>
+                    <dt>Actual</dt>
+                    <dd>{{ r['actual_participant_count'] }}</dd>
+                </dl>
+            </li>
+        {% endfor %}
+    </ul>
+{% endif %}

@@ -3,7 +3,7 @@ SELECT
     rl.log_event_id,
 	mri.id AS meta__redcap_instance_id,
 	mri.datalake_database,
-	mrp.name project_name,
+	mrp.id AS meta__redcap_project_id,
 	mrp.redcap_project_id,
 	mra.name arm_name,
 	mra.arm_num,

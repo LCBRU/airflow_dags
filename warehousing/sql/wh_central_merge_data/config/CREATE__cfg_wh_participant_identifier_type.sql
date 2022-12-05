@@ -90,3 +90,7 @@ INSERT INTO cfg_wh_participant_identifier_type (name) VALUES
 	(N'CiviCRM Case ID'),
 	(N'CiviCRM Contact ID');
 
+-- OpenSpecimen
+INSERT INTO cfg_wh_participant_identifier_type (name) VALUES
+	(N'OpenSpecimen Participant ID');
+

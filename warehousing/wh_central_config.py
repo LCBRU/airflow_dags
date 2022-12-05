@@ -9,6 +9,7 @@ def _create_config():
     logging.info("_create_config: Started")
 
     for sql_file in [
+        'CREATE__etl_errors.sql',
         'CREATE__cfg_wh_participant_identifier_type.sql',
         'CREATE__cfg_wh_participant_source.sql',
         'CREATE__cfg_wh_participant_identifier_table_columns.sql',

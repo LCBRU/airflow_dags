@@ -2,7 +2,7 @@ from itertools import groupby
 import logging
 from airflow.operators.mssql_operator import MsSqlOperator
 from airflow.operators.python_operator import PythonOperator
-from tools import create_sub_dag_task, query_mssql, execute_mssql
+from tools import create_sub_dag_task, query_mssql, execute_mssql, query_mssql_dict
 
 DWH_CONNECTION_NAME = 'DWH'
 
@@ -11,54 +11,49 @@ def _copy_redcap():
     logging.info("_copy_civicrm: Started")
 
     sql__redcap_mappings = '''
-        SELECT DISTINCT study_database FROM etl__redcap_project_mapping
+        SELECT
+            rpm.study_database,
+            mrp.id AS meta__redcap_project_id
+        FROM etl__redcap_project_mapping rpm
+        JOIN meta__redcap_project mrp
+            ON mrp.meta__redcap_instance_id = rpm.meta__redcap_instance_id
+            AND mrp.redcap_project_id = rpm.redcap_project_id
+        ORDER BY rpm.study_database
+        ;
     '''
-
-    with query_mssql(DWH_CONNECTION_NAME, schema='warehouse_central', sql=sql__redcap_mappings) as cursor:
-        studies = [study_db for (study_db,) in cursor]
-
-    print(studies)
 
     sql__create_redcap_data = '''
         CREATE VIEW desc__redcap_data AS
         SELECT DISTINCT rd.*
         FROM warehouse_central.dbo.desc__redcap_data rd
-        JOIN warehouse_central.dbo.etl__redcap_project_mapping rpm
-            ON rpm.meta__redcap_instance_id = rd.meta__redcap_instance_id
-            AND rpm.redcap_project_id = rd.redcap_project_id
-        WHERE rpm.study_database = %(study_db)s
+        WHERE rd.meta__redcap_project_id IN ({meta__redcap_project_ids})
     '''
 
     sql__create_redcap_log = '''
         CREATE VIEW desc__redcap_log AS
         SELECT DISTINCT rl.*
         FROM warehouse_central.dbo.desc__redcap_log rl
-        JOIN warehouse_central.dbo.etl__redcap_project_mapping rpm
-            ON rpm.meta__redcap_instance_id = rl.meta__redcap_instance_id
-            AND rpm.redcap_project_id = rl.redcap_project_id
-        WHERE rpm.study_database = %(study_db)s
+        WHERE rl.meta__redcap_project_id IN ({meta__redcap_project_ids})
     '''
 
-    for study_db in studies:
-        logging.info(f'****************************** {study_db}')
+    with query_mssql_dict(DWH_CONNECTION_NAME, schema='warehouse_central', sql=sql__redcap_mappings) as cursor:
+        for study_db, fields in groupby(cursor, lambda r: r['study_database']):
 
-        execute_mssql(
-            DWH_CONNECTION_NAME,
-            schema=study_db,
-            sql=sql__create_redcap_data,
-            parameters={
-                'study_db': study_db,
-            },
-        )
+            meta__redcap_project_ids = [str(f['meta__redcap_project_id']) for f in fields]
 
-        execute_mssql(
-            DWH_CONNECTION_NAME,
-            schema=study_db,
-            sql=sql__create_redcap_log,
-            parameters={
-                'study_db': study_db,
-            },
-        )
+            logging.info(f'****************************** {study_db}')
+
+            execute_mssql(
+                DWH_CONNECTION_NAME,
+                schema=study_db,
+                sql=sql__create_redcap_data.format(meta__redcap_project_ids=', '.join(meta__redcap_project_ids)),
+            )
+
+            execute_mssql(
+                DWH_CONNECTION_NAME,
+                schema=study_db,
+                sql=sql__create_redcap_log.format(meta__redcap_project_ids=', '.join(meta__redcap_project_ids)),
+            )
 
     logging.info("_copy_civicrm: Ended")
 
@@ -67,31 +62,30 @@ def _copy_openspecimen():
     logging.info("_copy_openspecimen: Started")
 
     sql__os_mappings = '''
-        SELECT DISTINCT study_database
+        SELECT	study_database, collection_protocol_id
         FROM etl__openspecimen_mapping
+        ORDER BY study_database 
     '''
-
-    with query_mssql(DWH_CONNECTION_NAME, schema='warehouse_central', sql=sql__os_mappings) as cursor:
-        studies = [study_db for (study_db,) in cursor]
 
     sql__create_view = '''
         CREATE VIEW desc__openspecimen AS
         SELECT os.*
         FROM warehouse_central.dbo.desc__openspecimen os
-        JOIN warehouse_central.dbo.etl__openspecimen_mapping osm
-            ON osm.collection_protocol_id = os.collection_protocol_identifier
-        WHERE osm.study_database = %(study_db)s
+        WHERE collection_protocol_identifier IN ({collection_protocol_ids})
     '''
 
-    for study_db in studies:
-        logging.info(f'****************************** {study_db}')
+    with query_mssql_dict(DWH_CONNECTION_NAME, schema='warehouse_central', sql=sql__os_mappings) as cursor:
+        for study_db, fields in groupby(cursor, lambda r: r['study_database']):
 
-        execute_mssql(
-            DWH_CONNECTION_NAME,
-            schema=study_db,
-            sql=sql__create_view,
-            parameters={'study_db': study_db},
-        )
+            collection_protocol_ids = [str(f['collection_protocol_id']) for f in fields]
+
+            logging.info(f'****************************** {study_db}')
+
+            execute_mssql(
+                DWH_CONNECTION_NAME,
+                schema=study_db,
+                sql=sql__create_view.format(collection_protocol_ids=', '.join(collection_protocol_ids)),
+            )
 
     logging.info("_copy_openspecimen: Ended")
 
@@ -100,50 +94,47 @@ def _copy_civicrm():
     logging.info("_copy_civicrm: Started")
 
     sql__civicrm_mappings = '''
-        SELECT DISTINCT study_database FROM etl__civicrm_mapping
+        SELECT study_database, case_type_id
+        FROM etl__civicrm_mapping
+        ORDER BY study_database
     '''
-
-    with query_mssql(DWH_CONNECTION_NAME, schema='warehouse_central', sql=sql__civicrm_mappings) as cursor:
-        studies = [study_db for (study_db,) in cursor]
 
     sql__create_case = '''
         CREATE VIEW civicrm_case AS
         SELECT cc.*
         FROM warehouse_central.dbo.civicrm__case cc
-        JOIN warehouse_central.dbo.etl__civicrm_mapping cm
-            ON cm.case_type_id = cc.case_type_id
-        WHERE cm.study_database = %(study_db)s
+        WHERE cc.case_type_id IN ({case_type_ids})
     '''
 
     sql__create_contact = '''
         CREATE VIEW civicrm_contact AS
-        SELECT cc.*
-        FROM warehouse_central.dbo.civicrm__contact cc
-        WHERE cc.id IN (
-            SELECT ccase.contact_id
-            FROM warehouse_central.dbo.civicrm__case ccase
-            JOIN warehouse_central.dbo.etl__civicrm_mapping cm
-                ON cm.case_type_id = ccase.case_type_id
-            WHERE cm.case_type_id = %(study_db)s
+        SELECT con.*
+        FROM warehouse_central.dbo.civicrm__contact con
+        WHERE con.id IN (
+            SELECT cc.contact_id
+            FROM warehouse_central.dbo.civicrm__case cc
+            WHERE cc.case_type_id IN ({case_type_ids})
         )
     '''
 
-    for study_db in studies:
-        logging.info(f'****************************** {study_db}')
+    with query_mssql_dict(DWH_CONNECTION_NAME, schema='warehouse_central', sql=sql__civicrm_mappings) as cursor:
+        for study_db, fields in groupby(cursor, lambda r: r['study_database']):
 
-        execute_mssql(
-            DWH_CONNECTION_NAME,
-            schema=study_db,
-            sql=sql__create_case,
-            parameters={'study_db': study_db},
-        )
+            case_type_ids = [str(f['case_type_id']) for f in fields]
 
-        execute_mssql(
-            DWH_CONNECTION_NAME,
-            schema=study_db,
-            sql=sql__create_contact,
-            parameters={'study_db': study_db},
-        )
+            logging.info(f'****************************** {study_db}')
+
+            execute_mssql(
+                DWH_CONNECTION_NAME,
+                schema=study_db,
+                sql=sql__create_case.format(case_type_ids=', '.join(case_type_ids)),
+            )
+
+            execute_mssql(
+                DWH_CONNECTION_NAME,
+                schema=study_db,
+                sql=sql__create_contact.format(case_type_ids=', '.join(case_type_ids)),
+            )
 
     logging.info("_copy_civicrm: Ended")
 
