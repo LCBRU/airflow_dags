@@ -1,0 +1,20 @@
+{% if cursor | length > 0 %}
+    <h2>Missing Study OpenSpecimen</h2>
+    <p>
+        The following Openspecimen collection protocols 
+        are missing from the Study Data Warehouses
+        that are defined in etl__openspecimen_mapping
+    </p>
+    <ul>
+        {% for r in cursor %}
+            <li>
+                <dl>
+                    <dt>Study</dt>
+                    <dd>{{ r['study_database'] }}</dd>
+                    <dt>Collection Protocol</dt>
+                    <dd>{{ r['collection_protocol_title'] }} ({{ r['collection_protocol_id'] }})</dd>
+                </dl>
+            </li>
+        {% endfor %}
+    </ul>
+{% endif %}

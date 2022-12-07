@@ -15,17 +15,15 @@ def _log_dq_errors(**kwargs):
 
     run_id = kwargs['dag_run'].run_id
 
-    _run_dq_error(run_id, 'redcap_projects_unmapped')
-    _run_dq_error(run_id, 'initial_missing_study_warehouses')
-    _run_dq_error(run_id, 'initial_study_participant_count_check')
+    for f in (sql_path() / 'wh_central_merge_data/audit').iterdir():
+        if f.is_dir():
+            _run_dq_error(run_id, f)    
 
     logging.info("_log_dq_errors: Ended")
 
 
-def _run_dq_error(run_id, dq_folder):
+def _run_dq_error(run_id, folder):
     logging.info("_run_dq_error: Started")
-
-    folder = sql_path() / 'wh_central_merge_data/audit' / dq_folder
 
     environment = Environment(loader=FileSystemLoader(folder))
     template = environment.get_template('template.j2')
@@ -71,6 +69,17 @@ def _send_email(**kwargs):
         parameters={'run_id': kwargs['dag_run'].run_id},
     ) as cursor:
 
+        lines.append('''
+<style>
+    dl {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+    }
+    dt {
+        font-weight: bold;
+    }
+</style>
+        ''')
         lines.append("<h1>Data Warehousing Errors</h1>\n")
         lines.append("<p>The following errors were raised during data warehousing.</p>\n")
         lines.extend([r['error'] for r in cursor])

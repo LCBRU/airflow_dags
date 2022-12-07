@@ -1,0 +1,22 @@
+{% if cursor | length > 0 %}
+    <h2>Missing Study REDCap Data</h2>
+    <p>
+        The following REDCap projects are missing from the
+        desc__redcap_data in the Study Data Warehouses
+        that are defined in etl__redcap_project_mapping
+    </p>
+    <ul>
+        {% for r in cursor %}
+            <li>
+                <dl>
+                    <dt>Study</dt>
+                    <dd>{{ r['study_database'] }}</dd>
+                    <dt>REDCap</dt>
+                    <dd>{{ r['datalake_database'] }} - {{ r['project_name'] }} ({{ r['project_id'] }})</dd>
+                    <dt>REDCap Project ID</dt>
+                    <dd>{{ r['redcap_project_id'] }}</dd>
+                </dl>
+            </li>
+        {% endfor %}
+    </ul>
+{% endif %}

@@ -56,11 +56,13 @@ def query_mssql_dict(connection_name, schema=None, sql=None, file_path=None, par
     conn = mysql.get_conn()
     cursor = conn.cursor()
 
-    if sql is not None:
-        cursor.execute(sql, parameters)
-    elif file_path is not None:
+    if sql is None:
         with open(sql_path() / file_path) as sql_file:
-            cursor.execute(sql_file.read(), parameters)
+            sql = sql_file.read()
+
+    logging.info(sql)
+
+    cursor.execute(sql, parameters)
 
     schema = list(map(lambda schema_tuple: schema_tuple[0].replace(' ', '_'), cursor.description))
 
