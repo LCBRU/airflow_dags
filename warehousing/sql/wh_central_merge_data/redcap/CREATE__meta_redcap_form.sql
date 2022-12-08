@@ -23,10 +23,10 @@ BEGIN
             form_name
         FROM [?].dbo.redcap_metadata
     ) rf
-    JOIN warehouse_central.dbo.meta__redcap_instance ri
+    JOIN warehouse_central.dbo.cfg_redcap_instance ri
         ON ri.datalake_database = rf.datalake_database
     JOIN warehouse_central.dbo.meta__redcap_project rp
-        ON  rp.meta__redcap_instance_id = ri.id
+        ON  rp.cfg_redcap_instance_id = ri.id
         AND rp.redcap_project_id = rf.project_id
 END"
 

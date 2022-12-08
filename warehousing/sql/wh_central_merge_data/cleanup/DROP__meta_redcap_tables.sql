@@ -34,8 +34,5 @@ IF OBJECT_ID(N'meta__redcap_form') IS NOT NULL
 IF OBJECT_ID(N'meta__redcap_project') IS NOT NULL
     DROP TABLE meta__redcap_project
 
-IF OBJECT_ID(N'meta__redcap_instance') IS NOT NULL
-    DROP TABLE meta__redcap_instance
-
 IF OBJECT_ID(N'meta__redcap_data_type') IS NOT NULL
     DROP TABLE meta__redcap_data_type

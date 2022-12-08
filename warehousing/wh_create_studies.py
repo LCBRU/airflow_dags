@@ -12,13 +12,15 @@ def _copy_redcap():
 
     sql__redcap_mappings = '''
         SELECT
-            rpm.study_database,
+            dbo.study_database_name(s.name) AS study_database,
             mrp.id AS meta__redcap_project_id
-        FROM etl__redcap_project_mapping rpm
+        FROM cfg_redcap_mapping rpm
+        JOIN cfg_study s
+            ON s.id = rpm.cfg_study_id
         JOIN meta__redcap_project mrp
-            ON mrp.meta__redcap_instance_id = rpm.meta__redcap_instance_id
+            ON mrp.cfg_redcap_instance_id = rpm.cfg_redcap_instance_id
             AND mrp.redcap_project_id = rpm.redcap_project_id
-        ORDER BY rpm.study_database
+        ORDER BY s.name
         ;
     '''
 

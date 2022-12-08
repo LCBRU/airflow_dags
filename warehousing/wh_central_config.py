@@ -9,12 +9,14 @@ def _create_config():
     logging.info("_create_config: Started")
 
     for sql_file in [
+        'CREATE__cfg_study.sql',
+        'CREATE__cfg_redcap_instance.sql',
+        'CREATE__cfg_redcap_mapping.sql',
         'CREATE__etl_errors.sql',
-        'CREATE__cfg_wh_participant_identifier_type.sql',
-        'CREATE__cfg_wh_participant_source.sql',
-        'CREATE__cfg_wh_participant_identifier_table_columns.sql',
+        'CREATE__cfg_participant_identifier_type.sql',
+        'CREATE__cfg_participant_source.sql',
+        'CREATE__cfg_participant_identifier_table_columns.sql',
         'CREATE__cfg_openspecimen_study_mapping.sql',
-        'CREATE__cfg_wh_redcap_instance.sql',
     ]:
         logging.info(f'Running: {sql_file}')
 

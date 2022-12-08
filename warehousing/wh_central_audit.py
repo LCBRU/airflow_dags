@@ -1,5 +1,4 @@
 import logging
-from pathlib import Path
 from airflow.operators.python_operator import PythonOperator
 from airflow.utils.email import send_email
 from tools import create_sub_dag_task, execute_mssql, query_mssql_dict

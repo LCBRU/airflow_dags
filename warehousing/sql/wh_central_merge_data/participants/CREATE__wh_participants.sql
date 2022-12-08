@@ -8,6 +8,6 @@ CREATE TABLE wh_participants (
     INDEX idx__wh_participants__identifier (identifier, identifier_type_id),
     INDEX idx__wh_participants__source_identifier (source_identifier, source_type_id),
     UNIQUE(identifier, identifier_type_id, source_type_id, source_identifier),
-    FOREIGN KEY (identifier_type_id) REFERENCES cfg_wh_participant_identifier_type(id),
-    FOREIGN KEY (source_type_id) REFERENCES cfg_wh_participant_identifier_type(id),
+    FOREIGN KEY (identifier_type_id) REFERENCES cfg_participant_identifier_type(id),
+    FOREIGN KEY (source_type_id) REFERENCES cfg_participant_identifier_type(id),
 );

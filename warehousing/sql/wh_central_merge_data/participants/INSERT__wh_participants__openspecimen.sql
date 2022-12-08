@@ -1,7 +1,7 @@
 DECLARE @source_type_id INT
 
 SELECT @source_type_id = id
-FROM cfg_wh_participant_source
+FROM cfg_participant_source
 WHERE name = 'OpenSpecimen'
 
 INSERT INTO wh_participants(
@@ -18,7 +18,7 @@ SELECT DISTINCT
 FROM openspecimen__registration or2
 JOIN openspecimen__participant op
 	ON op.identifier = or2.participant_id
-JOIN cfg_wh_participant_identifier_type cwpit
+JOIN cfg_participant_identifier_type cwpit
 	ON cwpit.name = 'OpenSpecimen Participant ID'
 	
 UNION

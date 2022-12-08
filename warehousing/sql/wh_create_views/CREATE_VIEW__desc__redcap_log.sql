@@ -1,7 +1,7 @@
 CREATE OR ALTER VIEW desc__redcap_log AS
 SELECT
     rl.log_event_id,
-	mri.id AS meta__redcap_instance_id,
+	mri.id AS cfg_redcap_instance_id,
 	mri.datalake_database,
 	mrp.id AS meta__redcap_project_id,
 	mrp.redcap_project_id,
@@ -37,6 +37,6 @@ JOIN meta__redcap_arm mra
 	ON mra.id = mre.meta__redcap_arm_id 
 JOIN meta__redcap_project mrp 
 	ON mrp.id = mra.meta__redcap_project_id 
-JOIN meta__redcap_instance mri 
-	ON mri.id = mrp.meta__redcap_instance_id
+JOIN cfg_redcap_instance mri 
+	ON mri.id = mrp.cfg_redcap_instance_id
 ;

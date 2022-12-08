@@ -22,10 +22,10 @@ BEGIN
         rea.arm_num,
         rea.arm_name 
     FROM [?].dbo.redcap_events_arms rea 
-    JOIN warehouse_central.dbo.meta__redcap_instance mri
+    JOIN warehouse_central.dbo.cfg_redcap_instance mri
         ON mri.datalake_database = '?'
     JOIN warehouse_central.dbo.meta__redcap_project mrp 
-        ON mrp.meta__redcap_instance_id = mri.id 
+        ON mrp.cfg_redcap_instance_id = mri.id 
         AND mrp.redcap_project_id = rea.project_id 
 END"
 

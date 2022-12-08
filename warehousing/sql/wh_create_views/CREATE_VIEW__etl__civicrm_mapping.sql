@@ -4,6 +4,6 @@ SELECT
 	s.name AS study_name,
     dbo.study_database_name(s.name) AS study_database
 FROM cfg_civicrm_study_mapping ccsm
-JOIN datalake_identity.dbo.study s
+JOIN cfg_study s
     ON s.id = ccsm.study_id
 ;

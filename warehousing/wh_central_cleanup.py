@@ -10,10 +10,10 @@ def _create_cleanup():
 
     for sql_file in [
         'DROP__Participants.sql',
-        'DROP__Config.sql',
         'DROP__Civicrm.sql',
         'DROP__OpenSpecimen.sql',
         'DROP__meta_redcap_tables.sql',
+        'DROP__Config.sql',
     ]:
         logging.info(f'Running: {sql_file}')
 

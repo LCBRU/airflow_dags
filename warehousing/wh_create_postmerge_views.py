@@ -14,9 +14,6 @@ def _create_views():
         'CREATE_VIEW__desc__redcap_log.sql',
         'CREATE_VIEW__desc__redcap_data.sql',
         'CREATE_VIEW__desc__openspecimen.sql',
-        'CREATE_VIEW__dq__redcap_projects_unmapped.sql',
-        'CREATE_VIEW__dq__redcap_projects_without_ids.sql',
-        'CREATE_VIEW__dq__redcap_data__duplicates.sql',
     ]:
         logging.info(f'Running: {sql_file}')
 

@@ -10,9 +10,9 @@ SELECT
 	mrf2.ordinal AS field_ordinal,
 	mrdt.element_type,
 	mrdt.element_validation_type
-FROM warehouse_central.dbo.meta__redcap_instance mri 
+FROM warehouse_central.dbo.cfg_redcap_instance mri 
 JOIN warehouse_central.dbo.meta__redcap_project mrp 
-	ON mrp.meta__redcap_instance_id = mri.id 
+	ON mrp.cfg_redcap_instance_id = mri.id 
 JOIN warehouse_central.dbo.meta__redcap_form mrf 
 	ON mrf.meta__redcap_project_id = mrp.id
 JOIN warehouse_central.dbo.meta__redcap_form_section mrfs 

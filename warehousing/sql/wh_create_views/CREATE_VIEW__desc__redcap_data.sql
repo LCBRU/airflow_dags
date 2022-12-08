@@ -1,7 +1,7 @@
 CREATE OR ALTER VIEW desc__redcap_data AS
 SELECT
 	rv.id,
-	rv.meta__redcap_instance_id,
+	rv.cfg_redcap_instance_id,
 	mri.datalake_database,
 	rv.meta__redcap_project_id,
 	mrp.name project_name,
@@ -40,8 +40,8 @@ SELECT
 	rv.decimal_value,
 	rv.boolean_value
 FROM warehouse_central.dbo.redcap_data rv
-JOIN warehouse_central.dbo.meta__redcap_instance mri 
-	ON mri.id = rv.meta__redcap_instance_id
+JOIN warehouse_central.dbo.cfg_redcap_instance mri 
+	ON mri.id = rv.cfg_redcap_instance_id
 JOIN warehouse_central.dbo.meta__redcap_project mrp 
 	ON mrp.id = rv.meta__redcap_project_id
 JOIN warehouse_central.dbo.meta__redcap_arm mra 

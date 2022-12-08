@@ -23,7 +23,6 @@ END"
 
 SELECT
 	om.study_database,
-	om.collection_protocol_title,
 	om.collection_protocol_id
 FROM etl__openspecimen_mapping om
 LEFT JOIN #stats s

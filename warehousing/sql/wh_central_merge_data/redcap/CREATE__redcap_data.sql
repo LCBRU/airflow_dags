@@ -2,7 +2,7 @@ SET QUOTED_IDENTIFIER OFF;
 
 CREATE TABLE dbo.redcap_data (
     id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
-    meta__redcap_instance_id INT NOT NULL,
+    cfg_redcap_instance_id INT NOT NULL,
     meta__redcap_project_id INT NOT NULL,
     meta__redcap_arm_id INT NOT NULL,
     meta__redcap_event_id INT NOT NULL,
@@ -21,7 +21,7 @@ CREATE TABLE dbo.redcap_data (
     int_value INT NULL,
     decimal_value DECIMAL(38,6) NULL,
     boolean_value BIT NULL,
-    FOREIGN KEY (meta__redcap_instance_id) REFERENCES meta__redcap_instance(id),
+    FOREIGN KEY (cfg_redcap_instance_id) REFERENCES cfg_redcap_instance(id),
     FOREIGN KEY (meta__redcap_project_id) REFERENCES meta__redcap_project(id),
     FOREIGN KEY (meta__redcap_arm_id) REFERENCES meta__redcap_arm(id),
     FOREIGN KEY (meta__redcap_event_id) REFERENCES meta__redcap_event(id),
@@ -32,7 +32,7 @@ CREATE TABLE dbo.redcap_data (
     FOREIGN KEY (meta__redcap_field_enum_id) REFERENCES meta__redcap_field_enum(id),
     FOREIGN KEY (meta__redcap_data_type_id) REFERENCES meta__redcap_data_type(id),
     FOREIGN KEY (redcap_file_id) REFERENCES redcap_file(id),
-    INDEX idx__redcap_data__meta__redcap_instance_id (meta__redcap_instance_id),
+    INDEX idx__redcap_data__cfg_redcap_instance_id (cfg_redcap_instance_id),
     INDEX idx__redcap_data__meta__redcap_project_id (meta__redcap_project_id),
     INDEX idx__redcap_data__meta__redcap_arm_id (meta__redcap_arm_id),
     INDEX idx__redcap_data__meta__redcap_event_id (meta__redcap_event_id),
@@ -45,8 +45,25 @@ CREATE TABLE dbo.redcap_data (
     INDEX idx__redcap_data__redcap_file_id (redcap_file_id),
 );
 
+SET NOCOUNT ON;
+DECLARE @SQL NVARCHAR(MAX)
+DECLARE @database_name VARCHAR(255)
+DECLARE @cfg_redcap_instance_id INT
+
+DECLARE TABLE_CURSOR CURSOR
+    LOCAL STATIC READ_ONLY FORWARD_ONLY
+FOR
+	SELECT id, datalake_database
+	FROM cfg_redcap_instance 
+
+OPEN TABLE_CURSOR
+FETCH NEXT FROM TABLE_CURSOR INTO @cfg_redcap_instance_id, @database_name
+WHILE @@FETCH_STATUS = 0
+BEGIN
+
+    SELECT @SQL = '
 INSERT INTO warehouse_central.dbo.redcap_data (
-    meta__redcap_instance_id,
+    cfg_redcap_instance_id,
     meta__redcap_project_id,
     meta__redcap_arm_id,
     meta__redcap_event_id,
@@ -58,7 +75,7 @@ INSERT INTO warehouse_central.dbo.redcap_data (
     [instance],
     text_value
 )
-SELECT
+SELECT DISTINCT
     mri.id,
     mrp.id,
     mra.id,
@@ -70,14 +87,11 @@ SELECT
     rp.id,
     ISNULL(rd.[instance], 1),
     rd.value
-FROM (
-    SELECT DISTINCT *
-    FROM warehouse_central.dbo.merged__redcap_data
-) rd 
-JOIN warehouse_central.dbo.meta__redcap_instance mri 
-    ON mri.datalake_database = rd.datalake_database
+FROM ' + @database_name + '.dbo.redcap_data rd
+JOIN warehouse_central.dbo.cfg_redcap_instance mri 
+    ON mri.id = ' + CONVERT(NVARCHAR(10), @cfg_redcap_instance_id) + '
 JOIN warehouse_central.dbo.meta__redcap_project mrp 
-    ON mrp.meta__redcap_instance_id = mri.id 
+    ON mrp.cfg_redcap_instance_id = mri.id 
     AND mrp.redcap_project_id = rd.project_id 
 JOIN warehouse_central.dbo.meta__redcap_arm mra 
     ON mra.meta__redcap_project_id = mrp.id 
@@ -96,6 +110,14 @@ JOIN warehouse_central.dbo.meta__redcap_data_type mrdt
 JOIN warehouse_central.dbo.redcap_participant rp 
     ON rp.meta__redcap_project_id = mrp.id 
     AND rp.record = rd.record
+'
+
+    EXEC sp_executesql @SQL
+
+	FETCH NEXT FROM TABLE_CURSOR INTO @cfg_redcap_instance_id, @database_name
+END
+CLOSE TABLE_CURSOR
+DEALLOCATE TABLE_CURSOR
 
 UPDATE warehouse_central.dbo.redcap_data
 SET datetime_value = CASE WHEN rdt.is_datetime = 1 THEN TRY_CONVERT(DATETIME2, rv.text_value, rdt.datetime_format) END,
@@ -122,7 +144,7 @@ LEFT JOIN warehouse_central.dbo.meta__redcap_field_enum mrfe
     ON mrfe.meta__redcap_field_id = rv.meta__redcap_field_id 
     AND mrfe.value = rv.text_value
 LEFT JOIN warehouse_central.dbo.redcap_file rf 
-    ON rf.meta__redcap_instance_id = rv.meta__redcap_instance_id 
+    ON rf.cfg_redcap_instance_id = rv.cfg_redcap_instance_id 
     AND rf.doc_id = TRY_CONVERT(INT, rv.text_value)
     AND rdt.is_file = 1
 

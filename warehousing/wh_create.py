@@ -56,8 +56,6 @@ def create_warehouse(dag):
     update_statistics = _create_update_statistics(parent_subdag.subdag)
     email_audit = create_wh_central_audit(parent_subdag.subdag)
 
-    wh_create_cleanup >> wh_create_config >> wh_create_premerge_views >> wh_central_merge_data >> wh_central_merge_participants >> wh_create_postmerge_views >> wh_create_studies >> update_statistics
+    wh_create_cleanup >> wh_create_config >> wh_create_premerge_views >> wh_central_merge_data >> wh_central_merge_participants >> wh_create_postmerge_views >> wh_create_studies >> update_statistics >> email_audit
 
     return parent_subdag
-    
-

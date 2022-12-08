@@ -1,6 +1,6 @@
 CREATE UNIQUE INDEX uidx__redcap_data__unique_observations
 ON redcap_data (
-    meta__redcap_instance_id,
+    cfg_redcap_instance_id,
     meta__redcap_project_id,
     meta__redcap_arm_id,
     meta__redcap_event_id,

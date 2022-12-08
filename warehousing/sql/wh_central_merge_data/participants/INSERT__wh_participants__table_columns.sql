@@ -10,7 +10,7 @@ DECLARE TABLE_CURSOR CURSOR
     LOCAL STATIC READ_ONLY FORWARD_ONLY
 FOR 
 SELECT identifier_type_id, source_type_id, table_name, identifier_column_name, source_identifier_column_name  
-FROM warehouse_central.dbo.cfg_wh_participant_identifier_table_columns
+FROM warehouse_central.dbo.cfg_participant_identifier_table_columns
 
 OPEN TABLE_CURSOR
 FETCH NEXT FROM TABLE_CURSOR INTO @identifier_type_id, @source_type_id, @table_name, @identifier_column_name, @source_identifier_column_name

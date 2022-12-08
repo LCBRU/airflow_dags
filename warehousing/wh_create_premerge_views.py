@@ -11,10 +11,7 @@ def _create_views():
     for sql_file in [
         'CREATE__strip_characters.sql',
         'CREATE__study_database_name.sql',
-        'CREATE_VIEW__merged__redcap_data.sql',
-        'CREATE_VIEW__merged__redcap_metadata.sql',
         'CREATE_VIEW__merged__redcap_project.sql',
-        'CREATE_VIEW__etl__redcap_project_mapping.sql',
         'CREATE_VIEW__etl__openspecimen_mapping.sql',
         'CREATE_VIEW__etl__civicrm_mapping.sql',
         'CREATE_VIEW__etl__civicrm_custom.sql',

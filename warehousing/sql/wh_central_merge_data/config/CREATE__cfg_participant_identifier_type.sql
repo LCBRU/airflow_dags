@@ -1,17 +1,17 @@
-CREATE TABLE cfg_wh_participant_identifier_type (
+CREATE TABLE cfg_participant_identifier_type (
 	id int IDENTITY(1,1) NOT NULL PRIMARY KEY,
 	name nvarchar(500),
-	INDEX idx__cfg_wh_participant_identifier_type__name (name),
+	INDEX idx__cfg_participant_identifier_type__name (name),
 );
 
 -- NHS IDs
-INSERT INTO cfg_wh_participant_identifier_type (name) VALUES
+INSERT INTO cfg_participant_identifier_type (name) VALUES
 	(N'UHL_NUMBER'),
 	(N'uhl_system_number'),
 	(N'nhs_number');
 
 -- Study IDs
-INSERT INTO cfg_wh_participant_identifier_type (name) VALUES
+INSERT INTO cfg_participant_identifier_type (name) VALUES
 	(N'alleviate_id'),
 	(N'amaze_id'),
 	(N'AS_PROGRESSION_ID'),
@@ -86,11 +86,11 @@ INSERT INTO cfg_wh_participant_identifier_type (name) VALUES
 	(N'yoga_id');
 
 -- CiviCRM IDs
-INSERT INTO cfg_wh_participant_identifier_type (name) VALUES
+INSERT INTO cfg_participant_identifier_type (name) VALUES
 	(N'CiviCRM Case ID'),
 	(N'CiviCRM Contact ID');
 
 -- OpenSpecimen
-INSERT INTO cfg_wh_participant_identifier_type (name) VALUES
+INSERT INTO cfg_participant_identifier_type (name) VALUES
 	(N'OpenSpecimen Participant ID');
 

@@ -34,10 +34,10 @@ BEGIN
                 ''
             ) AS element_preceding_header
         FROM [?].dbo.redcap_metadata arm
-        JOIN warehouse_central.dbo.meta__redcap_instance ri
+        JOIN warehouse_central.dbo.cfg_redcap_instance ri
             ON ri.datalake_database = '?'
         JOIN warehouse_central.dbo.meta__redcap_project rp
-            ON  rp.meta__redcap_instance_id = ri.id
+            ON  rp.cfg_redcap_instance_id = ri.id
             AND rp.redcap_project_id = arm.project_id
         JOIN warehouse_central.dbo.meta__redcap_form rf
             ON rf.name = arm.form_name
