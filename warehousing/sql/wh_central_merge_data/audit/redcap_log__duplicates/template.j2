@@ -1,0 +1,38 @@
+{% if cursor | length > 0 %}
+    <h2>REDCap Log Duplicates</h2>
+    <p>
+        The following duplicates have been found in the REDCap log.
+    </p>
+    <table>
+        <thead>
+            <tr>
+                <th>Log Event ID</th>
+                <th>Action</th>
+                <th>Datalake Database</th>
+                <th>REDCap Project ID</th>
+                <th>Arm</th>
+                <th>Event</th>
+                <th>Record</th>
+                <th>Field</th>
+                <th>Instance</th>
+                <th>Value</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in cursor %}
+                <tr>
+                    <td>{{ r['log_event_id'] }}</td>
+                    <td>{{ r['action_description'] }}</td>
+                    <td>{{ r['datalake_database'] }}</td>
+                    <td>{{ r['redcap_project_id'] }}</td>
+                    <td>{{ r['arm_name'] }}</td>
+                    <td>{{ r['event_name'] }}</td>
+                    <td>{{ r['record'] }}</td>
+                    <td>{{ r['field_name'] }}</td>
+                    <td>{{ r['instance'] }}</td>
+                    <td>{{ r['data_value'] }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endif %}

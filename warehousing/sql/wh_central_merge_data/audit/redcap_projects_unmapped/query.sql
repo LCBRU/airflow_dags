@@ -12,8 +12,10 @@ JOIN (
     
     EXCEPT
     
-    SELECT datalake_database, redcap_project_id
-    FROM etl__redcap_project_mapping
+    SELECT cri.datalake_database, crm.redcap_project_id
+    FROM cfg_redcap_mapping crm
+    JOIN cfg_redcap_instance cri
+    	ON cri.id = crm.cfg_redcap_instance_id 
 ) o ON o.datalake_database = crp.datalake_database
     AND o.project_id = crp.project_id
 ;

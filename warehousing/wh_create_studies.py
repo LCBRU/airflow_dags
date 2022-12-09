@@ -64,9 +64,13 @@ def _copy_openspecimen():
     logging.info("_copy_openspecimen: Started")
 
     sql__os_mappings = '''
-        SELECT	study_database, collection_protocol_id
-        FROM etl__openspecimen_mapping
-        ORDER BY study_database 
+        SELECT
+        	dbo.study_database_name(cs.name) study_database,
+        	cosm.collection_protocol_id
+        FROM cfg_openspecimen_study_mapping cosm
+        JOIN cfg_study cs
+        	ON cs.id  = cosm.study_id
+        ORDER BY cs.name
     '''
 
     sql__create_view = '''
@@ -96,9 +100,13 @@ def _copy_civicrm():
     logging.info("_copy_civicrm: Started")
 
     sql__civicrm_mappings = '''
-        SELECT study_database, case_type_id
-        FROM etl__civicrm_mapping
-        ORDER BY study_database
+        SELECT
+            dbo.study_database_name(cs.name) study_database,
+            ccsm.case_type_id
+        FROM cfg_civicrm_study_mapping ccsm
+        JOIN cfg_study cs
+            ON cs.id = ccsm.study_id
+        ORDER BY cs.name
     '''
 
     sql__create_case = '''
@@ -147,10 +155,13 @@ def _copy_civicrm_custom():
     sql__custom_table_mappings = '''
         SELECT
             ecc.warehouse_table_name,
-            ecm.study_database
+            dbo.study_database_name(cs.name) study_database
         FROM etl__civicrm_custom ecc
-        JOIN etl__civicrm_mapping ecm 
-            ON ecm.case_type_id = ecc.case_type_id
+        JOIN cfg_civicrm_study_mapping ccsm
+        	ON ccsm.case_type_id = ecc.case_type_id
+        JOIN cfg_study cs
+        	ON cs.id = ccsm.study_id 
+
     '''
 
     with query_mssql(DWH_CONNECTION_NAME, schema='warehouse_central', sql=sql__custom_table_mappings) as cursor:

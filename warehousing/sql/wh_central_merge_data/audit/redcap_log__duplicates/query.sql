@@ -1,4 +1,3 @@
-CREATE OR ALTER VIEW dq__redcap_log__duplicates AS
 SELECT rl.*
 FROM desc__redcap_log rl
 JOIN (

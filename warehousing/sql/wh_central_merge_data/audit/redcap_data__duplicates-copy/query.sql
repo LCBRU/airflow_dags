@@ -1,9 +1,8 @@
-CREATE OR ALTER VIEW dq__redcap_data__duplicates AS
 SELECT rv.*
 FROM desc__redcap_data rv
 JOIN (
 	SELECT 
-        meta__redcap_instance_id,
+        cfg_redcap_instance_id,
         meta__redcap_project_id,
         meta__redcap_arm_id,
         meta__redcap_event_id,
@@ -15,7 +14,7 @@ JOIN (
         instance
 	FROM redcap_data
 	GROUP BY
-        meta__redcap_instance_id,
+        cfg_redcap_instance_id,
         meta__redcap_project_id,
         meta__redcap_arm_id,
         meta__redcap_event_id,
@@ -27,7 +26,7 @@ JOIN (
         instance
 	HAVING COUNT(*) > 1
 ) dups
-	ON dups.meta__redcap_instance_id = rv.meta__redcap_instance_id
+	ON dups.cfg_redcap_instance_id = rv.cfg_redcap_instance_id
 	AND dups.meta__redcap_project_id = rv.meta__redcap_project_id
 	AND dups.meta__redcap_arm_id = rv.meta__redcap_arm_id
 	AND dups.meta__redcap_event_id = rv.meta__redcap_event_id

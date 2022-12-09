@@ -93,9 +93,11 @@ BEGIN
         AND pk IS NOT NULL
         AND event_id IS NOT NULL
         AND project_id IN (
-            SELECT DISTINCT redcap_project_id
-            FROM warehouse_central.dbo.etl__redcap_project_mapping
-            WHERE datalake_database = '?'
+            SELECT DISTINCT crm.redcap_project_id
+            FROM warehouse_central.dbo.cfg_redcap_mapping crm
+            JOIN warehouse_central.dbo.cfg_redcap_instance cri
+                ON cri.id = crm.cfg_redcap_instance_id
+            WHERE cri.datalake_database = '?'
         )
 END"
 

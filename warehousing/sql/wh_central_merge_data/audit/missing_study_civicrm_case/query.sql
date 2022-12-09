@@ -22,12 +22,14 @@ BEGIN
 END"
 
 SELECT
-	cm.study_database,
-	cm.case_type_id
-FROM etl__civicrm_mapping cm
+	dbo.study_database_name(cs.name) study_database,
+	ccsm.case_type_id
+FROM cfg_civicrm_study_mapping ccsm
+JOIN cfg_study cs
+	ON cs.id = ccsm.study_id 
 LEFT JOIN #stats s
-	ON s.case_type_id = cm.case_type_id 
-	AND s.study_wh_database = cm.study_database
+	ON s.case_type_id = ccsm.case_type_id 
+	AND s.study_wh_database = dbo.study_database_name(cs.name)
 ;
 
 DROP TABLE #stats;

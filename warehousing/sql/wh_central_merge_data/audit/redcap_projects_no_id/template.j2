@@ -1,22 +1,23 @@
 {% if cursor | length > 0 %}
-    <h2>REDCap Unmapped Projects</h2>
+    <h2>REDCap Projects without ID</h2>
     <p>
-        The following REDCap project have not been mapped to a study.
-        Either map the project to a study in the Identity tool.
-        table, or set the REDCap status to other than Online (1).
+        The following REDCap projects have no mapped IDs defined m
+        redcap_project_participant_identifier.
     </p>
     <table>
         <thead>
             <tr>
                 <th>Datalake Database</th>
-                <th>Project Name</th>
-                <th>Project ID</th>
+                <th>REDCap Project ID</th>
+                <th>Project</th>
+                <th>REDCap Project ID</th>
             </tr>
         </thead>
         <tbody>
             {% for r in cursor %}
                 <tr>
                     <td>{{ r['datalake_database'] }}</td>
+                    <td>{{ r['redcap_project_id'] }}</td>
                     <td>{{ r['project_name'] }}</td>
                     <td>{{ r['project_id'] }}</td>
                 </tr>
