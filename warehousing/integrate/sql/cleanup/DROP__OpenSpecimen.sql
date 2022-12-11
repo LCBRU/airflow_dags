@@ -18,6 +18,3 @@ IF OBJECT_ID(N'openspecimen__collection_protocol') IS NOT NULL
 
 IF OBJECT_ID(N'openspecimen__nanodrop') IS NOT NULL
     DROP TABLE openspecimen__nanodrop;
-
-IF OBJECT_ID(N'cfg_openspecimen_study_mapping') IS NOT NULL
-    DROP TABLE cfg_openspecimen_study_mapping;

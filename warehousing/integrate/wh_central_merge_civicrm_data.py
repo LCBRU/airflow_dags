@@ -18,7 +18,7 @@ def _create_merge_civicrm_data_dag(dag):
     create_cases = MsSqlOperator(
         task_id='CREATE__Civicrm_Case',
         mssql_conn_id=DWH_CONNECTION_NAME,
-        sql="sql/wh_central_merge_data/civicrm/CREATE__Civicrm_Case.sql",
+        sql="integrate/sql/civicrm/CREATE__Civicrm_Case.sql",
         autocommit=True,
         database='warehouse_central',
         dag=parent_subdag.subdag,
@@ -27,7 +27,7 @@ def _create_merge_civicrm_data_dag(dag):
     create_contacts = MsSqlOperator(
         task_id='CREATE__Civicrm_Contact',
         mssql_conn_id=DWH_CONNECTION_NAME,
-        sql="sql/wh_central_merge_data/civicrm/CREATE__Civicrm_Contact.sql",
+        sql="integrate/sql/civicrm/CREATE__Civicrm_Contact.sql",
         autocommit=True,
         database='warehouse_central',
         dag=parent_subdag.subdag,
@@ -101,7 +101,7 @@ def _copy_custom():
 
 
 def create_wh_central_merge_civicrm_data_dag(dag):
-    parent_subdag = create_sub_dag_task(dag, 'wh_central_merge_civicrm_data')
+    parent_subdag = create_sub_dag_task(dag, 'merge_civicrm_data')
 
     merge = _create_merge_civicrm_data_dag(dag=parent_subdag.subdag)
 

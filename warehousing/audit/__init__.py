@@ -1,9 +1,9 @@
 import logging
+from pathlib import Path
 from airflow.operators.python_operator import PythonOperator
 from airflow.utils.email import send_email
 from tools import create_sub_dag_task, execute_mssql, query_mssql_dict
 from jinja2 import Environment, FileSystemLoader
-from warehousing import sql_path
 
 
 DWH_CONNECTION_NAME = 'DWH'
@@ -14,7 +14,7 @@ def _log_dq_errors(**kwargs):
 
     run_id = kwargs['dag_run'].run_id
 
-    for f in (sql_path() / 'wh_central_merge_data/audit').iterdir():
+    for f in (Path(__file__).parent.absolute() / 'jobs').iterdir():
         if f.is_dir():
             _run_dq_error(run_id, f)    
 
@@ -93,7 +93,7 @@ def _send_email(**kwargs):
 
 
 def create_wh_central_audit(dag):
-    parent_subdag = create_sub_dag_task(dag, 'wh_central_audit')
+    parent_subdag = create_sub_dag_task(dag, 'audit_report')
 
     log_dq_errors = PythonOperator(
         task_id="log_dq_errors",
@@ -102,7 +102,7 @@ def create_wh_central_audit(dag):
     )
 
     send_email = PythonOperator(
-        task_id="_send_email",
+        task_id="send_email",
         python_callable=_send_email,
         dag=parent_subdag.subdag,
     )

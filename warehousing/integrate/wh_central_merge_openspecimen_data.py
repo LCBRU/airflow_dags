@@ -11,7 +11,7 @@ def _create_merge_openspecimen_dag(dag):
     create__collection_protocol = MsSqlOperator(
         task_id='CREATE__Collection_Protocol',
         mssql_conn_id=DWH_CONNECTION_NAME,
-        sql="sql/wh_central_merge_data/openspecimen/CREATE__Collection_Protocol.sql",
+        sql="integrate/sql/openspecimen/CREATE__Collection_Protocol.sql",
         autocommit=True,
         database='warehouse_central',
         dag=dag,
@@ -20,7 +20,7 @@ def _create_merge_openspecimen_dag(dag):
     create__participant = MsSqlOperator(
         task_id='CREATE__participant',
         mssql_conn_id=DWH_CONNECTION_NAME,
-        sql="sql/wh_central_merge_data/openspecimen/CREATE__Participant.sql",
+        sql="integrate/sql/openspecimen/CREATE__Participant.sql",
         autocommit=True,
         database='warehouse_central',
         dag=dag,
@@ -29,7 +29,7 @@ def _create_merge_openspecimen_dag(dag):
     create__registration = MsSqlOperator(
         task_id='CREATE__registration',
         mssql_conn_id=DWH_CONNECTION_NAME,
-        sql="sql/wh_central_merge_data/openspecimen/CREATE__Registration.sql",
+        sql="integrate/sql/openspecimen/CREATE__Registration.sql",
         autocommit=True,
         database='warehouse_central',
         dag=dag,
@@ -38,7 +38,7 @@ def _create_merge_openspecimen_dag(dag):
     create__event = MsSqlOperator(
         task_id='CREATE__event',
         mssql_conn_id=DWH_CONNECTION_NAME,
-        sql="sql/wh_central_merge_data/openspecimen/CREATE__Event.sql",
+        sql="integrate/sql/openspecimen/CREATE__Event.sql",
         autocommit=True,
         database='warehouse_central',
         dag=dag,
@@ -47,7 +47,7 @@ def _create_merge_openspecimen_dag(dag):
     create__specimen_group = MsSqlOperator(
         task_id='CREATE__specimen_group',
         mssql_conn_id=DWH_CONNECTION_NAME,
-        sql="sql/wh_central_merge_data/openspecimen/CREATE__Specimen_Group.sql",
+        sql="integrate/sql/openspecimen/CREATE__Specimen_Group.sql",
         autocommit=True,
         database='warehouse_central',
         dag=dag,
@@ -56,7 +56,7 @@ def _create_merge_openspecimen_dag(dag):
     create__specimen = MsSqlOperator(
         task_id='CREATE__specimen',
         mssql_conn_id=DWH_CONNECTION_NAME,
-        sql="sql/wh_central_merge_data/openspecimen/CREATE__Specimen.sql",
+        sql="integrate/sql/openspecimen/CREATE__Specimen.sql",
         autocommit=True,
         database='warehouse_central',
         dag=dag,
@@ -65,7 +65,7 @@ def _create_merge_openspecimen_dag(dag):
     create__nanodrop = MsSqlOperator(
         task_id='CREATE__Nanodrop',
         mssql_conn_id=DWH_CONNECTION_NAME,
-        sql="sql/wh_central_merge_data/openspecimen/CREATE__Nanodrop.sql",
+        sql="integrate/sql/openspecimen/CREATE__Nanodrop.sql",
         autocommit=True,
         database='warehouse_central',
         dag=dag,
@@ -79,7 +79,7 @@ def _create_merge_openspecimen_dag(dag):
 
 
 def create_wh_central_merge_openspecimen_data_dag(dag):
-    parent_subdag = create_sub_dag_task(dag, 'wh_central_merge_openspecimen_data')
+    parent_subdag = create_sub_dag_task(dag, 'merge_openspecimen_data')
 
     _create_merge_openspecimen_dag(dag=parent_subdag.subdag)
 

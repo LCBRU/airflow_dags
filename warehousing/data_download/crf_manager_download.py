@@ -134,7 +134,7 @@ def create_download_crf_manager_studies(dag):
     parent_subdag = create_sub_dag_task(dag, 'download_crfm_studies', run_on_failures=True)
 
     PythonOperator(
-        task_id=f"download_crfm_studies",
+        task_id=f"download_crf_manager_studies",
         python_callable=_download_crf_manager_studies,
         dag=parent_subdag.subdag,
     )

@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 from tools import create_sub_dag_task, execute_mssql
 from airflow.operators.python_operator import PythonOperator
 
@@ -23,14 +24,14 @@ def _create_config():
         execute_mssql(
             DWH_CONNECTION_NAME,
             schema='warehouse_central',
-            file_path=f'wh_central_merge_data/config/{sql_file}',
+            file_path=Path(__file__).parent.absolute() / 'sql' / sql_file,
         )
 
     logging.info("_create_config: Ended")
 
 
 def create_wh_central_config(dag):
-    parent_subdag = create_sub_dag_task(dag, 'wh_central_config')
+    parent_subdag = create_sub_dag_task(dag, 'initialise_config')
 
     PythonOperator(
         task_id="create_config",

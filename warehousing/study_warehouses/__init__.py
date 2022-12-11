@@ -1,5 +1,6 @@
 from itertools import groupby
 import logging
+from pathlib import Path
 from airflow.operators.mssql_operator import MsSqlOperator
 from airflow.operators.python_operator import PythonOperator
 from tools import create_sub_dag_task, query_mssql, execute_mssql, query_mssql_dict
@@ -65,11 +66,11 @@ def _copy_openspecimen():
 
     sql__os_mappings = '''
         SELECT
-        	dbo.study_database_name(cs.name) study_database,
-        	cosm.collection_protocol_id
+            dbo.study_database_name(cs.name) study_database,
+            cosm.collection_protocol_id
         FROM cfg_openspecimen_study_mapping cosm
         JOIN cfg_study cs
-        	ON cs.id  = cosm.study_id
+            ON cs.id  = cosm.study_id
         ORDER BY cs.name
     '''
 
@@ -158,9 +159,9 @@ def _copy_civicrm_custom():
             dbo.study_database_name(cs.name) study_database
         FROM etl__civicrm_custom ecc
         JOIN cfg_civicrm_study_mapping ccsm
-        	ON ccsm.case_type_id = ecc.case_type_id
+            ON ccsm.case_type_id = ecc.case_type_id
         JOIN cfg_study cs
-        	ON cs.id = ccsm.study_id 
+            ON cs.id = ccsm.study_id 
 
     '''
 
@@ -191,7 +192,7 @@ def _create_study_whs(dag):
     create_study_wh_dbs = MsSqlOperator(
         task_id='create_study_wh_dbs',
         mssql_conn_id=DWH_CONNECTION_NAME,
-        sql="sql/wh_create_studies/CREATE__warehouse_databases.sql",
+        sql='study_warehouses/sql/CREATE__warehouse_databases.sql',
         autocommit=True,
         dag=dag,
         database='warehouse_central',
@@ -227,7 +228,7 @@ def _create_study_whs(dag):
 
 
 def create_wh_create_studies(dag):
-    parent_subdag = create_sub_dag_task(dag, 'wh_create_studies')
+    parent_subdag = create_sub_dag_task(dag, 'create_study_warehouses')
 
     _create_study_whs(dag=parent_subdag.subdag)
 

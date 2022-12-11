@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 from airflow.operators.python_operator import PythonOperator
 from tools import create_sub_dag_task, execute_mssql
 
@@ -19,14 +20,14 @@ def _create_views():
         execute_mssql(
             DWH_CONNECTION_NAME,
             schema='warehouse_central',
-            file_path=f'wh_create_views/{sql_file}',
+            file_path=Path(__file__).parent.absolute() / 'sql/pre_views' / sql_file,
         )
 
     logging.info("_create_views: Ended")
 
 
 def create_wh_create_premerge_views(dag):
-    parent_subdag = create_sub_dag_task(dag, 'wh_create_premerge_views')
+    parent_subdag = create_sub_dag_task(dag, 'premerge_views')
 
     PythonOperator(
         task_id="create_views",

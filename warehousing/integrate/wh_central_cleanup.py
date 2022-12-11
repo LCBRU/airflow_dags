@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 from tools import create_sub_dag_task, execute_mssql
 from airflow.operators.python_operator import PythonOperator
 
@@ -13,14 +14,13 @@ def _create_cleanup():
         'DROP__Civicrm.sql',
         'DROP__OpenSpecimen.sql',
         'DROP__meta_redcap_tables.sql',
-        'DROP__Config.sql',
     ]:
         logging.info(f'Running: {sql_file}')
 
         execute_mssql(
             DWH_CONNECTION_NAME,
             schema='warehouse_central',
-            file_path=f'wh_central_merge_data/cleanup/{sql_file}',
+            file_path=Path(__file__).parent.absolute() / 'sql/cleanup' / sql_file,
         )
 
     logging.info("_create_cleanup: Ended")
@@ -30,7 +30,7 @@ def create_wh_central_cleanup(dag):
     parent_subdag = create_sub_dag_task(dag, 'wh_central_cleanup')
 
     PythonOperator(
-        task_id="_create_cleanup",
+        task_id="create_cleanup",
         python_callable=_create_cleanup,
         dag=parent_subdag.subdag,
     )

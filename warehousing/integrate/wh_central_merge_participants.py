@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 from tools import create_sub_dag_task, execute_mssql
 from airflow.operators.python_operator import PythonOperator
 
@@ -11,7 +12,7 @@ def _merge_participants():
     execute_mssql(
         DWH_CONNECTION_NAME,
         schema='warehouse_central',
-        file_path=f'wh_central_merge_data/cleanup/DROP__Participants.sql',
+        file_path=Path(__file__).parent.absolute() / 'sql/cleanup/DROP__Participants.sql',
     )
 
     for sql_file in [
@@ -26,14 +27,14 @@ def _merge_participants():
         execute_mssql(
             DWH_CONNECTION_NAME,
             schema='warehouse_central',
-            file_path=f'wh_central_merge_data/participants/{sql_file}',
+            file_path=Path(__file__).parent.absolute() / 'sql/participants' / sql_file,
         )
 
     logging.info("_create_views: Ended")
 
 
 def create_wh_central_merge_participants(dag):
-    parent_subdag = create_sub_dag_task(dag, 'wh_central_merge_participants')
+    parent_subdag = create_sub_dag_task(dag, 'merge_participants')
 
     PythonOperator(
         task_id="merge_participants",

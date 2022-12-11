@@ -1,41 +1,12 @@
 import logging
+from pathlib import Path
 from airflow.operators.mssql_operator import MsSqlOperator
-from airflow.providers.microsoft.mssql.hooks.mssql import MsSqlHook
 from airflow.operators.python_operator import PythonOperator
 from itertools import groupby
-from tools import create_sub_dag_task
-from warehousing import sql_path
+from tools import create_sub_dag_task, execute_mssql, query_mssql
 
 
 DWH_CONNECTION_NAME = 'DWH'
-
-
-def _query_mssql(connection_name, sql, parameters=None):
-    logging.info("_query_mssql: Started")
-
-    if not parameters:
-        parameters = {}
-
-    mysql = MsSqlHook(mssql_conn_id=connection_name)
-    conn = mysql.get_conn()
-    cursor = conn.cursor()
-    cursor.execute(sql, parameters)
-
-    logging.info("_query_mssql: Ended")
-
-    return cursor
-
-
-def _ddl_mssql(connection_name, sql):
-    logging.info("_ddl_mssql: Started")
-
-    mysql = MsSqlHook(mssql_conn_id=connection_name)
-    conn = mysql.get_conn()
-    cursor = conn.cursor()
-    cursor.execute(sql)
-    conn.commit()
-
-    logging.info("_ddl_mssql: Ended")
 
 
 def _create_indexes_procedure(destination_database, source_database):
@@ -51,52 +22,51 @@ def _create_indexes_procedure(destination_database, source_database):
         'D': 'DESCENDING',
     }
 
-    with open(sql_path() / 'mysql_to_datalake/QUERY__source_index_details.sql') as sql:
-        cursor =  _query_mssql(
-            DWH_CONNECTION_NAME,
-            sql.read(),
-            parameters={'source_database': source_database},
-        )
-
-    indexes = []
-
-    updated = [r[0] for r in _query_mssql(
-        DWH_CONNECTION_NAME,
-        f'''
+    sql_updated = '''
         SELECT name
-        FROM {destination_database}.dbo._etl_tables
+        FROM _etl_tables
         WHERE extant = 1
             AND exclude = 0
             AND (last_copied IS NULL OR last_copied < last_updated)
-        ;''',
-    ).fetchall()]
+        ;
+    '''
 
-    for (table_name, index_name), fields in groupby(cursor, key=lambda x: (x[0], x[1])):
+    with query_mssql(DWH_CONNECTION_NAME, schema=destination_database, sql=sql_updated) as cursor:
+        updated = [r[0] for r in cursor]
 
-        if table_name not in updated:
-            continue
+    indexes = []
 
-        columns = []
-        contains_text_field = False
+    with query_mssql(
+        DWH_CONNECTION_NAME,
+        schema='warehouse_central',
+        file_path=Path(__file__).parent.absolute() / 'sql/QUERY__source_index_details.sql',
+        parameters={'source_database': source_database},
+        ) as cursor:
 
-        for (_, _, fieldname, collation, data_type, max_length) in fields:
-            if data_type in ['text', 'tinytext', 'mediumtext', 'longtext']:
-                contains_text_field = True
+        for (table_name, index_name), fields in groupby(cursor, key=lambda x: (x[0], x[1])):
 
-            columns.append(f"[{fieldname}] {collations[collation or 'A']}")
+            if table_name not in updated:
+                continue
 
-        if not contains_text_field:
-            indexes.append(create_index_template.format(
-                index_name=f'[{index_name}]',
-                table_name=f'[{table_name}]',
-                columns=', '.join(columns),
-            ))
+            columns = []
+            contains_text_field = False
+
+            for (_, _, fieldname, collation, data_type, max_length) in fields:
+                if data_type in ['text', 'tinytext', 'mediumtext', 'longtext']:
+                    contains_text_field = True
+
+                columns.append(f"[{fieldname}] {collations[collation or 'A']}")
+
+            if not contains_text_field:
+                indexes.append(create_index_template.format(
+                    index_name=f'[{index_name}]',
+                    table_name=f'[{table_name}]',
+                    columns=', '.join(columns),
+                ))
 
     sql = '\n\n'.join(indexes)
 
-    sql = f'USE {destination_database};\n\n{sql}'
-
-    _ddl_mssql(DWH_CONNECTION_NAME, sql)
+    execute_mssql(DWH_CONNECTION_NAME, schema=destination_database, sql=sql)
 
     logging.info("_create_indexes_procedure: Ended")
 
@@ -107,7 +77,7 @@ def _create_database_copy_dag(dag, source_database, destination_database):
     create_etl_tables = MsSqlOperator(
         task_id='CREATE__etl_tables',
         mssql_conn_id=DWH_CONNECTION_NAME,
-        sql="sql/mysql_to_datalake/CREATE__etl_tables.sql",
+        sql="datalake_load/sql/CREATE__etl_tables.sql",
         autocommit=True,
         database=destination_database,
         dag=dag,
@@ -116,7 +86,7 @@ def _create_database_copy_dag(dag, source_database, destination_database):
     recreate_etl_tables = MsSqlOperator(
         task_id='recreate_etl_tables',
         mssql_conn_id=DWH_CONNECTION_NAME,
-        sql="sql/mysql_to_datalake/INSERT__etl_tables.sql",
+        sql="datalake_load/sql/INSERT__etl_tables.sql",
         autocommit=True,
         database=destination_database,
         dag=dag,
@@ -126,7 +96,7 @@ def _create_database_copy_dag(dag, source_database, destination_database):
     copy_tables = MsSqlOperator(
         task_id='copy_tables',
         mssql_conn_id=DWH_CONNECTION_NAME,
-        sql="sql/mysql_to_datalake/INSERT__tables.sql",
+        sql="datalake_load/sql/INSERT__tables.sql",
         autocommit=True,
         database=destination_database,
         dag=dag,
@@ -136,7 +106,7 @@ def _create_database_copy_dag(dag, source_database, destination_database):
     change_text_columns_to_varchar = MsSqlOperator(
         task_id='change_text_columns_to_varchar',
         mssql_conn_id=DWH_CONNECTION_NAME,
-        sql="sql/mysql_to_datalake/UPDATE__tables__alter_text_to_varchar.sql",
+        sql="datalake_load/sql/UPDATE__tables__alter_text_to_varchar.sql",
         autocommit=True,
         database=destination_database,
         dag=dag,
@@ -156,7 +126,7 @@ def _create_database_copy_dag(dag, source_database, destination_database):
     mark_updated = MsSqlOperator(
         task_id='mark_updated',
         mssql_conn_id=DWH_CONNECTION_NAME,
-        sql="sql/mysql_to_datalake/UPDATE__etl_tables__last_copied.sql",
+        sql="datalake_load/sql/UPDATE__etl_tables__last_copied.sql",
         autocommit=True,
         database=destination_database,
         dag=dag,
