@@ -1,13 +1,13 @@
 import logging
 from tools import create_sub_dag_task
 from airflow.operators.mssql_operator import MsSqlOperator
-from warehousing.integrate.wh_central_cleanup import create_wh_central_cleanup
-from warehousing.integrate.wh_central_merge_civicrm_data import create_wh_central_merge_civicrm_data_dag
-from warehousing.integrate.wh_central_merge_openspecimen_data import create_wh_central_merge_openspecimen_data_dag
-from warehousing.integrate.wh_central_merge_participants import create_wh_central_merge_participants
-from warehousing.integrate.wh_create_postmerge_views import create_wh_create_postmerge_views
-from warehousing.integrate.wh_create_premerge_views import create_wh_create_premerge_views
-from warehousing.integrate.wh_central_merge_redcap_data import create_wh_central_merge_redcap_data_dag
+from warehousing.integrate.drop_old_data import create_drop_old_data
+from warehousing.integrate.merge_civicrm_data import create_wh_central_merge_civicrm_data_dag
+from warehousing.integrate.merge_openspecimen_data import create_wh_central_merge_openspecimen_data_dag
+from warehousing.integrate.merge_participants import create_wh_central_merge_participants
+from warehousing.integrate.postmerge_views import create_wh_create_postmerge_views
+from warehousing.integrate.premerge_views import create_wh_create_premerge_views
+from warehousing.integrate.merge_redcap_data import create_wh_central_merge_redcap_data_dag
 
 
 def _create_merge_data(dag):
@@ -41,15 +41,15 @@ def _create_update_statistics(dag):
 
 
 def create_warehouse(dag):
-    parent_subdag = create_sub_dag_task(dag, 'warehouse', run_on_failures=True)
+    parent_subdag = create_sub_dag_task(dag, 'integrate', run_on_failures=True)
 
-    cleanup = create_wh_central_cleanup(parent_subdag.subdag)
+    drop_old = create_drop_old_data(parent_subdag.subdag)
     premerge_views = create_wh_create_premerge_views(parent_subdag.subdag)
     merge_data = _create_merge_data(parent_subdag.subdag)
     merge_participants = create_wh_central_merge_participants(parent_subdag.subdag)
     postmerge_views = create_wh_create_postmerge_views(parent_subdag.subdag)
     update_statistics = _create_update_statistics(parent_subdag.subdag)
 
-    cleanup >> premerge_views >> merge_data >> merge_participants >> postmerge_views >> update_statistics
+    drop_old >> premerge_views >> merge_data >> merge_participants >> postmerge_views >> update_statistics
 
     return parent_subdag

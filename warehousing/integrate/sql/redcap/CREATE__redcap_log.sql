@@ -94,8 +94,8 @@ BEGIN
         AND event_id IS NOT NULL
         AND project_id IN (
             SELECT DISTINCT crm.redcap_project_id
-            FROM warehouse_central.dbo.cfg_redcap_mapping crm
-            JOIN warehouse_central.dbo.cfg_redcap_instance cri
+            FROM warehouse_config.dbo.cfg_redcap_mapping crm
+            JOIN warehouse_config.dbo.cfg_redcap_instance cri
                 ON cri.id = crm.cfg_redcap_instance_id
             WHERE cri.datalake_database = '?'
         )
@@ -137,7 +137,7 @@ FROM temp_redcap_log t
 
 
 -----------------------------------------
---   Extract Option valie from field name
+--   Extract Option value from field name
 -----------------------------------------
 
 UPDATE t
@@ -166,7 +166,7 @@ SELECT DISTINCT
     x.value,
     x.[instance]
 FROM warehouse_central.dbo.temp_redcap_log x
-JOIN warehouse_central.dbo.cfg_redcap_instance mri 
+JOIN warehouse_config.dbo.cfg_redcap_instance mri 
     ON mri.datalake_database = x.datalake_database
 JOIN warehouse_central.dbo.meta__redcap_project mrp 
     ON mrp.cfg_redcap_instance_id = mri.id 

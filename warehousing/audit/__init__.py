@@ -2,11 +2,10 @@ import logging
 from pathlib import Path
 from airflow.operators.python_operator import PythonOperator
 from airflow.utils.email import send_email
-from tools import create_sub_dag_task, execute_mssql, query_mssql_dict
+from tools import create_sub_dag_task
+from warehousing.database import WarehouseCentralConnection
 from jinja2 import Environment, FileSystemLoader
 
-
-DWH_CONNECTION_NAME = 'DWH'
 
 
 def _log_dq_errors(**kwargs):
@@ -24,10 +23,14 @@ def _log_dq_errors(**kwargs):
 def _run_dq_error(run_id, folder):
     logging.info("_run_dq_error: Started")
 
+    logging.info(f"************ {folder}")
+
     environment = Environment(loader=FileSystemLoader(folder))
     template = environment.get_template('template.j2')
 
-    with query_mssql_dict(DWH_CONNECTION_NAME, schema='warehouse_central', file_path=folder / 'query.sql') as cursor:
+    conn = WarehouseCentralConnection()
+
+    with conn.query_mssql_dict(file_path=folder / 'query.sql') as cursor:
         errors = template.render(cursor=list(cursor))
 
     sql__insert = '''
@@ -36,9 +39,7 @@ def _run_dq_error(run_id, folder):
     '''
 
     if len(errors) > 0:
-        execute_mssql(
-            DWH_CONNECTION_NAME,
-            schema='warehouse_central',
+        conn.execute_mssql(
             sql=sql__insert,
             parameters={
                 'run_id': run_id,
@@ -61,9 +62,9 @@ def _send_email(**kwargs):
 
     lines = []
 
-    with query_mssql_dict(
-        DWH_CONNECTION_NAME,
-        schema='warehouse_central',
+    conn = WarehouseCentralConnection()
+
+    with conn.query_mssql_dict(
         sql=sql__errors,
         parameters={'run_id': kwargs['dag_run'].run_id},
     ) as cursor:

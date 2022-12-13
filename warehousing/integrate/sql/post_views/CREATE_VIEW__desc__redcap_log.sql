@@ -37,6 +37,6 @@ JOIN meta__redcap_arm mra
 	ON mra.id = mre.meta__redcap_arm_id 
 JOIN meta__redcap_project mrp 
 	ON mrp.id = mra.meta__redcap_project_id 
-JOIN cfg_redcap_instance mri 
+JOIN warehouse_config.dbo.cfg_redcap_instance mri 
 	ON mri.id = mrp.cfg_redcap_instance_id
 ;

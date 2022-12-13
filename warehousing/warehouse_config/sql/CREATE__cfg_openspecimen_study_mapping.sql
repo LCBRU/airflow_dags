@@ -3,14 +3,16 @@ BEGIN
     CREATE TABLE cfg_openspecimen_study_mapping (
         id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
         collection_protocol_id INT NOT NULL,
-        study_id INT NOT NULL,
-        participant_identifier_type_id INT NOT NULL,
+        cfg_study_id INT NOT NULL,
+        cfg_participant_identifier_type_id INT NOT NULL,
         INDEX idx__cfg_openspecimen_study_mapping__collection_protocol_id (collection_protocol_id),
-        INDEX idx__cfg_openspecimen_study_mapping__study_id (study_id),
-        INDEX idx__cfg_openspecimen_study_mapping__participant_identifier_type_id (participant_identifier_type_id),
+        INDEX idx__cfg_openspecimen_study_mapping__cfg_study_id (cfg_study_id),
+        INDEX idx__cfg_openspecimen_study_mapping__cfg_participant_identifier_type_id (cfg_participant_identifier_type_id),
+		FOREIGN KEY (cfg_study_id) REFERENCES cfg_study(id),
+		FOREIGN KEY (cfg_participant_identifier_type_id) REFERENCES cfg_participant_identifier_type(id),
     )
 
-    INSERT INTO warehouse_central.dbo.cfg_openspecimen_study_mapping (collection_protocol_id, study_id, participant_identifier_type_id) VALUES
+    INSERT INTO cfg_openspecimen_study_mapping (collection_protocol_id, cfg_study_id, cfg_participant_identifier_type_id) VALUES
         (1,7, (SELECT id FROM cfg_participant_identifier_type WHERE name='BRICCS_ID')),
         (7,46, (SELECT id FROM cfg_participant_identifier_type WHERE name='GENVASC_ID')),
         (8,37, (SELECT id FROM cfg_participant_identifier_type WHERE name='DREAM_ID')),

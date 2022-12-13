@@ -3,9 +3,8 @@ import logging
 from pathlib import Path
 from airflow.operators.mssql_operator import MsSqlOperator
 from airflow.operators.python_operator import PythonOperator
-from tools import create_sub_dag_task, query_mssql, execute_mssql, query_mssql_dict
-
-DWH_CONNECTION_NAME = 'DWH'
+from tools import create_sub_dag_task
+from warehousing.database import WarehouseCentralConnection, WarehouseConnection, DWH_CONNECTION_NAME
 
 
 def _copy_redcap():
@@ -15,8 +14,8 @@ def _copy_redcap():
         SELECT
             dbo.study_database_name(s.name) AS study_database,
             mrp.id AS meta__redcap_project_id
-        FROM cfg_redcap_mapping rpm
-        JOIN cfg_study s
+        FROM warehouse_config.dbo.cfg_redcap_mapping rpm
+        JOIN warehouse_config.dbo.cfg_study s
             ON s.id = rpm.cfg_study_id
         JOIN meta__redcap_project mrp
             ON mrp.cfg_redcap_instance_id = rpm.cfg_redcap_instance_id
@@ -39,23 +38,27 @@ def _copy_redcap():
         WHERE rl.meta__redcap_project_id IN ({meta__redcap_project_ids})
     '''
 
-    with query_mssql_dict(DWH_CONNECTION_NAME, schema='warehouse_central', sql=sql__redcap_mappings) as cursor:
+    conn = WarehouseCentralConnection()
+
+    with conn.query_mssql_dict(sql=sql__redcap_mappings) as cursor:
         for study_db, fields in groupby(cursor, lambda r: r['study_database']):
+
+            conn_study = WarehouseConnection(schema=study_db)
 
             meta__redcap_project_ids = [str(f['meta__redcap_project_id']) for f in fields]
 
             logging.info(f'****************************** {study_db}')
 
-            execute_mssql(
-                DWH_CONNECTION_NAME,
-                schema=study_db,
-                sql=sql__create_redcap_data.format(meta__redcap_project_ids=', '.join(meta__redcap_project_ids)),
+            conn_study.execute_mssql(
+                sql=sql__create_redcap_data.format(
+                    meta__redcap_project_ids=', '.join(meta__redcap_project_ids)
+                ),
             )
 
-            execute_mssql(
-                DWH_CONNECTION_NAME,
-                schema=study_db,
-                sql=sql__create_redcap_log.format(meta__redcap_project_ids=', '.join(meta__redcap_project_ids)),
+            conn_study.execute_mssql(
+                sql=sql__create_redcap_log.format(
+                    meta__redcap_project_ids=', '.join(meta__redcap_project_ids)
+                ),
             )
 
     logging.info("_copy_civicrm: Ended")
@@ -68,9 +71,9 @@ def _copy_openspecimen():
         SELECT
             dbo.study_database_name(cs.name) study_database,
             cosm.collection_protocol_id
-        FROM cfg_openspecimen_study_mapping cosm
-        JOIN cfg_study cs
-            ON cs.id  = cosm.study_id
+        FROM warehouse_config.dbo.cfg_openspecimen_study_mapping cosm
+        JOIN warehouse_config.dbo.cfg_study cs
+            ON cs.id  = cosm.cfg_study_id
         ORDER BY cs.name
     '''
 
@@ -81,17 +84,21 @@ def _copy_openspecimen():
         WHERE collection_protocol_identifier IN ({collection_protocol_ids})
     '''
 
-    with query_mssql_dict(DWH_CONNECTION_NAME, schema='warehouse_central', sql=sql__os_mappings) as cursor:
+    conn = WarehouseCentralConnection()
+
+    with conn.query_mssql_dict(sql=sql__os_mappings) as cursor:
         for study_db, fields in groupby(cursor, lambda r: r['study_database']):
+
+            conn_study = WarehouseConnection(schema=study_db)
 
             collection_protocol_ids = [str(f['collection_protocol_id']) for f in fields]
 
             logging.info(f'****************************** {study_db}')
 
-            execute_mssql(
-                DWH_CONNECTION_NAME,
-                schema=study_db,
-                sql=sql__create_view.format(collection_protocol_ids=', '.join(collection_protocol_ids)),
+            conn_study.execute_mssql(
+                sql=sql__create_view.format(
+                    collection_protocol_ids=', '.join(collection_protocol_ids)
+                ),
             )
 
     logging.info("_copy_openspecimen: Ended")
@@ -104,9 +111,9 @@ def _copy_civicrm():
         SELECT
             dbo.study_database_name(cs.name) study_database,
             ccsm.case_type_id
-        FROM cfg_civicrm_study_mapping ccsm
-        JOIN cfg_study cs
-            ON cs.id = ccsm.study_id
+        FROM warehouse_config.dbo.cfg_civicrm_study_mapping ccsm
+        JOIN warehouse_config.dbo.cfg_study cs
+            ON cs.id = ccsm.cfg_study_id
         ORDER BY cs.name
     '''
 
@@ -128,22 +135,22 @@ def _copy_civicrm():
         )
     '''
 
-    with query_mssql_dict(DWH_CONNECTION_NAME, schema='warehouse_central', sql=sql__civicrm_mappings) as cursor:
+    conn = WarehouseCentralConnection()
+
+    with conn.query_mssql_dict(sql=sql__civicrm_mappings) as cursor:
         for study_db, fields in groupby(cursor, lambda r: r['study_database']):
+
+            conn_study = WarehouseConnection(schema=study_db)
 
             case_type_ids = [str(f['case_type_id']) for f in fields]
 
             logging.info(f'****************************** {study_db}')
 
-            execute_mssql(
-                DWH_CONNECTION_NAME,
-                schema=study_db,
+            conn_study.execute_mssql(
                 sql=sql__create_case.format(case_type_ids=', '.join(case_type_ids)),
             )
 
-            execute_mssql(
-                DWH_CONNECTION_NAME,
-                schema=study_db,
+            conn_study.execute_mssql(
                 sql=sql__create_contact.format(case_type_ids=', '.join(case_type_ids)),
             )
 
@@ -158,14 +165,16 @@ def _copy_civicrm_custom():
             ecc.warehouse_table_name,
             dbo.study_database_name(cs.name) study_database
         FROM etl__civicrm_custom ecc
-        JOIN cfg_civicrm_study_mapping ccsm
+        JOIN warehouse_config.dbo.cfg_civicrm_study_mapping ccsm
             ON ccsm.case_type_id = ecc.case_type_id
-        JOIN cfg_study cs
-            ON cs.id = ccsm.study_id 
+        JOIN warehouse_config.dbo.cfg_study cs
+            ON cs.id = ccsm.cfg_study_id 
 
     '''
 
-    with query_mssql(DWH_CONNECTION_NAME, schema='warehouse_central', sql=sql__custom_table_mappings) as cursor:
+    conn = WarehouseCentralConnection()
+
+    with conn.query_mssql(sql=sql__custom_table_mappings) as cursor:
         mappings = [(table_name, study_db) for (table_name, study_db) in cursor]
 
     sql__create_view = '''
@@ -177,11 +186,9 @@ def _copy_civicrm_custom():
     for table_name, study_db in mappings:
         logging.info(f'****************************** {table_name} > {study_db}: {study_db}')
 
-        execute_mssql(
-            DWH_CONNECTION_NAME,
-            schema=study_db,
-            sql=sql__create_view.format(table_name=table_name)
-        )
+        conn_study = WarehouseConnection(schema=study_db)
+ 
+        conn_study.execute_mssql(sql=sql__create_view.format(table_name=table_name))
 
     logging.info("_copy_civicrm_custom: Ended")
 

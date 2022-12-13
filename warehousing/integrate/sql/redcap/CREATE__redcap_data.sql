@@ -21,7 +21,6 @@ CREATE TABLE dbo.redcap_data (
     int_value INT NULL,
     decimal_value DECIMAL(38,6) NULL,
     boolean_value BIT NULL,
-    FOREIGN KEY (cfg_redcap_instance_id) REFERENCES cfg_redcap_instance(id),
     FOREIGN KEY (meta__redcap_project_id) REFERENCES meta__redcap_project(id),
     FOREIGN KEY (meta__redcap_arm_id) REFERENCES meta__redcap_arm(id),
     FOREIGN KEY (meta__redcap_event_id) REFERENCES meta__redcap_event(id),
@@ -54,7 +53,7 @@ DECLARE TABLE_CURSOR CURSOR
     LOCAL STATIC READ_ONLY FORWARD_ONLY
 FOR
 	SELECT id, datalake_database
-	FROM cfg_redcap_instance 
+	FROM warehouse_config.dbo.cfg_redcap_instance 
 
 OPEN TABLE_CURSOR
 FETCH NEXT FROM TABLE_CURSOR INTO @cfg_redcap_instance_id, @database_name
@@ -88,7 +87,7 @@ SELECT DISTINCT
     ISNULL(rd.[instance], 1),
     rd.value
 FROM ' + @database_name + '.dbo.redcap_data rd
-JOIN warehouse_central.dbo.cfg_redcap_instance mri 
+JOIN warehouse_config.dbo.cfg_redcap_instance mri 
     ON mri.id = ' + CONVERT(NVARCHAR(10), @cfg_redcap_instance_id) + '
 JOIN warehouse_central.dbo.meta__redcap_project mrp 
     ON mrp.cfg_redcap_instance_id = mri.id 

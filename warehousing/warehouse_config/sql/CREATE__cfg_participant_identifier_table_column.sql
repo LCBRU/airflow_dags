@@ -1,20 +1,20 @@
-IF OBJECT_ID(N'cfg_participant_identifier_table_columns') IS NULL
+IF OBJECT_ID(N'cfg_participant_identifier_table_column') IS NULL
 BEGIN
-    CREATE TABLE cfg_participant_identifier_table_columns (
+    CREATE TABLE cfg_participant_identifier_table_column (
         id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
-        identifier_type_id INT NOT NULL,
-        source_type_id INT NOT NULL,
+        cfg_participant_identifier_type_id INT NOT NULL,
+        cfg_participant_source_id INT NOT NULL,
         table_name VARCHAR(200) NOT NULL,
         identifier_column_name VARCHAR(200) NOT NULL,
         source_identifier_column_name VARCHAR(200) NOT NULL,
-        INDEX idx__cfg_participant_identifier_table_columns__identifier_type_id (identifier_type_id),
-        INDEX idx__cfg_participant_identifier_table_columns__source_type_id (source_type_id),
-        UNIQUE(table_name, identifier_type_id, identifier_column_name),
-        FOREIGN KEY (identifier_type_id) REFERENCES cfg_participant_identifier_type(id),
-        FOREIGN KEY (source_type_id) REFERENCES cfg_participant_identifier_type(id),	
+        INDEX idx__cfg_participant_identifier_table_columns__cfg_participant_identifier_type_id (cfg_participant_identifier_type_id),
+        INDEX idx__cfg_participant_identifier_table_columns__cfg_participant_source_id (cfg_participant_source_id),
+        UNIQUE(table_name, cfg_participant_identifier_type_id, identifier_column_name),
+        FOREIGN KEY (cfg_participant_identifier_type_id) REFERENCES cfg_participant_identifier_type(id),
+        FOREIGN KEY (cfg_participant_source_id) REFERENCES cfg_participant_source(id),	
     );
 
-    INSERT INTO cfg_participant_identifier_table_columns (identifier_type_id, source_type_id, table_name, identifier_column_name, source_identifier_column_name) VALUES
+    INSERT INTO cfg_participant_identifier_table_column (cfg_participant_identifier_type_id, cfg_participant_source_id, table_name, identifier_column_name, source_identifier_column_name) VALUES
     (
         (SELECT id FROM cfg_participant_identifier_type WHERE name='CiviCRM Case ID'),
         (SELECT id FROM cfg_participant_source WHERE name='CiviCRM Case'),

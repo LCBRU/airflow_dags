@@ -25,10 +25,10 @@ SELECT
 	dbo.study_database_name(cs.name) study_database,
 	cri.datalake_database,
 	crm.redcap_project_id
-FROM cfg_redcap_mapping crm
-JOIN cfg_study cs
+FROM warehouse_config.dbo.cfg_redcap_mapping crm
+JOIN warehouse_config.dbo.cfg_study cs
 	ON cs.id = crm.cfg_study_id
-JOIN cfg_redcap_instance cri
+JOIN warehouse_config.dbo.cfg_redcap_instance cri
 	ON cri.id = crm.cfg_redcap_instance_id
 LEFT JOIN #stats s
 	ON s.redcap_project_id = crm.redcap_project_id 

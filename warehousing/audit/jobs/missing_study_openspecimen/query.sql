@@ -24,9 +24,9 @@ END"
 SELECT
 	dbo.study_database_name(cs.name) study_database,
 	cosm.collection_protocol_id
-FROM cfg_openspecimen_study_mapping cosm
-JOIN cfg_study cs
-	ON cs.id = cosm.study_id
+FROM warehouse_config.dbo.cfg_openspecimen_study_mapping cosm
+JOIN warehouse_config.dbo.cfg_study cs
+	ON cs.id = cosm.cfg_study_id
 LEFT JOIN #stats s
 	ON s.collection_protocol_id = cosm.collection_protocol_id 
 	AND s.study_wh_database = dbo.study_database_name(cs.name)

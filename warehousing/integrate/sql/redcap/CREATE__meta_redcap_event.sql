@@ -26,7 +26,7 @@ BEGIN
         rem.offset_max,
         rem.descrip
     FROM [?].dbo.redcap_events_metadata rem
-    JOIN warehouse_central.dbo.cfg_redcap_instance mri
+    JOIN warehouse_config.dbo.cfg_redcap_instance mri
         ON mri.datalake_database = '?'
     JOIN warehouse_central.dbo.meta__redcap_project mrp 
         ON mrp.cfg_redcap_instance_id = mri.id 

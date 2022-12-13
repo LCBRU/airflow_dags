@@ -18,7 +18,7 @@ DECLARE TABLE_CURSOR CURSOR
     LOCAL STATIC READ_ONLY FORWARD_ONLY
 FOR
 	SELECT id, datalake_database
-	FROM cfg_redcap_instance 
+	FROM warehouse_config.dbo.cfg_redcap_instance 
 
 OPEN TABLE_CURSOR
 FETCH NEXT FROM TABLE_CURSOR INTO @cfg_redcap_instance_id, @database_name

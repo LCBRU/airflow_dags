@@ -11,7 +11,6 @@ CREATE TABLE dbo.redcap_file (
     file_extension NVARCHAR(500) NOT NULL,
     gzipped BIT NOT NULL,
     INDEX idx__meta__redcap_file__doc_name (doc_name),
-    FOREIGN KEY (cfg_redcap_instance_id) REFERENCES cfg_redcap_instance(id),
     UNIQUE (cfg_redcap_instance_id, doc_id),
     UNIQUE (cfg_redcap_instance_id, stored_name),
 );
@@ -30,9 +29,9 @@ BEGIN
         rem.file_extension,
         rem.gzipped
     FROM [?].dbo.redcap_edocs_metadata rem
-    JOIN warehouse_central.dbo.cfg_redcap_instance mri
+    JOIN warehouse_config.dbo.cfg_redcap_instance mri
         ON mri.datalake_database = '?'
-    JOIN warehouse_central.dbo.cfg_redcap_mapping rm
+    JOIN warehouse_config.dbo.cfg_redcap_mapping rm
         ON rm.cfg_redcap_instance_id = mri.id
         AND rm.redcap_project_id = rem.project_id
 END"

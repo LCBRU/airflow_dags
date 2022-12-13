@@ -24,9 +24,9 @@ END"
 SELECT
 	dbo.study_database_name(cs.name) study_database,
 	ccsm.case_type_id
-FROM cfg_civicrm_study_mapping ccsm
-JOIN cfg_study cs
-	ON cs.id = ccsm.study_id 
+FROM warehouse_config.dbo.cfg_civicrm_study_mapping ccsm
+JOIN warehouse_config.dbo.cfg_study cs
+	ON cs.id = ccsm.cfg_study_id 
 LEFT JOIN #stats s
 	ON s.case_type_id = ccsm.case_type_id 
 	AND s.study_wh_database = dbo.study_database_name(cs.name)

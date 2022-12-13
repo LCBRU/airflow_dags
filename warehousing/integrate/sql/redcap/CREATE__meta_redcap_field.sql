@@ -53,7 +53,7 @@ BEGIN
 			) AS element_preceding_header
 		FROM [?].dbo.redcap_metadata arm
     ) rfd
-    JOIN warehouse_central.dbo.cfg_redcap_instance ri
+    JOIN warehouse_config.dbo.cfg_redcap_instance ri
         ON ri.datalake_database = rfd.datalake_database
     JOIN warehouse_central.dbo.meta__redcap_data_type rdt
         ON rdt.element_type = rfd.element_type

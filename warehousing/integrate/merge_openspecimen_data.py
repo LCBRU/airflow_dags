@@ -1,8 +1,7 @@
 import logging
 from airflow.operators.mssql_operator import MsSqlOperator
 from tools import create_sub_dag_task
-
-DWH_CONNECTION_NAME = 'DWH'
+from warehousing.database import DWH_CONNECTION_NAME
 
 
 def _create_merge_openspecimen_dag(dag):

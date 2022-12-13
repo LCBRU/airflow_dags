@@ -47,7 +47,7 @@ BEGIN
                 AND LEN(TRIM(COALESCE(value, ''))) > 0
         ) e
     ) rfe
-    JOIN warehouse_central.dbo.cfg_redcap_instance ri
+    JOIN warehouse_config.dbo.cfg_redcap_instance ri
         ON ri.datalake_database = rfe.datalake_database
     JOIN warehouse_central.dbo.meta__redcap_project rp
         ON  rp.cfg_redcap_instance_id = ri.id

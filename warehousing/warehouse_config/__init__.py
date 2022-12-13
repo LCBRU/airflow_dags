@@ -1,31 +1,31 @@
 import logging
 from pathlib import Path
-from tools import create_sub_dag_task, execute_mssql
+from tools import create_sub_dag_task
+from warehousing.database import WarehouseConfigConnection, DWH_CONNECTION_NAME
 from airflow.operators.python_operator import PythonOperator
-
-DWH_CONNECTION_NAME = 'DWH'
+from airflow.operators.mssql_operator import MsSqlOperator
 
 
 def _create_config():
     logging.info("_create_config: Started")
 
+    conn = WarehouseConfigConnection()
+
+    sql_dir = Path(__file__).parent.absolute() / 'sql'
+
     for sql_file in [
         'CREATE__cfg_study.sql',
         'CREATE__cfg_redcap_instance.sql',
         'CREATE__cfg_redcap_mapping.sql',
-        'CREATE__etl_errors.sql',
+        'CREATE__etl_error.sql',
         'CREATE__cfg_participant_identifier_type.sql',
         'CREATE__cfg_participant_source.sql',
-        'CREATE__cfg_participant_identifier_table_columns.sql',
+        'CREATE__cfg_participant_identifier_table_column.sql',
+        'CREATE__cfg_redcap_identifier_field.sql',
         'CREATE__cfg_openspecimen_study_mapping.sql',
+        'CREATE__cfg_civicrm_study_mapping.sql',
     ]:
-        logging.info(f'Running: {sql_file}')
-
-        execute_mssql(
-            DWH_CONNECTION_NAME,
-            schema='warehouse_central',
-            file_path=Path(__file__).parent.absolute() / 'sql' / sql_file,
-        )
+        conn.execute_mssql(file_path= sql_dir / sql_file)
 
     logging.info("_create_config: Ended")
 
@@ -33,10 +33,21 @@ def _create_config():
 def create_wh_central_config(dag):
     parent_subdag = create_sub_dag_task(dag, 'initialise_config')
 
-    PythonOperator(
+    create_config_database = MsSqlOperator(
+        task_id='create_warehouse_config',
+        mssql_conn_id=DWH_CONNECTION_NAME,
+        sql='warehouse_config/sql/CREATE_DB__warehouse_config.sql',
+        autocommit=True,
+        dag=parent_subdag.subdag,
+        database='warehouse_central',
+    )
+
+    create_config = PythonOperator(
         task_id="create_config",
         python_callable=_create_config,
         dag=parent_subdag.subdag,
     )
+
+    create_config_database >> create_config
 
     return parent_subdag

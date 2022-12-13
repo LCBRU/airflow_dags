@@ -6,7 +6,7 @@ DECLARE TABLE_CURSOR CURSOR
     LOCAL STATIC READ_ONLY FORWARD_ONLY
 FOR
 SELECT dbo.study_database_name(s.name)
-FROM datalake_identity.dbo.study s
+FROM warehouse_config.dbo.cfg_study s
 
 OPEN TABLE_CURSOR
 FETCH NEXT FROM TABLE_CURSOR INTO @db_name

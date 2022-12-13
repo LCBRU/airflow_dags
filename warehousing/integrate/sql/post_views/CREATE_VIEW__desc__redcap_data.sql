@@ -40,7 +40,7 @@ SELECT
 	rv.decimal_value,
 	rv.boolean_value
 FROM warehouse_central.dbo.redcap_data rv
-JOIN warehouse_central.dbo.cfg_redcap_instance mri 
+JOIN warehouse_config.dbo.cfg_redcap_instance mri 
 	ON mri.id = rv.cfg_redcap_instance_id
 JOIN warehouse_central.dbo.meta__redcap_project mrp 
 	ON mrp.id = rv.meta__redcap_project_id

@@ -1,8 +1,7 @@
 import logging
 from airflow.operators.mssql_operator import MsSqlOperator
+from warehousing.database import DWH_CONNECTION_NAME
 from tools import create_sub_dag_task
-
-DWH_CONNECTION_NAME = 'DWH'
 
 
 def _create_merge_redcap_metadata_dag(dag):
@@ -157,29 +156,12 @@ def _create_merge_redcap_data_dag(dag):
     return parent_subdag
 
 
-def _create_merge_redcap_participants_dag(dag):
-    logging.info("_create_merge_redcap_participants_dag: Started")
-
-    redcap__merge_participant = MsSqlOperator(
-        task_id='INSERT__redcap_project_participant_identifier',
-        mssql_conn_id=DWH_CONNECTION_NAME,
-        sql="integrate/sql/redcap/INSERT__redcap_project_participant_identifier.sql",
-        autocommit=True,
-        database='warehouse_central',
-        dag=dag,
-    )
-    logging.info("_create_merge_redcap_participants_dag: Ended")
-
-    return redcap__merge_participant
-
-
 def create_wh_central_merge_redcap_data_dag(dag):
     parent_subdag = create_sub_dag_task(dag, 'merge_redcap_data')
 
     metadata = _create_merge_redcap_metadata_dag(dag=parent_subdag.subdag)
     data = _create_merge_redcap_data_dag(dag=parent_subdag.subdag)
-    participant_merge = _create_merge_redcap_participants_dag(dag=parent_subdag.subdag)
 
-    metadata >> data >> participant_merge
+    metadata >> data
 
     return parent_subdag

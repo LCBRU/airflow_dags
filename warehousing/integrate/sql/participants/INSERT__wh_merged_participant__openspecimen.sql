@@ -1,34 +1,34 @@
-DECLARE @source_type_id INT
+DECLARE @cfg_participant_source_id INT
 
-SELECT @source_type_id = id
-FROM cfg_participant_source
+SELECT @cfg_participant_source_id = id
+FROM warehouse_config.dbo.cfg_participant_source
 WHERE name = 'OpenSpecimen'
 
-INSERT INTO wh_participants(
+INSERT INTO wh_merged_participant(
     identifier,
-    identifier_type_id,
-    source_type_id,
+    cfg_participant_identifier_type_id,
+    cfg_participant_source_id,
     source_identifier
 )
 SELECT DISTINCT
 	CONVERT(VARCHAR(100), op.identifier),
 	cwpit.id,
-	@source_type_id,
+	@cfg_participant_source_id,
 	op.identifier
 FROM openspecimen__registration or2
 JOIN openspecimen__participant op
 	ON op.identifier = or2.participant_id
-JOIN cfg_participant_identifier_type cwpit
+JOIN warehouse_config.dbo.cfg_participant_identifier_type cwpit
 	ON cwpit.name = 'OpenSpecimen Participant ID'
 	
 UNION
 
 SELECT DISTINCT
 	op.empi_id,
-	cosm.participant_identifier_type_id,
-	@source_type_id,
+	cosm.cfg_participant_identifier_type_id,
+	@cfg_participant_source_id,
 	op.identifier
-FROM cfg_openspecimen_study_mapping cosm
+FROM warehouse_config.dbo.cfg_openspecimen_study_mapping cosm
 JOIN openspecimen__registration or2 
 	ON or2.collection_protocol_id = cosm.collection_protocol_id
 JOIN openspecimen__participant op 

@@ -1,8 +1,8 @@
-UPDATE wh_participants SET merged_participant_id = id;
+UPDATE wh_merged_participant SET merged_participant_id = id;
 
-ALTER TABLE wh_participants ALTER COLUMN merged_participant_id INT NOT NULL;
+ALTER TABLE wh_merged_participant ALTER COLUMN merged_participant_id INT NOT NULL;
 
-CREATE INDEX idx__wh_participants__merged_participant_id ON wh_participants(merged_participant_id);
+CREATE INDEX idx__wh_merged_participant__merged_participant_id ON wh_merged_participant(merged_participant_id);
 
 CREATE TABLE #to_update (
     id INT NOT NULL,
@@ -21,10 +21,10 @@ BEGIN
 
     INSERT INTO #to_update (id, merged_participant_id)
     SELECT a2.id, MIN(a1.merged_participant_id)
-    FROM wh_participants a1
-    JOIN wh_participants a2
+    FROM wh_merged_participant a1
+    JOIN wh_merged_participant a2
         ON a2.source_identifier = a1.source_identifier
-        AND a2.source_type_id = a1.source_type_id
+        AND a2.cfg_participant_source_id = a1.cfg_participant_source_id
         AND a2.merged_participant_id > a1.merged_participant_id
     GROUP BY a2.id
 
@@ -32,7 +32,7 @@ BEGIN
 
     UPDATE a
     SET a.merged_participant_id = u.merged_participant_id
-    FROM wh_participants a
+    FROM wh_merged_participant a
     JOIN #to_update u
         ON u.id = a.id
 
@@ -43,10 +43,10 @@ BEGIN
 
     INSERT INTO #to_update (id, merged_participant_id)
     SELECT a2.id, MIN(a1.merged_participant_id)
-    FROM wh_participants a1
-    JOIN wh_participants a2
+    FROM wh_merged_participant a1
+    JOIN wh_merged_participant a2
         ON a2.identifier = a1.identifier
-        AND a2.identifier_type_id = a1.identifier_type_id
+        AND a2.cfg_participant_identifier_type_id = a1.cfg_participant_identifier_type_id
         AND a2.merged_participant_id > a1.merged_participant_id
     GROUP BY a2.id
 
@@ -54,7 +54,7 @@ BEGIN
 
     UPDATE a
     SET a.merged_participant_id = u.merged_participant_id
-    FROM wh_participants a
+    FROM wh_merged_participant a
     JOIN #to_update u
     ON u.id = a.id
 
