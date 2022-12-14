@@ -1,5 +1,5 @@
 SELECT dbo.study_database_name(name)
-FROM cfg_study
+FROM warehouse_config.dbo.cfg_study
 
 EXCEPT
 
