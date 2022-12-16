@@ -2,7 +2,8 @@ import os
 from datetime import timedelta, datetime
 from airflow import DAG
 from tools import create_sub_dag_task
-from warehousing.audit import create_wh_central_audit
+from warehousing.audit import create_audit_dag
+from warehousing.dq_reporting import create_dq_reporting
 from warehousing.warehouse_config import create_wh_central_config
 from warehousing.data_download.crf_manager_download import create_download_crf_manager_studies
 from warehousing.data_download.download_to_mysql import create_download_to_mysql_dag
@@ -45,6 +46,7 @@ datalake_mysql_import = create_datalake_mysql_import_dag(dag)
 config = create_wh_central_config(dag)
 warehouse = create_warehouse(dag)
 create_study_warehouses = create_wh_create_studies(dag)
-email_audit = create_wh_central_audit(dag)
+audit = create_audit_dag(dag)
+email_dq = create_dq_reporting(dag)
 
-download_data >> datalake_mysql_import >> config >> warehouse >> create_study_warehouses >> email_audit
+download_data >> datalake_mysql_import >> config >> warehouse >> create_study_warehouses >> audit >> email_dq

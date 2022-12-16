@@ -1,113 +1,96 @@
-import logging
-from pathlib import Path
-from airflow.operators.python_operator import PythonOperator
-from airflow.utils.email import send_email
 from tools import create_sub_dag_task
 from warehousing.database import WarehouseCentralConnection
-from jinja2 import Environment, FileSystemLoader
+from collections import namedtuple
 
 
-
-def _log_dq_errors(**kwargs):
-    logging.info("_log_dq_errors: Started")
-
-    run_id = kwargs['dag_run'].run_id
-
-    for f in (Path(__file__).parent.absolute() / 'jobs').iterdir():
-        if f.is_dir():
-            _run_dq_error(run_id, f)    
-
-    logging.info("_log_dq_errors: Ended")
-
-
-def _run_dq_error(run_id, folder):
-    logging.info("_run_dq_error: Started")
-
-    logging.info(f"************ {folder}")
-
-    environment = Environment(loader=FileSystemLoader(folder))
-    template = environment.get_template('template.j2')
+def create_audit_dag(dag):
+    parent_subdag = create_sub_dag_task(dag, 'audit')
 
     conn = WarehouseCentralConnection()
 
-    with conn.query_mssql_dict(file_path=folder / 'query.sql') as cursor:
-        errors = template.render(cursor=list(cursor))
-
-    sql__insert = '''
-        INSERT INTO etl_errors (run_id, title, error)
-        VALUES (%(run_id)s, 'REDCap Projects Unmapped', %(error)s)
-    '''
-
-    if len(errors) > 0:
-        conn.execute_mssql(
-            sql=sql__insert,
-            parameters={
-                'run_id': run_id,
-                'error': errors,
-            },
-        )
-
-    logging.info("_run_dq_error: Ended")
-
-
-def _send_email(**kwargs):
-
-    logging.info("_send_email: Started")
-
-    sql__errors = '''
-        SELECT *
-        FROM etl_errors
-        WHERE run_id = %(run_id)s
-    '''
-
-    lines = []
-
-    conn = WarehouseCentralConnection()
-
-    with conn.query_mssql_dict(
-        sql=sql__errors,
-        parameters={'run_id': kwargs['dag_run'].run_id},
-    ) as cursor:
-
-        lines.append('''
-<style>
-    dl {
-        display: grid;
-        grid-template-columns: 1fr 2fr;
-    }
-    dt {
-        font-weight: bold;
-    }
-</style>
-        ''')
-        lines.append("<h1>Data Warehousing Errors</h1>\n")
-        lines.append("<p>The following errors were raised during data warehousing.</p>\n")
-        lines.extend([r['error'] for r in cursor])
-
-    send_email(
-        html_content='\n'.join(lines),
-        to=["richard.a.bramley@uhl-tr.nhs.uk"],
-        subject="Data Warehousing Errors",
+    conn.get_operator(
+        task_id='INSERT__etl_run',
+        sql="shared_sql/INSERT__etl_run.sql",
+        dag=parent_subdag.subdag,
     )
-
-    logging.info("_send_email: Ended")
-
-
-def create_wh_central_audit(dag):
-    parent_subdag = create_sub_dag_task(dag, 'audit_report')
-
-    log_dq_errors = PythonOperator(
-        task_id="log_dq_errors",
-        python_callable=_log_dq_errors,
+    conn.get_operator(
+        task_id='QUERY__CiviCRM_Custom__records',
+        sql="audit/sql/QUERY__CiviCRM_Custom__records.sql",
         dag=parent_subdag.subdag,
     )
 
-    send_email = PythonOperator(
-        task_id="send_email",
-        python_callable=_send_email,
-        dag=parent_subdag.subdag,
-    )
-
-    log_dq_errors >> send_email
+    create_table_record_counts_dag(parent_subdag.subdag)
+    create_table_group_counts_dag(parent_subdag.subdag)
 
     return parent_subdag
+
+def create_table_record_counts_dag(dag):
+    parent_subdag = create_sub_dag_task(dag, 'table_record_counts')
+
+    conn = WarehouseCentralConnection()
+
+    Params = namedtuple(
+        'Params',
+        'table_name participant_source'
+    )
+
+    for p in [
+        Params('civicrm__case', 'CiviCRM Case'),
+        Params('civicrm__contact', 'CiviCRM Contact'),
+        Params('meta__redcap_arm', 'REDCap'),
+        Params('meta__redcap_data_type', 'REDCap'),
+        Params('meta__redcap_event', 'REDCap'),
+        Params('meta__redcap_field', 'REDCap'),
+        Params('meta__redcap_field_enum', 'REDCap'),
+        Params('meta__redcap_form', 'REDCap'),
+        Params('meta__redcap_form_section', 'REDCap'),
+        Params('meta__redcap_instance', 'REDCap'),
+        Params('meta__redcap_project', 'REDCap'),
+        Params('openspecimen__collection_protocol', 'OpenSpecimen'),
+        Params('openspecimen__event', 'OpenSpecimen'),
+        Params('openspecimen__nanodrop', 'OpenSpecimen'),
+        Params('openspecimen__participant', 'OpenSpecimen'),
+        Params('openspecimen__registration', 'OpenSpecimen'),
+        Params('openspecimen__specimen', 'OpenSpecimen'),
+        Params('openspecimen__specimen_group', 'OpenSpecimen'),
+        Params('redcap_data', 'REDCap'),
+        Params('redcap_file', 'REDCap'),
+        Params('redcap_log', 'REDCap'),
+        Params('redcap_participant', 'REDCap'),
+    ]:
+        conn.get_operator(
+            task_id=f'QUERY__warehouse_central__{p.table_name}__records',
+            sql="audit/sql/QUERY__table__records.sql",
+            dag=parent_subdag.subdag,
+            params=p._asdict(),
+        )
+
+    return dag
+
+
+def create_table_group_counts_dag(dag):
+    parent_subdag = create_sub_dag_task(dag, 'table_group_counts')
+
+    conn = WarehouseCentralConnection()
+
+    Params = namedtuple(
+        'Params',
+        'table_name participant_source group_id_term group_type count_type'
+    )
+
+    for p in [
+        Params('civicrm__case', 'CiviCRM Case', 'case_type_id', 'CiviCRM Case Type', 'record'),
+        Params('openspecimen__registration', 'OpenSpecimen', 'collection_protocol_id', 'OpenSpecimen Collection Protocol', 'record'),
+        Params('openspecimen__specimen', 'OpenSpecimen', 'collection_protocol_id', 'OpenSpecimen Collection Protocol', 'record'),
+        Params('desc__redcap_data', 'REDCap', 'datalake_database + \'-\' + CONVERT(VARCHAR(100), redcap_project_id)', 'REDCap Project', 'record'),
+        Params('desc__redcap_log', 'REDCap', 'datalake_database + \'-\' + CONVERT(VARCHAR(100), redcap_project_id)', 'REDCap Project', 'record'),
+        Params('desc__redcap_field', 'REDCap', 'datalake_database + \'-\' + CONVERT(VARCHAR(100), redcap_project_id)', 'REDCap Project', 'record'),
+    ]:
+        conn.get_operator(
+            task_id=f'QUERY__warehouse_central__{p.table_name}__group__{p.group_type}',
+            sql="audit/sql/QUERY__table__groups.sql",
+            dag=parent_subdag.subdag,
+            params=p._asdict(),
+        )
+
+    return dag

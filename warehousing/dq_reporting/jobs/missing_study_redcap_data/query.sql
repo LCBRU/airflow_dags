@@ -22,8 +22,9 @@ BEGIN
 END"
 
 SELECT
-	dbo.study_database_name(cs.name) study_database,
-	cri.datalake_database,
+	cs.id AS crf_study_id,
+	cs.name AS stucy_name,
+	cri.id AS cfg_redcap_instance_id,
 	crm.redcap_project_id
 FROM warehouse_config.dbo.cfg_redcap_mapping crm
 JOIN warehouse_config.dbo.cfg_study cs
@@ -33,6 +34,9 @@ JOIN warehouse_config.dbo.cfg_redcap_instance cri
 LEFT JOIN #stats s
 	ON s.redcap_project_id = crm.redcap_project_id 
 	AND s.study_wh_database = dbo.study_database_name(cs.name)
+WHERE s.study_wh_database IS NULL
 ;
 
 DROP TABLE #stats;
+
+

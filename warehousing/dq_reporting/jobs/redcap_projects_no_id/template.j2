@@ -2,12 +2,13 @@
     <h2>REDCap Projects without ID</h2>
     <p>
         The following REDCap projects have no mapped IDs defined m
-        redcap_project_participant_identifier.
+        <em>cfg_redcap_identifier_field</em>.
     </p>
     <table>
         <thead>
             <tr>
                 <th>Datalake Database</th>
+                <th>CFG REDCap Instance ID</th>
                 <th>REDCap Project ID</th>
                 <th>Project</th>
             </tr>
@@ -16,6 +17,7 @@
             {% for r in cursor %}
                 <tr>
                     <td>{{ r['datalake_database'] }}</td>
+                    <td>{{ r['cfg_redcap_instance_id'] }}</td>
                     <td>{{ r['redcap_project_id'] }}</td>
                     <td>{{ r['project_name'] }}</td>
                 </tr>

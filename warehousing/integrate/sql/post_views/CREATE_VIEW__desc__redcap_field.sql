@@ -1,6 +1,7 @@
 CREATE OR ALTER VIEW desc__redcap_field AS
 SELECT
 	mrf2.id AS meta__redcap_field_id,
+	mri.id AS cfg_redcap_instance_id,
 	mri.datalake_database,
 	mrp.redcap_project_id,
 	mrp.name AS project_name,

@@ -6,6 +6,7 @@ from airflow.providers.mysql.hooks.mysql import MySqlHook
 from sqlalchemy.ext.declarative import declarative_base
 from airflow.providers.microsoft.mssql.hooks.mssql import MsSqlHook
 from contextlib import contextmanager
+from airflow.operators.mssql_operator import MsSqlOperator
 
 
 Base = declarative_base()
@@ -51,7 +52,6 @@ class MsSqlConnection:
             
         logging.info("query_mssql_dict: Ended")
 
-
     def execute_mssql(self, *args, **kwargs):
         logging.info("execute_mssql: Started")
 
@@ -59,6 +59,17 @@ class MsSqlConnection:
             pass
 
         logging.info("execute_mssql: Ended")
+
+    def get_operator(self, dag, task_id, sql, params=None):
+        return MsSqlOperator(
+            task_id=task_id.replace(" ", "_"),
+            mssql_conn_id=self._connection_name,
+            sql=sql,
+            autocommit=True,
+            database=self._schema,
+            dag=dag,
+            params=params,
+        )
 
 
     @contextmanager

@@ -15,6 +15,11 @@ def _create_config():
 
     for sql_file in [
         'CREATE__cfg_study.sql',
+        'CREATE__etl_audit_group_type.sql',
+        'CREATE__etl_run.sql',
+        'CREATE__etl_audit_database.sql',
+        'CREATE__etl_audit_table.sql',
+        'CREATE__etl_audit.sql',
         'CREATE__cfg_redcap_instance.sql',
         'CREATE__cfg_redcap_mapping.sql',
         'CREATE__etl_error.sql',
@@ -33,13 +38,12 @@ def _create_config():
 def create_wh_central_config(dag):
     parent_subdag = create_sub_dag_task(dag, 'initialise_config')
 
-    create_config_database = MsSqlOperator(
+    conn = WarehouseConfigConnection()
+
+    create_config_database = conn.get_operator(
         task_id='create_warehouse_config',
-        mssql_conn_id=DWH_CONNECTION_NAME,
-        sql='warehouse_config/sql/CREATE_DB__warehouse_config.sql',
-        autocommit=True,
+        sql="warehouse_config/sql/CREATE_DB__warehouse_config.sql",
         dag=parent_subdag.subdag,
-        database='warehouse_central',
     )
 
     create_config = PythonOperator(
@@ -48,6 +52,12 @@ def create_wh_central_config(dag):
         dag=parent_subdag.subdag,
     )
 
-    create_config_database >> create_config
+    create_run = conn.get_operator(
+        task_id='INSERT__etl_run',
+        sql="shared_sql/INSERT__etl_run.sql",
+        dag=parent_subdag.subdag,
+    )
+
+    create_config_database >> create_config >> create_run
 
     return parent_subdag
