@@ -1,7 +1,13 @@
+from itertools import groupby, tee
 from tools import create_sub_dag_task
-from warehousing.database import WarehouseCentralConnection
+from warehousing.database import WarehouseCentralConnection, WarehouseConfigConnection, WarehouseConnection
 from collections import namedtuple
 
+def pairwise(iterable):
+    # pairwise('ABCDEFG') --> AB BC CD DE EF FG
+    a, b = tee(iterable)
+    next(b, None)
+    return zip(a, b)
 
 def create_audit_dag(dag):
     parent_subdag = create_sub_dag_task(dag, 'audit')
@@ -9,7 +15,7 @@ def create_audit_dag(dag):
     conn = WarehouseCentralConnection()
 
     conn.get_operator(
-        task_id='INSERT__etl_run',
+        task_id='INSERT__etl_run__audit',
         sql="shared_sql/INSERT__etl_run.sql",
         dag=parent_subdag.subdag,
     )
@@ -19,19 +25,26 @@ def create_audit_dag(dag):
         dag=parent_subdag.subdag,
     )
 
-    create_table_record_counts_dag(parent_subdag.subdag)
-    create_table_group_counts_dag(parent_subdag.subdag)
+    create_table_record_counts_dag(parent_subdag.subdag, conn)
+    create_table_group_counts_dag(parent_subdag.subdag, conn)
+    create_civicrm_custom_record_count_dag(parent_subdag.subdag, conn)
+    create_study_table_record_count_dag(parent_subdag.subdag)
 
     return parent_subdag
 
-def create_table_record_counts_dag(dag):
-    parent_subdag = create_sub_dag_task(dag, 'table_record_counts')
 
-    conn = WarehouseCentralConnection()
+def create_table_record_counts_dag(dag, conn):
+    parent_subdag = create_sub_dag_task(dag, f'table_record_counts_for_db_{conn._schema}')
 
     Params = namedtuple(
         'Params',
         'table_name participant_source'
+    )
+
+    run_id = conn.get_operator(
+        task_id=f'INSERT__etl_run__table_record_counts_for_db_{conn._schema}',
+        sql="shared_sql/INSERT__etl_run.sql",
+        dag=parent_subdag.subdag,
     )
 
     for p in [
@@ -58,39 +71,119 @@ def create_table_record_counts_dag(dag):
         Params('redcap_log', 'REDCap'),
         Params('redcap_participant', 'REDCap'),
     ]:
-        conn.get_operator(
+        job = conn.get_operator(
             task_id=f'QUERY__warehouse_central__{p.table_name}__records',
             sql="audit/sql/QUERY__table__records.sql",
             dag=parent_subdag.subdag,
             params=p._asdict(),
         )
 
-    return dag
+        run_id >> job
+
+    return parent_subdag
 
 
-def create_table_group_counts_dag(dag):
-    parent_subdag = create_sub_dag_task(dag, 'table_group_counts')
+def create_table_group_counts_dag(dag, conn):
+    parent_subdag = create_sub_dag_task(dag, f'table_group_counts_for_db_{conn._schema}')
 
-    conn = WarehouseCentralConnection()
+    redcap_group = 'datalake_database + \'-\' + CONVERT(VARCHAR(100), redcap_project_id)'
 
     Params = namedtuple(
         'Params',
-        'table_name participant_source group_id_term group_type count_type'
+        'table_name participant_source group_id_term group_type count_type count_term'
+    )
+
+    run_id = conn.get_operator(
+        task_id=f'INSERT__etl_run__table_group_counts_for_db_{conn._schema}',
+        sql="shared_sql/INSERT__etl_run.sql",
+        dag=parent_subdag.subdag,
     )
 
     for p in [
-        Params('civicrm__case', 'CiviCRM Case', 'case_type_id', 'CiviCRM Case Type', 'record'),
-        Params('openspecimen__registration', 'OpenSpecimen', 'collection_protocol_id', 'OpenSpecimen Collection Protocol', 'record'),
-        Params('openspecimen__specimen', 'OpenSpecimen', 'collection_protocol_id', 'OpenSpecimen Collection Protocol', 'record'),
-        Params('desc__redcap_data', 'REDCap', 'datalake_database + \'-\' + CONVERT(VARCHAR(100), redcap_project_id)', 'REDCap Project', 'record'),
-        Params('desc__redcap_log', 'REDCap', 'datalake_database + \'-\' + CONVERT(VARCHAR(100), redcap_project_id)', 'REDCap Project', 'record'),
-        Params('desc__redcap_field', 'REDCap', 'datalake_database + \'-\' + CONVERT(VARCHAR(100), redcap_project_id)', 'REDCap Project', 'record'),
+        Params('civicrm__case', 'CiviCRM Case', 'case_type_id', 'CiviCRM Case Type', 'record', '*'),
+        Params('desc__openspecimen', 'OpenSpecimen', 'collection_protocol_identifier', 'OpenSpecimen Collection Protocol', 'record', '*'),
+        Params('desc__redcap_data', 'REDCap', redcap_group, 'REDCap Project', 'record', '*'),
+        Params('desc__redcap_data', 'REDCap', redcap_group, 'REDCap Project', 'REDCap Participant', 'DISTINCT redcap_participant_id'),
+        Params('desc__redcap_log', 'REDCap', redcap_group, 'REDCap Project', 'record', '*'),
+        Params('desc__redcap_field', 'REDCap', redcap_group, 'REDCap Project', 'record', '*'),
     ]:
-        conn.get_operator(
-            task_id=f'QUERY__warehouse_central__{p.table_name}__group__{p.group_type}',
+        job = conn.get_operator(
+            task_id=f'QUERY__warehouse_central__{p.table_name}__group__{p.group_type}__count__{p.count_type}'.replace(' ', '_'),
             sql="audit/sql/QUERY__table__groups.sql",
             dag=parent_subdag.subdag,
             params=p._asdict(),
         )
 
-    return dag
+        run_id >> job
+
+    return parent_subdag
+
+
+def create_civicrm_custom_record_count_dag(dag, conn):
+    parent_subdag = create_sub_dag_task(dag, 'civicrm_custom_record_count')
+
+    wh_conn = WarehouseCentralConnection()
+
+    run_id = wh_conn.get_operator(
+        task_id='INSERT__etl_run__civicrm_custom_record_count',
+        sql="shared_sql/INSERT__etl_run.sql",
+        dag=parent_subdag.subdag,
+    )
+
+    sql__custom_civicrm = '''
+        SELECT * FROM etl__civicrm_custom;
+    '''
+    with wh_conn.query_mssql_dict(sql=sql__custom_civicrm) as cursor:
+        for t in cursor:
+            job = conn.get_operator(
+                task_id=f'QUERY__warehouse_central__{t["warehouse_table_name"]}__records',
+                sql="audit/sql/QUERY__table__records.sql",
+                dag=parent_subdag.subdag,
+                params={
+                    'table_name': t['warehouse_table_name'],
+                    'participant_source': 'CiviCRM Case',
+                },
+            )
+
+            run_id >> job
+
+    return parent_subdag
+
+
+def create_study_table_record_count_dag(dag):
+    parent_subdag = create_sub_dag_task(dag, 'study_table_record_count')
+
+    conf_conn = WarehouseConfigConnection()
+
+    sql__custom_civicrm = '''
+        SELECT
+            id,
+            warehouse_central.dbo.study_database_name(name) AS db_name
+        FROM cfg_study
+        ORDER BY id;
+    '''
+
+    with conf_conn.query_mssql_dict(sql=sql__custom_civicrm) as cursor:
+        group_dags = []
+        for i, jobs in groupby(cursor, lambda x: x['id'] // 5 ):
+            group_subdag = create_sub_dag_task(parent_subdag.subdag, f'create_study_table_record_count_group_{i}', run_on_failures=True)
+            group_dags.append(group_subdag)
+
+            run_id = conf_conn.get_operator(
+                task_id=f'INSERT__etl_run__create_study_table_record_count_group_{i}',
+                sql="shared_sql/INSERT__etl_run.sql",
+                dag=group_subdag.subdag,
+            )
+
+            for j in jobs:
+                d = create_table_group_counts_dag(
+                    group_subdag.subdag,
+                    WarehouseConnection(schema=j['db_name']),
+                )
+
+                run_id >> d
+
+        for a, b in pairwise(group_dags):
+            a >> b
+            
+    return parent_subdag
