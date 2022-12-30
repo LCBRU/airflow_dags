@@ -1,7 +1,10 @@
 from itertools import groupby, tee
+from pathlib import Path
 from tools import create_sub_dag_task
 from warehousing.database import WarehouseCentralConnection, WarehouseConfigConnection, WarehouseConnection
 from collections import namedtuple
+from airflow.operators.python_operator import PythonOperator
+
 
 def pairwise(iterable):
     # pairwise('ABCDEFG') --> AB BC CD DE EF FG
@@ -19,16 +22,16 @@ def create_audit_dag(dag):
         sql="shared_sql/INSERT__etl_run.sql",
         dag=parent_subdag.subdag,
     )
-    conn.get_operator(
-        task_id='QUERY__CiviCRM_Custom__records',
-        sql="audit/sql/QUERY__CiviCRM_Custom__records.sql",
-        dag=parent_subdag.subdag,
-    )
+    # conn.get_operator(
+    #     task_id='QUERY__CiviCRM_Custom__records',
+    #     sql="audit/sql/QUERY__CiviCRM_Custom__records.sql",
+    #     dag=parent_subdag.subdag,
+    # )
 
-    create_table_record_counts_dag(parent_subdag.subdag, conn)
-    create_table_group_counts_dag(parent_subdag.subdag, conn)
-    create_civicrm_custom_record_count_dag(parent_subdag.subdag, conn)
-    create_study_table_record_count_dag(parent_subdag.subdag)
+    # create_table_record_counts_dag(parent_subdag.subdag, conn)
+    # create_table_group_counts_dag(parent_subdag.subdag, conn)
+    # create_civicrm_custom_record_count_dag(parent_subdag.subdag, conn)
+    create_study_table_record_count_dags(parent_subdag.subdag)
 
     return parent_subdag
 
@@ -150,10 +153,16 @@ def create_civicrm_custom_record_count_dag(dag, conn):
     return parent_subdag
 
 
-def create_study_table_record_count_dag(dag):
+def create_study_table_record_count_dags(dag):
     parent_subdag = create_sub_dag_task(dag, 'study_table_record_count')
 
     conf_conn = WarehouseConfigConnection()
+
+    run_id = conf_conn.get_operator(
+        task_id=f'INSERT__etl_run__study_table_record_count',
+        sql="shared_sql/INSERT__etl_run.sql",
+        dag=parent_subdag.subdag,
+    )
 
     sql__custom_civicrm = '''
         SELECT
@@ -164,26 +173,65 @@ def create_study_table_record_count_dag(dag):
     '''
 
     with conf_conn.query_mssql_dict(sql=sql__custom_civicrm) as cursor:
-        group_dags = []
-        for i, jobs in groupby(cursor, lambda x: x['id'] // 5 ):
-            group_subdag = create_sub_dag_task(parent_subdag.subdag, f'create_study_table_record_count_group_{i}', run_on_failures=True)
-            group_dags.append(group_subdag)
-
-            run_id = conf_conn.get_operator(
-                task_id=f'INSERT__etl_run__create_study_table_record_count_group_{i}',
-                sql="shared_sql/INSERT__etl_run.sql",
-                dag=group_subdag.subdag,
+        for study in cursor:
+            study_group_counts = PythonOperator(
+                task_id=f"study_group_counts__{study['db_name']}",
+                python_callable=_study_group_count,
+                dag=parent_subdag.subdag,
+                op_kwargs={
+                    'study_id': study['id'],
+                    'db_name': study['db_name'],
+                },
             )
 
-            for j in jobs:
-                d = create_table_group_counts_dag(
-                    group_subdag.subdag,
-                    WarehouseConnection(schema=j['db_name']),
-                )
+            run_id >> study_group_counts
+    
 
-                run_id >> d
+        # group_dags = []
+        # for i, jobs in groupby(cursor, lambda x: x['id'] // 5 ):
+        #     group_subdag = create_sub_dag_task(parent_subdag.subdag, f'create_study_table_record_count_group_{i}', run_on_failures=True)
+        #     group_dags.append(group_subdag)
 
-        for a, b in pairwise(group_dags):
-            a >> b
+        #     run_id = conf_conn.get_operator(
+        #         task_id=f'INSERT__etl_run__create_study_table_record_count_group_{i}',
+        #         sql="shared_sql/INSERT__etl_run.sql",
+        #         dag=group_subdag.subdag,
+        #     )
+
+        #     for j in jobs:
+        #         d = create_table_group_counts_dag(
+        #             group_subdag.subdag,
+        #             WarehouseConnection(schema=j['db_name']),
+        #         )
+
+        #         run_id >> d
+
+        # for a, b in pairwise(group_dags):
+        #     a >> b
             
     return parent_subdag
+
+
+def _study_group_count(study_id, db_name, **kwargs):
+    redcap_group = 'datalake_database + \'-\' + CONVERT(VARCHAR(100), redcap_project_id)'
+
+    conn = WarehouseConnection(schema=db_name)
+
+    Params = namedtuple(
+        'Params',
+        'table_name participant_source group_id_term group_type count_type count_term'
+    )
+
+    for p in [
+        Params('civicrm__case', 'CiviCRM Case', 'case_type_id', 'CiviCRM Case Type', 'record', '*'),
+        Params('desc__openspecimen', 'OpenSpecimen', 'collection_protocol_identifier', 'OpenSpecimen Collection Protocol', 'record', '*'),
+        Params('desc__redcap_data', 'REDCap', redcap_group, 'REDCap Project', 'record', '*'),
+        Params('desc__redcap_data', 'REDCap', redcap_group, 'REDCap Project', 'REDCap Participant', 'DISTINCT redcap_participant_id'),
+        Params('desc__redcap_log', 'REDCap', redcap_group, 'REDCap Project', 'record', '*'),
+        Params('desc__redcap_field', 'REDCap', redcap_group, 'REDCap Project', 'record', '*'),
+    ]:
+
+        hook = conn.execute_mssql(
+            file_path=Path(__file__).parent.absolute() / "sql/QUERY__table__groups.sql",
+            context={**p._asdict(), **kwargs},
+        )

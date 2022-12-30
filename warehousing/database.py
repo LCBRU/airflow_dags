@@ -71,24 +71,29 @@ class MsSqlConnection:
             params=params,
         )
 
+    def get_hook(self):
+        return MsSqlHook(mssql_conn_id=self._connection_name, schema=self._schema)
 
     @contextmanager
-    def query_mssql(self, sql=None, file_path=None, parameters=None):
+    def query_mssql(self, sql=None, file_path=None, parameters=None, context=None):
         logging.info("query_mssql: Started")
 
         if not parameters:
             parameters = {}
 
-        mysql = MsSqlHook(mssql_conn_id=self._connection_name, schema=self._schema)
+        mysql = self.get_hook()
         conn = mysql.get_conn()
         cursor = conn.cursor()
 
-        if sql is not None:
-            cursor.execute(sql, parameters)
-        elif file_path is not None:
+        if sql is None:
             logging.info(f'query_mssql running: {file_path}')
             with open(file_path) as sql_file:
-                cursor.execute(sql_file.read(), parameters)
+                sql = sql_file.read()
+
+        if context:
+            sql = sql.format(**context)
+
+        cursor.execute(sql, parameters)
 
         try:
             yield cursor
