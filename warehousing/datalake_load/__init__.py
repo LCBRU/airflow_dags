@@ -77,6 +77,15 @@ def _create_indexes_procedure(destination_database, source_database):
 def _create_database_copy_dag(dag, source_database, destination_database):
     logging.info("_create_database_copy_dag: Started")
 
+    create_destination_database = MsSqlOperator(
+        task_id='create_destination_database',
+        mssql_conn_id=DWH_CONNECTION_NAME,
+        sql="datalake_load/sql/CREATE__databases.sql",
+        autocommit=True,
+        dag=dag,
+        parameters={'db_name': destination_database},
+    )
+
     create_etl_tables = MsSqlOperator(
         task_id='CREATE__etl_tables',
         mssql_conn_id=DWH_CONNECTION_NAME,
@@ -137,6 +146,7 @@ def _create_database_copy_dag(dag, source_database, destination_database):
     )
 
     (
+        create_destination_database >>
         create_etl_tables >>
         recreate_etl_tables >>
         copy_tables >>
