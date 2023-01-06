@@ -6,7 +6,7 @@ from airflow.operators.mssql_operator import MsSqlOperator
 from airflow.operators.python_operator import PythonOperator
 
 from tools import create_sub_dag_task
-from warehousing.database import DatalakeCiviCRMConnection, WarehouseCentralConnection, execute_mssql, query_mssql, DWH_CONNECTION_NAME
+from warehousing.database import DatalakeCiviCRMConnection, WarehouseCentralConnection, DWH_CONNECTION_NAME
 
 
 def _create_merge_civicrm_data_dag(dag):
@@ -57,7 +57,7 @@ def _copy_custom():
         ORDER BY ecc.warehouse_table_name, ccf.id
     '''
 
-    with conn.query_mssql(sql=sql__field_details) as cursor:
+    with conn.query(sql=sql__field_details) as cursor:
         custom_fields = [(
             table_name,
             warehouse_table_name,
@@ -94,7 +94,7 @@ def _copy_custom():
                 ON cc.id = cv.entity_id
         '''
 
-        cv_conn.execute_mssql(sql=sql)
+        cv_conn.execute(sql=sql)
 
     logging.info("_copy_custom: Ended")
 

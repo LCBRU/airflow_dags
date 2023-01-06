@@ -5,8 +5,8 @@ from contextlib import contextmanager
 from airflow.providers.mysql.hooks.mysql import MySqlHook
 from sqlalchemy.ext.declarative import declarative_base
 from airflow.providers.microsoft.mssql.hooks.mssql import MsSqlHook
-from contextlib import contextmanager
 from airflow.operators.mssql_operator import MsSqlOperator
+from airflow.operators.mysql_operator import MySqlOperator
 
 
 Base = declarative_base()
@@ -35,58 +35,65 @@ def etl_central_session():
         engine.dispose
 
 
-class MsSqlConnection:
+class SqlConnection:
     def __init__(self, connection_name, schema):
         self._connection_name = connection_name
         self._schema = schema
     
     @contextmanager
-    def query_mssql_dict(self, *args, **kwargs):
-        logging.info("query_mssql_dict: Started")
+    def query_dict(self, *args, **kwargs):
+        logging.info("query_dict: Started")
 
-        with self.query_mssql(*args, **kwargs) as cursor:
+        with self.query(*args, **kwargs) as cursor:
 
             schema = list(map(lambda schema_tuple: schema_tuple[0].replace(' ', '_'), cursor.description))
 
             yield (dict(zip(schema, r)) for r in cursor)
             
-        logging.info("query_mssql_dict: Ended")
+        logging.info("query_dict: Ended")
 
-    def execute_mssql(self, *args, **kwargs):
-        logging.info("execute_mssql: Started")
+    def execute(self, *args, **kwargs):
+        logging.info("execute: Started")
 
-        with self.query_mssql(*args, **kwargs) as cursor:
+        with self.query(*args, **kwargs) as cursor:
             pass
 
-        logging.info("execute_mssql: Ended")
+        logging.info("execute: Ended")
 
     def get_operator(self, dag, task_id, sql, params=None):
-        return MsSqlOperator(
-            task_id=task_id.replace(" ", "_"),
-            mssql_conn_id=self._connection_name,
-            sql=sql,
-            autocommit=True,
-            database=self._schema,
-            dag=dag,
-            params=params,
-        )
+        pass
 
     def get_hook(self):
-        return MsSqlHook(mssql_conn_id=self._connection_name, schema=self._schema)
+        pass
+
+    @property
+    def connection_details(self):
+        return self.get_hook().get_connection(self._connection_name)
+
+    @property
+    def host(self):
+        return self.connection_details.host
+
+    @property
+    def login(self):
+        return self.connection_details.login
+
+    @property
+    def password(self):
+        return self.connection_details.password
 
     @contextmanager
-    def query_mssql(self, sql=None, file_path=None, parameters=None, context=None):
-        logging.info("query_mssql: Started")
+    def query(self, sql=None, file_path=None, parameters=None, context=None):
+        logging.info("query: Started")
 
         if not parameters:
             parameters = {}
 
-        mysql = self.get_hook()
-        conn = mysql.get_conn()
+        conn = self.get_hook().get_conn()
         cursor = conn.cursor()
 
         if sql is None:
-            logging.info(f'query_mssql running: {file_path}')
+            logging.info(f'query running: {file_path}')
             with open(file_path) as sql_file:
                 sql = sql_file.read()
 
@@ -108,7 +115,39 @@ class MsSqlConnection:
             cursor.close()
             conn.close()
         finally:
-            logging.info("query_mssql: Ended")
+            logging.info("query: Ended")
+
+
+class MySqlConnection(SqlConnection):
+    def get_operator(self, dag, task_id, sql, params=None):
+        return MySqlOperator(
+            task_id=task_id.replace(" ", "_"),
+            mssql_conn_id=self._connection_name,
+            sql=sql,
+            autocommit=True,
+            database=self._schema,
+            dag=dag,
+            params=params,
+        )
+
+    def get_hook(self):
+        return MySqlHook(mysql_conn_id=self._connection_name, schema=self._schema)
+
+
+class MsSqlConnection(SqlConnection):
+    def get_operator(self, dag, task_id, sql, params=None):
+        return MsSqlOperator(
+            task_id=task_id.replace(" ", "_"),
+            mssql_conn_id=self._connection_name,
+            sql=sql,
+            autocommit=True,
+            database=self._schema,
+            dag=dag,
+            params=params,
+        )
+
+    def get_hook(self):
+        return MsSqlHook(mssql_conn_id=self._connection_name, schema=self._schema)
 
 
 DWH_CONNECTION_NAME = 'DWH'
@@ -143,56 +182,15 @@ class DatalakeCiviCRMConnection(WarehouseConnection):
         super().__init__(SCH_DATALAKE_CIVICRM)
 
 
-@contextmanager
-def query_mssql_dict(*args, **kwargs):
-    logging.info("query_mssql_dict: Started")
-
-    with query_mssql(*args, **kwargs) as cursor:
-
-        schema = list(map(lambda schema_tuple: schema_tuple[0].replace(' ', '_'), cursor.description))
-
-        yield (dict(zip(schema, r)) for r in cursor)
-        
-    logging.info("query_mssql_dict: Ended")
+LIVE_DB_CONNECTION_NAME = 'LIVE_DB'
+REPLICANT_DB_CONNECTION_NAME = 'REPLICANT_DB'
 
 
-def execute_mssql(*args, **kwargs):
-    logging.info("execute_mssql: Started")
-
-    with query_mssql(*args, **kwargs) as cursor:
-        pass
-
-    logging.info("execute_mssql: Ended")
+class LiveDbConnection(MySqlConnection):
+    def __init__(self, schema):
+        super().__init__(LIVE_DB_CONNECTION_NAME, schema)
 
 
-@contextmanager
-def query_mssql(connection_name, schema=None, sql=None, file_path=None, parameters=None):
-    logging.info("query_mssql: Started")
-
-    if not parameters:
-        parameters = {}
-
-    mysql = MsSqlHook(mssql_conn_id=connection_name, schema=schema)
-    conn = mysql.get_conn()
-    cursor = conn.cursor()
-
-    if sql is not None:
-        cursor.execute(sql, parameters)
-    elif file_path is not None:
-        with open(file_path) as sql_file:
-            cursor.execute(sql_file.read(), parameters)
-
-    try:
-        yield cursor
-
-    except Exception as e:
-        conn.rollback()
-        cursor.close()
-        conn.close()
-        raise e
-    else:
-        conn.commit()
-        cursor.close()
-        conn.close()
-    finally:
-        logging.info("query_mssql: Ended")
+class ReplicantDbConnection(MySqlConnection):
+    def __init__(self, schema):
+        super().__init__(REPLICANT_DB_CONNECTION_NAME, schema)

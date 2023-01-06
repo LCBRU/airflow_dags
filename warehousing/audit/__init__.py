@@ -136,7 +136,7 @@ def create_civicrm_custom_record_count_dag(dag, conn):
     sql__custom_civicrm = '''
         SELECT * FROM etl__civicrm_custom;
     '''
-    with wh_conn.query_mssql_dict(sql=sql__custom_civicrm) as cursor:
+    with wh_conn.query_dict(sql=sql__custom_civicrm) as cursor:
         for t in cursor:
             job = conn.get_operator(
                 task_id=f'QUERY__warehouse_central__{t["warehouse_table_name"]}__records',
@@ -172,7 +172,7 @@ def create_study_table_record_count_dags(dag):
         ORDER BY id;
     '''
 
-    with conf_conn.query_mssql_dict(sql=sql__custom_civicrm) as cursor:
+    with conf_conn.query_dict(sql=sql__custom_civicrm) as cursor:
         for study in cursor:
             study_group_counts = PythonOperator(
                 task_id=f"study_group_counts__{study['db_name']}",
@@ -231,7 +231,7 @@ def _study_group_count(study_id, db_name, **kwargs):
         Params('desc__redcap_field', 'REDCap', redcap_group, 'REDCap Project', 'record', '*'),
     ]:
 
-        hook = conn.execute_mssql(
+        hook = conn.execute(
             file_path=Path(__file__).parent.absolute() / "sql/QUERY__table__groups.sql",
             context={**p._asdict(), **kwargs},
         )

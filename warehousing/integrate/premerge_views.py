@@ -19,7 +19,7 @@ def _create_views():
         'CREATE_VIEW__merged__redcap_project.sql',
         'CREATE_VIEW__etl__civicrm_custom.sql',
     ]:
-        conn.execute_mssql(file_path=sql_dir / sql_file)
+        conn.execute(file_path=sql_dir / sql_file)
 
     logging.info("_create_views: Ended")
 

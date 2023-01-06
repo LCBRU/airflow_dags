@@ -30,7 +30,7 @@ def _run_dq_error(run_id, folder):
 
     conn = WarehouseCentralConnection()
 
-    with conn.query_mssql_dict(file_path=folder / 'query.sql') as cursor:
+    with conn.query_dict(file_path=folder / 'query.sql') as cursor:
         errors = template.render(cursor=list(cursor))
 
     sql__insert = '''
@@ -39,7 +39,7 @@ def _run_dq_error(run_id, folder):
     '''
 
     if len(errors) > 0:
-        conn.execute_mssql(
+        conn.execute(
             sql=sql__insert,
             parameters={
                 'run_id': run_id,
@@ -64,7 +64,7 @@ def _send_email(**kwargs):
 
     conn = WarehouseCentralConnection()
 
-    with conn.query_mssql_dict(
+    with conn.query_dict(
         sql=sql__errors,
         parameters={'run_id': kwargs['dag_run'].run_id},
     ) as cursor:

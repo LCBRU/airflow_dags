@@ -30,7 +30,7 @@ def _create_config():
         'CREATE__cfg_openspecimen_study_mapping.sql',
         'CREATE__cfg_civicrm_study_mapping.sql',
     ]:
-        conn.execute_mssql(file_path= sql_dir / sql_file)
+        conn.execute(file_path= sql_dir / sql_file)
 
     logging.info("_create_config: Ended")
 

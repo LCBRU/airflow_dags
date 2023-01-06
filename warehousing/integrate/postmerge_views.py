@@ -17,7 +17,7 @@ def _create_views():
         'CREATE_VIEW__desc__redcap_data.sql',
         'CREATE_VIEW__desc__openspecimen.sql',
     ]:
-        conn.execute_mssql(file_path=sql_dir / sql_file)
+        conn.execute(file_path=sql_dir / sql_file)
 
     logging.info("_create_views: Ended")
 

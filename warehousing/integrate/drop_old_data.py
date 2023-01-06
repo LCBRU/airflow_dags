@@ -17,7 +17,7 @@ def _drop_old_data():
         'DROP__OpenSpecimen.sql',
         'DROP__meta_redcap_tables.sql',
     ]:
-        conn.execute_mssql(file_path=sql_dir / sql_file)
+        conn.execute(file_path=sql_dir / sql_file)
 
     logging.info("_drop_old_data: Ended")
 

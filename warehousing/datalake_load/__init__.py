@@ -4,7 +4,7 @@ from airflow.operators.mssql_operator import MsSqlOperator
 from airflow.operators.python_operator import PythonOperator
 from itertools import groupby
 from tools import create_sub_dag_task
-from warehousing.database import WarehouseConnection, execute_mssql, query_mssql, WarehouseCentralConnection
+from warehousing.database import WarehouseConnection, WarehouseCentralConnection
 
 
 DWH_CONNECTION_NAME = 'DWH'
@@ -34,14 +34,14 @@ def _create_indexes_procedure(destination_database, source_database):
 
     conn_dest = WarehouseConnection(destination_database)
 
-    with conn_dest.query_mssql(sql=sql_updated) as cursor:
+    with conn_dest.query(sql=sql_updated) as cursor:
         updated = [r[0] for r in cursor]
 
     indexes = []
 
     conn = WarehouseCentralConnection()
 
-    with conn.query_mssql(
+    with conn.query(
         file_path=Path(__file__).parent.absolute() / 'sql/QUERY__source_index_details.sql',
         parameters={'source_database': source_database},
         ) as cursor:
@@ -69,7 +69,7 @@ def _create_indexes_procedure(destination_database, source_database):
 
     sql = '\n\n'.join(indexes)
 
-    conn_dest.execute_mssql(sql=sql)
+    conn_dest.execute(sql=sql)
 
     logging.info("_create_indexes_procedure: Ended")
 

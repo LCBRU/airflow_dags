@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
 from tools import create_sub_dag_task
-from warehousing.database import WarehouseCentralConnection, execute_mssql
+from warehousing.database import WarehouseCentralConnection
 from airflow.operators.python_operator import PythonOperator
 
 
@@ -11,7 +11,7 @@ def _merge_participants():
     conn = WarehouseCentralConnection()
     sql_dir = Path(__file__).parent.absolute() / 'sql'
     
-    conn.execute_mssql(
+    conn.execute(
         file_path=sql_dir / 'cleanup/DROP__Participants.sql',
     )
 
@@ -22,7 +22,7 @@ def _merge_participants():
         'INSERT__wh_merged_participant__table_column.sql',
         'MERGE__wh_merged_participant.sql',
     ]:
-        conn.execute_mssql(file_path=sql_dir / 'participants' / sql_file)
+        conn.execute(file_path=sql_dir / 'participants' / sql_file)
 
     logging.info("_create_views: Ended")
 

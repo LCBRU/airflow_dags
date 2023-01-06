@@ -40,7 +40,7 @@ def _copy_redcap():
 
     conn = WarehouseCentralConnection()
 
-    with conn.query_mssql_dict(sql=sql__redcap_mappings) as cursor:
+    with conn.query_dict(sql=sql__redcap_mappings) as cursor:
         for study_db, fields in groupby(cursor, lambda r: r['study_database']):
 
             conn_study = WarehouseConnection(schema=study_db)
@@ -49,13 +49,13 @@ def _copy_redcap():
 
             logging.info(f'****************************** {study_db}')
 
-            conn_study.execute_mssql(
+            conn_study.execute(
                 sql=sql__create_redcap_data.format(
                     meta__redcap_project_ids=', '.join(meta__redcap_project_ids)
                 ),
             )
 
-            conn_study.execute_mssql(
+            conn_study.execute(
                 sql=sql__create_redcap_log.format(
                     meta__redcap_project_ids=', '.join(meta__redcap_project_ids)
                 ),
@@ -86,7 +86,7 @@ def _copy_openspecimen():
 
     conn = WarehouseCentralConnection()
 
-    with conn.query_mssql_dict(sql=sql__os_mappings) as cursor:
+    with conn.query_dict(sql=sql__os_mappings) as cursor:
         for study_db, fields in groupby(cursor, lambda r: r['study_database']):
 
             conn_study = WarehouseConnection(schema=study_db)
@@ -95,7 +95,7 @@ def _copy_openspecimen():
 
             logging.info(f'****************************** {study_db}')
 
-            conn_study.execute_mssql(
+            conn_study.execute(
                 sql=sql__create_view.format(
                     collection_protocol_ids=', '.join(collection_protocol_ids)
                 ),
@@ -137,7 +137,7 @@ def _copy_civicrm():
 
     conn = WarehouseCentralConnection()
 
-    with conn.query_mssql_dict(sql=sql__civicrm_mappings) as cursor:
+    with conn.query_dict(sql=sql__civicrm_mappings) as cursor:
         for study_db, fields in groupby(cursor, lambda r: r['study_database']):
 
             conn_study = WarehouseConnection(schema=study_db)
@@ -146,11 +146,11 @@ def _copy_civicrm():
 
             logging.info(f'****************************** {study_db}')
 
-            conn_study.execute_mssql(
+            conn_study.execute(
                 sql=sql__create_case.format(case_type_ids=', '.join(case_type_ids)),
             )
 
-            conn_study.execute_mssql(
+            conn_study.execute(
                 sql=sql__create_contact.format(case_type_ids=', '.join(case_type_ids)),
             )
 
@@ -174,7 +174,7 @@ def _copy_civicrm_custom():
 
     conn = WarehouseCentralConnection()
 
-    with conn.query_mssql(sql=sql__custom_table_mappings) as cursor:
+    with conn.query(sql=sql__custom_table_mappings) as cursor:
         mappings = [(table_name, study_db) for (table_name, study_db) in cursor]
 
     sql__create_view = '''
@@ -188,7 +188,7 @@ def _copy_civicrm_custom():
 
         conn_study = WarehouseConnection(schema=study_db)
  
-        conn_study.execute_mssql(sql=sql__create_view.format(table_name=table_name))
+        conn_study.execute(sql=sql__create_view.format(table_name=table_name))
 
     logging.info("_copy_civicrm_custom: Ended")
 
