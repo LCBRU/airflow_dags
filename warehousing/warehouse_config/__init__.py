@@ -29,6 +29,8 @@ def _create_config():
         'CREATE__cfg_redcap_identifier_field.sql',
         'CREATE__cfg_openspecimen_study_mapping.sql',
         'CREATE__cfg_civicrm_study_mapping.sql',
+        'CREATE__desc__etl_audit.sql',
+        'CREATE__desc__cfg_redcap_mapping.sql',
     ]:
         conn.execute(file_path= sql_dir / sql_file)
 

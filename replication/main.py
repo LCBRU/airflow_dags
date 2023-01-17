@@ -25,10 +25,8 @@ dag = DAG(
     catchup=False,
 )
 
-def _replicate_database(db):
+def _replicate_database(db, live_conn, replicant_conn):
     logging.info("_replicate_database: Started")
-
-    live_conn = LiveDbConnection(db)
 
     dump = subprocess.Popen(
         [
@@ -40,15 +38,12 @@ def _replicate_database(db):
             f'--password={live_conn.password}',
             '--add-drop-database',
             '--column-statistics=0',
-            '--compact',
             '--databases',
             db,
         ],
         bufsize=0,
         stdout=subprocess.PIPE,
     )
-
-    replicant_conn = ReplicantDbConnection(db)
 
     load = subprocess.Popen(
         [
@@ -66,45 +61,52 @@ def _replicate_database(db):
     dump.stdout.close()
     result = load.communicate()[0]
 
+    print(result)
+
     logging.info("_replicate_database: Ended")
 
 dbs = {
-    'Yakult',
-    'briccs',
-    'briccs_auditor_temp',
-    'briccs_kettering',
-    'briccs_northampton',
-    'briccsids',
-    'civicrmlive_docker4716',
-    'dq_central',
-    'drupallive_docker4716',
-    'etl_central',
-    'genvasc_gp_portal',
-    'grafana',
-    'identity',
-    'image_study_merge',
-    'mrbs',
-    'onyx',
+    # 'Yakult',
+    # 'briccs',
+    # 'briccs_auditor_temp',
+    # 'briccs_kettering',
+    # 'briccs_northampton',
+    # 'briccsids',
+    # 'civicrmlive_docker4716',
+    # 'dq_central',
+    # 'drupallive_docker4716',
+    # 'etl_central',
+    # 'genvasc_gp_portal',
+    # 'grafana',
+    # 'identity',
+    # 'image_study_merge',
+    # 'mrbs',
+    # 'onyx',
     'redcap6170_briccs',
     'redcap6170_briccsext',
     'redcap_dev',
     'redcap_genvasc',
     'redcap_national',
     'redcap_test',
-    'reporting',
-    'scratch',
+    # 'reporting',
+    # 'scratch',
 }
 
 def create_download_to_mysql_dag(dag):
     parent_subdag = create_sub_dag_task(dag, 'replicate_mysql', run_on_failures=True)
 
     for db in dbs:
+        live_conn = LiveDbConnection(db)
+        replicant_conn = ReplicantDbConnection(db)
+
         PythonOperator(
             task_id=f"replicate__replicate_database__{db}",
             python_callable=_replicate_database,
             dag=parent_subdag.subdag,
             op_kwargs={
                 'db': db,
+                'live_conn': live_conn,
+                'replicant_conn': replicant_conn,
             },
         )
     

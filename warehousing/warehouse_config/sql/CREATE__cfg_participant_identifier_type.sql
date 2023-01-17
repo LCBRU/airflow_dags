@@ -85,7 +85,8 @@ BEGIN
 		(N'UPFOR5_ID'),
 		(N'VASCEGENS_ID'),
 		(N'yakult_id'),
-		(N'yoga_id');
+		(N'yoga_id'),
+		(N'DISCORDANCE_ANONYMOUS_IMAGE_ID');
 
 	-- CiviCRM IDs
 	INSERT INTO cfg_participant_identifier_type (name) VALUES
@@ -95,4 +96,5 @@ BEGIN
 	-- OpenSpecimen
 	INSERT INTO cfg_participant_identifier_type (name) VALUES
 		(N'OpenSpecimen Participant ID');
+
 END

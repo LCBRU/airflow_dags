@@ -22,15 +22,15 @@ def create_audit_dag(dag):
         sql="shared_sql/INSERT__etl_run.sql",
         dag=parent_subdag.subdag,
     )
-    # conn.get_operator(
-    #     task_id='QUERY__CiviCRM_Custom__records',
-    #     sql="audit/sql/QUERY__CiviCRM_Custom__records.sql",
-    #     dag=parent_subdag.subdag,
-    # )
+    conn.get_operator(
+        task_id='QUERY__CiviCRM_Custom__records',
+        sql="audit/sql/QUERY__CiviCRM_Custom__records.sql",
+        dag=parent_subdag.subdag,
+    )
 
-    # create_table_record_counts_dag(parent_subdag.subdag, conn)
-    # create_table_group_counts_dag(parent_subdag.subdag, conn)
-    # create_civicrm_custom_record_count_dag(parent_subdag.subdag, conn)
+    create_table_record_counts_dag(parent_subdag.subdag, conn)
+    create_table_group_counts_dag(parent_subdag.subdag, conn)
+    create_civicrm_custom_record_count_dag(parent_subdag.subdag, conn)
     create_study_table_record_count_dags(parent_subdag.subdag)
 
     return parent_subdag
