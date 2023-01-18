@@ -1,7 +1,7 @@
 from itertools import groupby, tee
 from pathlib import Path
 from tools import create_sub_dag_task
-from warehousing.database import WarehouseCentralConnection, WarehouseConfigConnection, WarehouseConnection
+from warehousing.database import WarehouseCentralConnection, WarehouseConfigConnection, WarehouseConnection, SCH_WAREHOUSE_CENTRAL
 from collections import namedtuple
 from airflow.operators.python_operator import PythonOperator
 
@@ -29,7 +29,18 @@ def create_audit_dag(dag):
     )
 
     create_table_record_counts_dag(parent_subdag.subdag, conn)
-    create_table_group_counts_dag(parent_subdag.subdag, conn)
+    # create_table_group_counts_dag(parent_subdag.subdag, conn)
+
+    PythonOperator(
+        task_id=f"warehouse_central_group_counts",
+        python_callable=_study_group_count,
+        dag=parent_subdag.subdag,
+        op_kwargs={
+            'study_id': '',
+            'db_name': SCH_WAREHOUSE_CENTRAL,
+        },
+    )
+
     create_civicrm_custom_record_count_dag(parent_subdag.subdag, conn)
     create_study_table_record_count_dags(parent_subdag.subdag)
 
@@ -186,29 +197,6 @@ def create_study_table_record_count_dags(dag):
 
             run_id >> study_group_counts
     
-
-        # group_dags = []
-        # for i, jobs in groupby(cursor, lambda x: x['id'] // 5 ):
-        #     group_subdag = create_sub_dag_task(parent_subdag.subdag, f'create_study_table_record_count_group_{i}', run_on_failures=True)
-        #     group_dags.append(group_subdag)
-
-        #     run_id = conf_conn.get_operator(
-        #         task_id=f'INSERT__etl_run__create_study_table_record_count_group_{i}',
-        #         sql="shared_sql/INSERT__etl_run.sql",
-        #         dag=group_subdag.subdag,
-        #     )
-
-        #     for j in jobs:
-        #         d = create_table_group_counts_dag(
-        #             group_subdag.subdag,
-        #             WarehouseConnection(schema=j['db_name']),
-        #         )
-
-        #         run_id >> d
-
-        # for a, b in pairwise(group_dags):
-        #     a >> b
-            
     return parent_subdag
 
 
@@ -232,6 +220,6 @@ def _study_group_count(study_id, db_name, **kwargs):
     ]:
 
         hook = conn.execute(
-            file_path=Path(__file__).parent.absolute() / "sql/QUERY__table__groups.sql",
+            file_path=Path(__file__).parent.absolute() / "sql/QUERY__table__groups_2.sql",
             context={**p._asdict(), **kwargs},
         )

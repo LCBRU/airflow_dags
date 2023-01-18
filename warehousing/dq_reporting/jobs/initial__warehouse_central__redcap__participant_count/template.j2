@@ -1,0 +1,31 @@
+{% if cursor | length > 0 %}
+    <h2>Initial Warehouse Central REDCap Participant Count</h2>
+    <p>
+        The following redcap projects have fewer participants
+        than the initial manual data check.
+    </p>
+    <table>
+        <thead>
+            <tr>
+                <th>Datalake Database</th>
+                <th>Source System</th>
+                <th>Project ID</th>
+                <th>Project Name</th>
+                <th>Expected</th>
+                <th>Actual</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in cursor %}
+                <tr>
+                    <td>{{ r['datalake_database'] }}</td>
+                    <td>{{ r['source_system'] }}</td>
+                    <td>{{ r['project_id'] }}</td>
+                    <td>{{ r['project_name'] }}</td>
+                    <td>{{ r['expected_participant_count'] }}</td>
+                    <td>{{ r['actual_participant_count'] }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endif %}

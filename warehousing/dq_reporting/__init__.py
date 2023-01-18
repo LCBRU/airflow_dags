@@ -12,15 +12,16 @@ def _log_dq_errors(**kwargs):
     logging.info("_log_dq_errors: Started")
 
     run_id = kwargs['dag_run'].run_id
+    ts = kwargs['dag_run'].ts
 
     for f in (Path(__file__).parent.absolute() / 'jobs').iterdir():
         if f.is_dir():
-            _run_dq_error(run_id, f)    
+            _run_dq_error(run_id, ts, f)    
 
     logging.info("_log_dq_errors: Ended")
 
 
-def _run_dq_error(run_id, folder):
+def _run_dq_error(run_id, ts, folder):
     logging.info("_run_dq_error: Started")
 
     logging.info(f"************ {folder}")
@@ -30,7 +31,7 @@ def _run_dq_error(run_id, folder):
 
     conn = WarehouseCentralConnection()
 
-    with conn.query_dict(file_path=folder / 'query.sql') as cursor:
+    with conn.query_dict(file_path=folder / 'query.sql', parameters={'ts': ts}) as cursor:
         errors = template.render(cursor=list(cursor))
 
     sql__insert = '''
