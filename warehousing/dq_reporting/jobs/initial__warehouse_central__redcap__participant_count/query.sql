@@ -1,5 +1,7 @@
 DECLARE @ts VARCHAR(100)
-SET @ts='2023-01-18T12:57:22.568885+00:00'
+SELECT TOP 1 @ts=r.dag_run_ts
+FROM warehouse_config.dbo.etl_run r
+ORDER BY r.created_datetime DESC
 
 SELECT
 	ame.datalake_database,

@@ -1,0 +1,25 @@
+{% if cursor | length > 0 %}
+    <h2>Ongoing Warehouse Central REDCap Participant Count</h2>
+    <p>
+        The following redcap projects have fewer participants
+        than the previous data load.
+    </p>
+    <table>
+        <thead>
+            <tr>
+                <th>Group ID</th>
+                <th>Expected Participant Count</th>
+                <th>Actual Participant Count</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in cursor %}
+                <tr>
+                    <td>{{ r['group_id'] }}</td>
+                    <td>{{ r['expected_participant_count'] }}</td>
+                    <td>{{ r['actual_participant_count'] }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endif %}
