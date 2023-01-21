@@ -12,7 +12,7 @@ def _log_dq_errors(**kwargs):
     logging.info("_log_dq_errors: Started")
 
     run_id = kwargs['dag_run'].run_id
-    ts = kwargs['dag_run'].ts
+    ts = kwargs['dag_run'].logical_date
 
     for f in (Path(__file__).parent.absolute() / 'jobs').iterdir():
         if f.is_dir():
