@@ -8,8 +8,8 @@ SELECT
 	ame.source_system,
 	ame.project_id,
 	ame.project_name,
-	ame.item_count AS expected_participant_count,
-	dea.count AS actual_participant_count
+	ame.item_count AS expected_count,
+	dea.count AS actual_count
 FROM warehouse_central.dbo.audit__manual_expected ame
 LEFT JOIN warehouse_config.dbo.desc__etl_audit dea
 	ON dea.group_id = ame.datalake_database + '-' + CONVERT(VARCHAR, ame.project_id)

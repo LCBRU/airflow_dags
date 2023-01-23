@@ -176,6 +176,7 @@ def _table_group_count(study_id, db_name, **kwargs):
     for p in [
         Params('civicrm__case', 'CiviCRM Case', 'case_type_id', 'CiviCRM Case Type', 'record', '*'),
         Params('desc__openspecimen', 'OpenSpecimen', 'collection_protocol_identifier', 'OpenSpecimen Collection Protocol', 'record', '*'),
+        Params('desc__openspecimen', 'OpenSpecimen', 'collection_protocol_identifier', 'OpenSpecimen Collection Protocol', 'OpenSpecimen Participant', 'empi_id'),
         Params('desc__redcap_data', 'REDCap', redcap_group, 'REDCap Project', 'record', '*'),
         Params('desc__redcap_data', 'REDCap', redcap_group, 'REDCap Project', 'REDCap Participant', 'DISTINCT redcap_participant_id'),
         Params('desc__redcap_log', 'REDCap', redcap_group, 'REDCap Project', 'record', '*'),
