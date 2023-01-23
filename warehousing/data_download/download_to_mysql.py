@@ -7,12 +7,9 @@ import requests
 import shutil
 import logging
 from airflow.operators.python_operator import PythonOperator
-from airflow.providers.mysql.hooks.mysql import MySqlHook
 from airflow.models import Variable
 from tools import create_sub_dag_task
-
-
-LIVE_DB_CONNECTION_NAME = 'LIVE_DB'
+from warehousing.database import ReplicantDbConnection
 
 
 def _download_and_restore(destination_database, source_url):
@@ -121,11 +118,8 @@ def _drop_database(destination_database):
     logging.info("_drop_database: Started")
 
     sql = 'DROP DATABASE IF EXISTS {};'.format(destination_database)
-    mysql = MySqlHook(mysql_conn_id=LIVE_DB_CONNECTION_NAME)
-    conn = mysql.get_conn()
-    cursor = conn.cursor()
-    cursor.execute(sql)
-
+    conn = ReplicantDbConnection()
+    conn.execute(sql)
     logging.info("_drop_database: Ended")
 
 
@@ -133,10 +127,8 @@ def _create_database(destination_database):
     logging.info("_create_database: Started")
 
     sql = 'CREATE DATABASE {};'.format(destination_database)
-    mysql = MySqlHook(mysql_conn_id=LIVE_DB_CONNECTION_NAME)
-    conn = mysql.get_conn()
-    cursor = conn.cursor()
-    cursor.execute(sql)
+    conn = ReplicantDbConnection()
+    conn.execute(sql)
 
     logging.info("_create_database: Ended")
 
@@ -160,8 +152,7 @@ def _restore_database(destination_database, input_filename):
 
 
 def _run_mysql(command):
-    mysqlhook = MySqlHook(mysql_conn_id=LIVE_DB_CONNECTION_NAME)
-    conn = mysqlhook.get_connection(LIVE_DB_CONNECTION_NAME)
+    conn = ReplicantDbConnection()
 
     result = subprocess.run(
         [
