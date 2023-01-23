@@ -158,7 +158,7 @@ SCH_DATALAKE_CIVICRM = 'datalake_civicrm'
 
 
 class WarehouseConnection(MsSqlConnection):
-    def __init__(self, schema):
+    def __init__(self, schema=''):
         super().__init__(DWH_CONNECTION_NAME, schema)
 
 
@@ -187,10 +187,10 @@ REPLICANT_DB_CONNECTION_NAME = 'REPLICANT_DB'
 
 
 class LiveDbConnection(MySqlConnection):
-    def __init__(self, schema):
+    def __init__(self, schema=''):
         super().__init__(LIVE_DB_CONNECTION_NAME, schema)
 
 
 class ReplicantDbConnection(MySqlConnection):
-    def __init__(self, schema):
+    def __init__(self, schema=''):
         super().__init__(REPLICANT_DB_CONNECTION_NAME, schema)
