@@ -36,7 +36,7 @@ def etl_central_session():
 
 
 class SqlConnection:
-    def __init__(self, connection_name, schema):
+    def __init__(self, connection_name, schema=''):
         self._connection_name = connection_name
         self._schema = schema
     
