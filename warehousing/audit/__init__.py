@@ -29,11 +29,10 @@ def create_audit_dag(dag):
     )
 
     create_table_record_counts_dag(parent_subdag.subdag, conn)
-    # create_table_group_counts_dag(parent_subdag.subdag, conn)
 
     PythonOperator(
         task_id=f"warehouse_central_group_counts",
-        python_callable=_study_group_count,
+        python_callable=_table_group_count,
         dag=parent_subdag.subdag,
         op_kwargs={
             'study_id': '',
@@ -97,42 +96,6 @@ def create_table_record_counts_dag(dag, conn):
     return parent_subdag
 
 
-def create_table_group_counts_dag(dag, conn):
-    parent_subdag = create_sub_dag_task(dag, f'table_group_counts_for_db_{conn._schema}')
-
-    redcap_group = 'datalake_database + \'-\' + CONVERT(VARCHAR(100), redcap_project_id)'
-
-    Params = namedtuple(
-        'Params',
-        'table_name participant_source group_id_term group_type count_type count_term'
-    )
-
-    run_id = conn.get_operator(
-        task_id=f'INSERT__etl_run__table_group_counts_for_db_{conn._schema}',
-        sql="shared_sql/INSERT__etl_run.sql",
-        dag=parent_subdag.subdag,
-    )
-
-    for p in [
-        Params('civicrm__case', 'CiviCRM Case', 'case_type_id', 'CiviCRM Case Type', 'record', '*'),
-        Params('desc__openspecimen', 'OpenSpecimen', 'collection_protocol_identifier', 'OpenSpecimen Collection Protocol', 'record', '*'),
-        Params('desc__redcap_data', 'REDCap', redcap_group, 'REDCap Project', 'record', '*'),
-        Params('desc__redcap_data', 'REDCap', redcap_group, 'REDCap Project', 'REDCap Participant', 'DISTINCT redcap_participant_id'),
-        Params('desc__redcap_log', 'REDCap', redcap_group, 'REDCap Project', 'record', '*'),
-        Params('desc__redcap_field', 'REDCap', redcap_group, 'REDCap Project', 'record', '*'),
-    ]:
-        job = conn.get_operator(
-            task_id=f'QUERY__warehouse_central__{p.table_name}__group__{p.group_type}__count__{p.count_type}'.replace(' ', '_'),
-            sql="audit/sql/QUERY__table__groups.sql",
-            dag=parent_subdag.subdag,
-            params=p._asdict(),
-        )
-
-        run_id >> job
-
-    return parent_subdag
-
-
 def create_civicrm_custom_record_count_dag(dag, conn):
     parent_subdag = create_sub_dag_task(dag, 'civicrm_custom_record_count')
 
@@ -187,7 +150,7 @@ def create_study_table_record_count_dags(dag):
         for study in cursor:
             study_group_counts = PythonOperator(
                 task_id=f"study_group_counts__{study['db_name']}",
-                python_callable=_study_group_count,
+                python_callable=_table_group_count,
                 dag=parent_subdag.subdag,
                 op_kwargs={
                     'study_id': study['id'],
@@ -200,7 +163,7 @@ def create_study_table_record_count_dags(dag):
     return parent_subdag
 
 
-def _study_group_count(study_id, db_name, **kwargs):
+def _table_group_count(study_id, db_name, **kwargs):
     redcap_group = 'datalake_database + \'-\' + CONVERT(VARCHAR(100), redcap_project_id)'
 
     conn = WarehouseConnection(schema=db_name)
@@ -220,6 +183,6 @@ def _study_group_count(study_id, db_name, **kwargs):
     ]:
 
         hook = conn.execute(
-            file_path=Path(__file__).parent.absolute() / "sql/QUERY__table__groups_2.sql",
+            file_path=Path(__file__).parent.absolute() / "sql/QUERY__table__groups.sql",
             context={**p._asdict(), **kwargs},
         )
