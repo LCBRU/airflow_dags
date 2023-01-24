@@ -12,10 +12,10 @@ SELECT
 	dea.count AS actual_count
 FROM warehouse_central.dbo.audit__manual_expected ame
 LEFT JOIN warehouse_config.dbo.desc__etl_audit dea
-	ON dea.group_id = ame.datalake_database + '-' + CONVERT(VARCHAR, ame.project_id)
+	ON dea.group_id = ame.project_id
 	AND dea.dag_run_ts = @ts
 	AND dea.count_type_name = 'record'
-	AND dea.group_type_name = 'CiviCRM Case'
+	AND dea.group_type_name = 'CiviCRM Case Type'
 	AND dea.table_name = 'civicrm__case'
 	AND dea.database_name = 'warehouse_central'
 WHERE ame.source_system = 'civicrm'

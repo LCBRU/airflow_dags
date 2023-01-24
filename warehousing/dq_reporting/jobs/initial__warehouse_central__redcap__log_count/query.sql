@@ -15,9 +15,9 @@ LEFT JOIN warehouse_config.dbo.desc__etl_audit dea
 	ON dea.group_id = ame.datalake_database + '-' + CONVERT(VARCHAR, ame.project_id)
 	AND dea.dag_run_ts = @ts
 	AND dea.count_type_name = 'record'
-	AND dea.group_type_name = 'OpenSpecimen'
-	AND dea.table_name = 'desc__openspecimen'
+	AND dea.group_type_name = 'REDCap Project'
+	AND dea.table_name = 'desc__redcap_log'
 	AND dea.database_name = 'warehouse_central'
-WHERE ame.source_system = 'OpenSpecimen'
+WHERE ame.source_system = 'redcap'
 	AND COALESCE(ame.participant_count, 0) > COALESCE(dea.count, 0)
 ;
