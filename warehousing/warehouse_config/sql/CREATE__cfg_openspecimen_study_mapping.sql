@@ -77,7 +77,7 @@ BEGIN
         UNION SELECT 85, 'Benrex', 'Benrex_id'
         UNION SELECT 86, 'covid-heart', 'covid_heart_id'
         UNION SELECT 87, 'mri uspio', 'mri_uspio_id'
-        UNION SELECT 87, 'event', 'event_id'
+        UNION SELECT 88, 'event', 'event_id'
         UNION SELECT 89, 'CHESTY', 'CHESTY_ID'
         UNION SELECT 90, 'mesos lcm', 'mesos_lcm_id'
         UNION SELECT 91, 'COSMIC', 'COSMIC_ID'

@@ -70,7 +70,6 @@ def create_table_record_counts_dag(dag, conn):
         Params('meta__redcap_field_enum', 'REDCap'),
         Params('meta__redcap_form', 'REDCap'),
         Params('meta__redcap_form_section', 'REDCap'),
-        Params('meta__redcap_instance', 'REDCap'),
         Params('meta__redcap_project', 'REDCap'),
         Params('openspecimen__collection_protocol', 'OpenSpecimen'),
         Params('openspecimen__event', 'OpenSpecimen'),
@@ -174,13 +173,62 @@ def _table_group_count(study_id, db_name, **kwargs):
     )
 
     for p in [
-        Params('civicrm__case', 'CiviCRM Case', 'case_type_id', 'CiviCRM Case Type', 'record', '*'),
-        Params('desc__openspecimen', 'OpenSpecimen', 'collection_protocol_identifier', 'OpenSpecimen Collection Protocol', 'record', '*'),
-        Params('desc__openspecimen', 'OpenSpecimen', 'collection_protocol_identifier', 'OpenSpecimen Collection Protocol', 'OpenSpecimen Participant', 'empi_id'),
-        Params('desc__redcap_data', 'REDCap', redcap_group, 'REDCap Project', 'record', '*'),
-        Params('desc__redcap_data', 'REDCap', redcap_group, 'REDCap Project', 'REDCap Participant', 'DISTINCT redcap_participant_id'),
-        Params('desc__redcap_log', 'REDCap', redcap_group, 'REDCap Project', 'record', '*'),
-        Params('desc__redcap_field', 'REDCap', redcap_group, 'REDCap Project', 'record', '*'),
+        Params(
+            'civicrm__case',
+            'CiviCRM Case',
+            'case_type_id',
+            'CiviCRM Case Type',
+            'record',
+            '*',
+        ),
+        Params(
+            'desc__openspecimen',
+            'OpenSpecimen',
+            'collection_protocol_identifier',
+            'OpenSpecimen Collection Protocol',
+            'record',
+            '*',
+        ),
+        Params(
+            'desc__openspecimen',
+            'OpenSpecimen',
+            'collection_protocol_identifier',
+            'OpenSpecimen Collection Protocol',
+            'OpenSpecimen Participant',
+            'participant_identifier',
+        ),
+        Params(
+            'desc__redcap_data',
+            'REDCap',
+            redcap_group,
+            'REDCap Project',
+            'record',
+            '*',
+        ),
+        Params(
+            'desc__redcap_data',
+            'REDCap',
+            redcap_group,
+            'REDCap Project',
+            'REDCap Participant',
+            'DISTINCT redcap_participant_id',
+        ),
+        Params(
+            'desc__redcap_log',
+            'REDCap',
+            redcap_group,
+            'REDCap Project',
+            'record',
+            '*',
+        ),
+        Params(
+            'desc__redcap_field',
+            'REDCap',
+            redcap_group,
+            'REDCap Project',
+            'record',
+            '*',
+        ),
     ]:
 
         hook = conn.execute(
