@@ -1,6 +1,4 @@
 DECLARE @ts VARCHAR(100)
-SET @ts = {{ params.ts }}
-
 SELECT TOP 1 @ts=r.dag_run_ts
 FROM warehouse_config.dbo.etl_run r
 ORDER BY r.created_datetime DESC
