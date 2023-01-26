@@ -230,7 +230,7 @@ def _table_group_count(study_id, db_name, **kwargs):
             '*',
         ),
     ]:
-
+        print(**p._asdict())
         hook = conn.execute(
             file_path=Path(__file__).parent.absolute() / "sql/QUERY__table__groups.sql",
             context={**p._asdict(), **kwargs},
