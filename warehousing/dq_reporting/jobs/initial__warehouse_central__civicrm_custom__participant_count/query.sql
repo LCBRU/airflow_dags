@@ -1,8 +1,3 @@
-DECLARE @ts VARCHAR(100)
-SELECT TOP 1 @ts=r.dag_run_ts
-FROM warehouse_config.dbo.etl_run r
-ORDER BY r.created_datetime DESC
-
 SELECT
 	ame.datalake_database,
 	ame.source_system,
@@ -15,11 +10,12 @@ JOIN warehouse_central.dbo.etl__civicrm_custom ecc
 	ON ecc.case_type_id = ame.project_id
 LEFT JOIN warehouse_config.dbo.desc__etl_audit dea
 	ON dea.group_id = CONVERT(VARCHAR, ame.project_id)
-	AND dea.dag_run_ts = @ts
 	AND dea.count_type_name = 'record'
 	AND dea.group_type_name = 'table'
 	AND dea.table_name = ecc.table_name
 	AND dea.database_name = 'warehouse_central'
+JOIN etl__last_ts ts
+	ON ts.last_ts = dea.dag_run_ts
 WHERE ame.source_system = 'CiviCRM Case'
 	AND COALESCE(ame.participant_count, 0) > COALESCE(dea.count, 0)
 ;
