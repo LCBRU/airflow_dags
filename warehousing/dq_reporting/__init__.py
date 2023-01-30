@@ -26,6 +26,7 @@ def _run_dq_error(run_id, ts, folder):
 
     if not((folder / 'query.sql').exists() and (folder / 'template.j2').exists()):
         logging.info(f"****** Skipping ****** {folder}")
+        return
 
     logging.info(f"************ {folder}")
 

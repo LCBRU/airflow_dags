@@ -266,6 +266,7 @@ INSERT INTO cfg_redcap_identifier_field(cfg_redcap_instance_id, redcap_project_i
     (6,35,'record',(SELECT id FROM cfg_participant_identifier_type WHERE name='easy_as_id')),
     (6,38,'record',(SELECT id FROM cfg_participant_identifier_type WHERE name='easy_as_id')),
     (6,42,'record',(SELECT id FROM cfg_participant_identifier_type WHERE name='easy_as_id')),
+    (6,52,'record',(SELECT id FROM cfg_participant_identifier_type WHERE name='easy_as_id')),
     (5,27,'record',(SELECT id FROM cfg_participant_identifier_type WHERE name='ldc_volunteer_id')),
     (5,41,'record',(SELECT id FROM cfg_participant_identifier_type WHERE name='covid_risk_perception_id')),
     (5,48,'record',(SELECT id FROM cfg_participant_identifier_type WHERE name='covid_care_home_chronic_disease_id')),
