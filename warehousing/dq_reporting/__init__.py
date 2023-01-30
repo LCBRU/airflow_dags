@@ -24,6 +24,9 @@ def _log_dq_errors(**kwargs):
 def _run_dq_error(run_id, ts, folder):
     logging.info("_run_dq_error: Started")
 
+    if not((folder / 'query.sql').exists() and (folder / 'template.j2').exists()):
+        logging.info(f"****** Skipping ****** {folder}")
+
     logging.info(f"************ {folder}")
 
     environment = Environment(loader=FileSystemLoader(folder))
