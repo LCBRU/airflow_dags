@@ -1,0 +1,25 @@
+{% if cursor | length > 0 %}
+    <h2>Missing Mapped REDCap Project</h2>
+    <p>
+        The following REDCap Projects have not been
+        copied into the Data Warehouse meta__redcap_project table.
+    </p>
+    <table>
+        <thead>
+            <tr>
+                <th>REDCap Meta Instance ID</th>
+                <th>REDCap Project ID</th>
+                <th>Study ID</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in cursor %}
+                <tr>
+                    <td>{{ r['cfg_redcap_instance_id'] }}</td>
+                    <td>{{ r['redcap_project_id'] }}</td>
+                    <td>{{ r['cfg_study_id'] }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endif %}

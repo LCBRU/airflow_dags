@@ -13,6 +13,8 @@ BEGIN
 	);
 
 	INSERT INTO cfg_redcap_mapping (cfg_study_id, redcap_project_id, cfg_redcap_instance_id) VALUES
+	(0,73,2),
+	(0,4,1),
 	(1,93,1),
 	(2,9,1),
 	(3,68,1),

@@ -1,0 +1,23 @@
+{% if cursor | length > 0 %}
+    <h2>Missing Study CiviCRM</h2>
+    <p>
+        The following CiviCRM case types 
+        are missing from the Study Data Warehouses
+        that are defined in cfg_civicrm_study_mapping
+    </p>
+    <table>
+        <thead>
+            <tr>
+                <th>Study</th>
+                <th>Case Type ID</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in cursor %}
+                <tr>
+                    <td>{{ r['study_database'] }}</td>
+                    <td>{{ r['case_type_id'] }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+{% endif %}

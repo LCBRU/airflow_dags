@@ -34,6 +34,8 @@ BEGIN
     JOIN warehouse_config.dbo.cfg_redcap_mapping rm
         ON rm.cfg_redcap_instance_id = mri.id
         AND rm.redcap_project_id = rem.project_id
+        AND rm.cfg_study_id > 0
+
 END"
 
 SET QUOTED_IDENTIFIER ON;

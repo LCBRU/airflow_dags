@@ -26,6 +26,7 @@ BEGIN
         FROM warehouse_config.dbo.cfg_redcap_instance ri
         JOIN warehouse_config.dbo.cfg_redcap_mapping rm
             ON rm.cfg_redcap_instance_id = ri.id
+            AND rm.cfg_study_id > 0
         WHERE ri.datalake_database = '?'
     ) ri ON ri.redcap_project_id = rp.project_id
 END"

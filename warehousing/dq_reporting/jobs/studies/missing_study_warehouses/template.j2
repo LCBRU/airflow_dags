@@ -1,0 +1,16 @@
+{% if cursor | length > 0 %}
+    <h2>Missing Study Data Warehouses (REDCap)</h2>
+    <p>
+        The following study data warehouses required by the REDCap study
+        mappings are missing.  This could be because an
+        error has occured in the ETL scripts or a mapping is missing.
+    </p>
+    <ul>
+        {% for r in cursor %}
+            <li>
+                {{ r['study_database'] }}
+            </li>
+        {% endfor %}
+    </ul>
+{% endif %}
+

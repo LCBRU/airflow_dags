@@ -1,0 +1,24 @@
+{% if cursor | length > 0 %}
+    <h2>Extra Study CiviCRM Contacts</h2>
+    <p>
+        The following CiviCRM contacts 
+        have been copied into a Study Data Warehouses
+        but are not needed by the CiviCRM cases
+    </p>
+    <table>
+        <thead>
+            <tr>
+                <th>Study Database</th>
+                <th>Contact ID</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in cursor %}
+                <tr>
+                    <td>{{ r['study_database'] }}</td>
+                    <td>{{ r['contact_id'] }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endif %}

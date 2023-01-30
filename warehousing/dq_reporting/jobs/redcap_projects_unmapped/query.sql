@@ -80,4 +80,5 @@ WHERE crm.id IS NULL
 --    -- 1 = Online
 --    -- 2 = ?
 --    -- 3 = Archived
+    AND crm.cfg_study_id > 0
 ;

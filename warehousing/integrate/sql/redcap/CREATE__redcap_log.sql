@@ -98,6 +98,7 @@ BEGIN
             JOIN warehouse_config.dbo.cfg_redcap_instance cri
                 ON cri.id = crm.cfg_redcap_instance_id
             WHERE cri.datalake_database = '?'
+                AND crm.cfg_study_id > 0
         )
 END"
 

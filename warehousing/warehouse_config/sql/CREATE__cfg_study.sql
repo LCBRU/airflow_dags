@@ -10,6 +10,7 @@ BEGIN
     SET IDENTITY_INSERT cfg_study ON;
 
     INSERT INTO cfg_study (id,name,edge_id) VALUES
+        (0,N'No Study',NULL),
         (1,N'CAE',50359),
         (2,N'Bioresource',NULL),
         (3,N'SPIRAL',NULL),
@@ -170,6 +171,7 @@ BEGIN
         (146,N'ukags',NULL),
         (147,N'ultimate',NULL),
         (148,N'GLOBAL_LEADERS',NULL),
+        (150,N'BariEX',NULL),
         (149,N'AMAZE',NULL);
 
     SET IDENTITY_INSERT cfg_study OFF;
