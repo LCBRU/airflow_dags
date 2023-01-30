@@ -20,8 +20,8 @@ def _copy_redcap():
         JOIN meta__redcap_project mrp
             ON mrp.cfg_redcap_instance_id = rpm.cfg_redcap_instance_id
             AND mrp.redcap_project_id = rpm.redcap_project_id
-        ORDER BY s.name
         WHERE rpm.cfg_study_id > 0
+        ORDER BY s.name
         ;
     '''
 
