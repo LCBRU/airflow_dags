@@ -6,31 +6,22 @@ from collections import namedtuple
 from airflow.operators.python_operator import PythonOperator
 
 
-def pairwise(iterable):
-    # pairwise('ABCDEFG') --> AB BC CD DE EF FG
-    a, b = tee(iterable)
-    next(b, None)
-    return zip(a, b)
-
 def create_audit_dag(dag):
     parent_subdag = create_sub_dag_task(dag, 'audit')
 
     conn = WarehouseCentralConnection()
 
-    conn.get_operator(
+    create_id = conn.get_operator(
         task_id='INSERT__etl_run__audit',
         sql="shared_sql/INSERT__etl_run.sql",
         dag=parent_subdag.subdag,
     )
-    conn.get_operator(
-        task_id='QUERY__CiviCRM_Custom__records',
-        sql="audit/sql/QUERY__CiviCRM_Custom__records.sql",
+    wc_record_counts = PythonOperator(
+        task_id=f"warehouse_central_record_counts",
+        python_callable=_table_record_counts,
         dag=parent_subdag.subdag,
     )
-
-    create_table_record_counts_dag(parent_subdag.subdag, conn)
-
-    PythonOperator(
+    wc_group_count = PythonOperator(
         task_id=f"warehouse_central_group_counts",
         python_callable=_table_group_count,
         dag=parent_subdag.subdag,
@@ -40,24 +31,20 @@ def create_audit_dag(dag):
         },
     )
 
-    create_civicrm_custom_record_count_dag(parent_subdag.subdag, conn)
-    create_study_table_record_count_dags(parent_subdag.subdag)
+    wc_civi_custom = create_civicrm_custom_record_count_dag(parent_subdag.subdag, conn)
+    study_record_counts = create_study_table_record_count_dags(parent_subdag.subdag)
+
+    create_id >> wc_record_counts >> wc_group_count >> wc_civi_custom >> study_record_counts
 
     return parent_subdag
 
 
-def create_table_record_counts_dag(dag, conn):
-    parent_subdag = create_sub_dag_task(dag, f'table_record_counts_for_db_{conn._schema}')
+def _table_record_counts(**kwargs):
+    conn = WarehouseCentralConnection()
 
     Params = namedtuple(
         'Params',
         'table_name participant_source'
-    )
-
-    run_id = conn.get_operator(
-        task_id=f'INSERT__etl_run__table_record_counts_for_db_{conn._schema}',
-        sql="shared_sql/INSERT__etl_run.sql",
-        dag=parent_subdag.subdag,
     )
 
     for p in [
@@ -83,16 +70,10 @@ def create_table_record_counts_dag(dag, conn):
         Params('redcap_log', 'REDCap'),
         Params('redcap_participant', 'REDCap'),
     ]:
-        job = conn.get_operator(
-            task_id=f'QUERY__warehouse_central__{p.table_name}__records',
-            sql="audit/sql/QUERY__table__records.sql",
-            dag=parent_subdag.subdag,
-            params=p._asdict(),
+        conn.execute(
+            file_path=Path(__file__).parent.absolute() / "sql/QUERY__table__records_hook.sql",
+            context={**p._asdict(), **kwargs},
         )
-
-        run_id >> job
-
-    return parent_subdag
 
 
 def create_civicrm_custom_record_count_dag(dag, conn):
@@ -181,56 +162,55 @@ def _table_group_count(study_id, db_name, **kwargs):
             'record',
             '*',
         ),
-        Params(
-            'desc__openspecimen',
-            'OpenSpecimen',
-            'collection_protocol_identifier',
-            'OpenSpecimen Collection Protocol',
-            'record',
-            '*',
-        ),
-        Params(
-            'desc__openspecimen',
-            'OpenSpecimen',
-            'collection_protocol_identifier',
-            'OpenSpecimen Collection Protocol',
-            'OpenSpecimen Participant',
-            'participant_identifier',
-        ),
-        Params(
-            'desc__redcap_data',
-            'REDCap',
-            redcap_group,
-            'REDCap Project',
-            'record',
-            '*',
-        ),
-        Params(
-            'desc__redcap_data',
-            'REDCap',
-            redcap_group,
-            'REDCap Project',
-            'REDCap Participant',
-            'DISTINCT redcap_participant_id',
-        ),
-        Params(
-            'desc__redcap_log',
-            'REDCap',
-            redcap_group,
-            'REDCap Project',
-            'record',
-            '*',
-        ),
-        Params(
-            'desc__redcap_field',
-            'REDCap',
-            redcap_group,
-            'REDCap Project',
-            'record',
-            '*',
-        ),
+        # Params(
+        #     'desc__openspecimen',
+        #     'OpenSpecimen',
+        #     'collection_protocol_identifier',
+        #     'OpenSpecimen Collection Protocol',
+        #     'record',
+        #     '*',
+        # ),
+        # Params(
+        #     'desc__openspecimen',
+        #     'OpenSpecimen',
+        #     'collection_protocol_identifier',
+        #     'OpenSpecimen Collection Protocol',
+        #     'OpenSpecimen Participant',
+        #     'participant_identifier',
+        # ),
+        # Params(
+        #     'desc__redcap_data',
+        #     'REDCap',
+        #     redcap_group,
+        #     'REDCap Project',
+        #     'record',
+        #     '*',
+        # ),
+        # Params(
+        #     'desc__redcap_data',
+        #     'REDCap',
+        #     redcap_group,
+        #     'REDCap Project',
+        #     'REDCap Participant',
+        #     'DISTINCT redcap_participant_id',
+        # ),
+        # Params(
+        #     'desc__redcap_log',
+        #     'REDCap',
+        #     redcap_group,
+        #     'REDCap Project',
+        #     'record',
+        #     '*',
+        # ),
+        # Params(
+        #     'desc__redcap_field',
+        #     'REDCap',
+        #     redcap_group,
+        #     'REDCap Project',
+        #     'record',
+        #     '*',
+        # ),
     ]:
-        print(**p._asdict())
         hook = conn.execute(
             file_path=Path(__file__).parent.absolute() / "sql/QUERY__table__groups.sql",
             context={**p._asdict(), **kwargs},
