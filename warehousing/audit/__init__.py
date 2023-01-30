@@ -92,6 +92,7 @@ def create_civicrm_custom_record_count_dag(dag, conn):
     '''
     with wh_conn.query_dict(sql=sql__custom_civicrm) as cursor:
         for t in cursor:
+            print(f'****** {t["warehouse_table_name"]}')
             job = conn.get_operator(
                 task_id=f'QUERY__warehouse_central__{t["warehouse_table_name"]}__records',
                 sql="audit/sql/QUERY__table__records.sql",
