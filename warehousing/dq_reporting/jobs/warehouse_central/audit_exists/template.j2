@@ -1,0 +1,27 @@
+{% if cursor | length > 0 %}
+    <h2>Audit Data Missing</h2>
+    <p>
+        No audit information was collected for the following
+        counts.
+    </p>
+    <table>
+        <thead>
+            <tr>
+                <th>Database</th>
+                <th>Table</th>
+                <th>Group Type</th>
+                <th>Count Type</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in cursor %}
+                <tr>
+                    <td>{{ r['database_name'] }}</td>
+                    <td>{{ r['table_name'] }}</td>
+                    <td>{{ r['group_type_name'] }}</td>
+                    <td>{{ r['count_type_name'] }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endif %}

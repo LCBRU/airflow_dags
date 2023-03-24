@@ -14,9 +14,14 @@ def _log_dq_errors(**kwargs):
     run_id = kwargs['dag_run'].run_id
     ts = kwargs['dag_run'].logical_date
 
-    for f in (Path(__file__).parent.absolute() / 'jobs').iterdir():
-        if f.is_dir():
-            _run_dq_error(run_id, ts, f)    
+    for g in [
+        'warehouse_central/initial',
+        'warehouse_central/redcap_mappings',
+        'warehouse_central',
+    ]:
+        for f in (Path(__file__).parent.absolute() / 'jobs' / g).iterdir():
+            if f.is_dir():
+                _run_dq_error(run_id, ts, f)
 
     logging.info("_log_dq_errors: Ended")
 
@@ -36,18 +41,18 @@ def _run_dq_error(run_id, ts, folder):
     conn = WarehouseCentralConnection()
 
     with conn.query_dict(file_path=folder / 'query.sql', parameters={'ts': ts}) as cursor:
-        errors = template.render(cursor=list(cursor))
+        errors = template.render(cursor=list(cursor)).strip()
 
     sql__insert = '''
         INSERT INTO warehouse_config.dbo.etl_error (run_id, title, error)
-        VALUES (%(run_id)s, 'REDCap Projects Unmapped', %(error)s)
+        VALUES ((SELECT id FROM warehouse_config.dbo.etl_run WHERE dag_run_ts = %(ts)s), 'REDCap Projects Unmapped', %(error)s)
     '''
 
     if len(errors) > 0:
         conn.execute(
             sql=sql__insert,
             parameters={
-                'run_id': run_id,
+                'ts': ts.isoformat(),
                 'error': errors,
             },
         )
@@ -61,45 +66,46 @@ def _send_email(**kwargs):
 
     sql__errors = '''
         SELECT *
-        FROM warehouse_config.dbo.etl_error
-        WHERE run_id = %(run_id)s
+        FROM warehouse_config.dbo.etl_error e
+        JOIN warehouse_config.dbo.etl_run r
+            ON r.dag_run_ts = %(ts)s
+            AND r.id = e.run_id
     '''
 
     lines = []
 
     conn = WarehouseCentralConnection()
+    folder = Path(__file__).parent.absolute() / 'templates'
 
     with conn.query_dict(
         sql=sql__errors,
-        parameters={'run_id': kwargs['dag_run'].run_id},
+        parameters={'ts': kwargs['dag_run'].logical_date},
     ) as cursor:
 
-        lines.append('''
-<style>
-    dl {
-        display: grid;
-        grid-template-columns: 1fr 2fr;
-    }
-    dt {
-        font-weight: bold;
-    }
-</style>
-        ''')
-        lines.append("<h1>Data Warehousing Errors</h1>\n")
-        lines.append("<p>The following errors were raised during data warehousing.</p>\n")
-        lines.extend([r['error'] for r in cursor])
+        environment = Environment(loader=FileSystemLoader(folder))
+        template = environment.get_template('email.j2')
+        content = template.render(cursor=list(cursor)).strip()
 
-    send_email(
-        html_content='\n'.join(lines),
-        to=["richard.a.bramley@uhl-tr.nhs.uk"],
-        subject="Data Warehousing Errors",
-    )
+        if len(content) > 0:
+            send_email(
+                html_content=content,
+                to=["richard.a.bramley@uhl-tr.nhs.uk"],
+                subject="Data Warehousing Errors",
+            )
 
     logging.info("_send_email: Ended")
 
 
 def create_dq_reporting(dag):
     parent_subdag = create_sub_dag_task(dag, 'dq_reporting')
+
+    conn = WarehouseCentralConnection()
+
+    create_run = conn.get_operator(
+        task_id='INSERT__etl_run__audit',
+        sql="shared_sql/INSERT__etl_run.sql",
+        dag=parent_subdag.subdag,
+    )
 
     log_dq_errors = PythonOperator(
         task_id="log_dq_errors",
@@ -113,6 +119,6 @@ def create_dq_reporting(dag):
         dag=parent_subdag.subdag,
     )
 
-    log_dq_errors >> send_email
+    create_run >> log_dq_errors >> send_email
 
     return parent_subdag

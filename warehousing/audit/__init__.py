@@ -30,11 +30,21 @@ def create_audit_dag(dag):
             'db_name': SCH_WAREHOUSE_CENTRAL,
         },
     )
+    wc_civi_custom_group_count = PythonOperator(
+        task_id=f"warehouse_central_civi_custom_group_count",
+        python_callable=_civi_custom_group_count,
+        dag=parent_subdag.subdag,
+        op_kwargs={
+            'db_name': SCH_WAREHOUSE_CENTRAL,
+        },
+    )
+
 
     wc_civi_custom = create_civicrm_custom_record_count_dag(parent_subdag.subdag, conn)
     study_record_counts = create_study_table_record_count_dags(parent_subdag.subdag)
 
-    create_id >> wc_record_counts >> wc_group_count >> wc_civi_custom >> study_record_counts
+    create_id >> wc_record_counts >> wc_group_count >> wc_civi_custom >> study_record_counts >> wc_civi_custom_group_count
+    create_id >> wc_civi_custom_group_count
 
     return parent_subdag
 
@@ -119,7 +129,7 @@ def create_study_table_record_count_dags(dag):
         dag=parent_subdag.subdag,
     )
 
-    sql__custom_civicrm = '''
+    sql__study_databases = '''
         SELECT
             id,
             warehouse_central.dbo.study_database_name(name) AS db_name
@@ -127,7 +137,7 @@ def create_study_table_record_count_dags(dag):
         ORDER BY id;
     '''
 
-    with conf_conn.query_dict(sql=sql__custom_civicrm) as cursor:
+    with conf_conn.query_dict(sql=sql__study_databases) as cursor:
         for study in cursor:
             study_group_counts = PythonOperator(
                 task_id=f"study_group_counts__{study['db_name']}",
@@ -216,3 +226,22 @@ def _table_group_count(study_id, db_name, **kwargs):
             file_path=Path(__file__).parent.absolute() / "sql/QUERY__table__groups.sql",
             context={**p._asdict(), **kwargs},
         )
+
+
+def _civi_custom_group_count(db_name, **kwargs):
+    conn = WarehouseConnection(schema=db_name)
+
+    with conn.query_dict(sql='SELECT warehouse_table_name FROM etl__civicrm_custom;') as cursor:
+        for t in cursor:
+            hook = conn.execute(
+                file_path=Path(__file__).parent.absolute() / "sql/QUERY__table__groups.sql",
+                context={
+                    'table_name': t["warehouse_table_name"],
+                    'participant_source': 'CiviCRM Case',
+                    'group_id_term': f'\'{t["warehouse_table_name"]}-\' + CONVERT(VARCHAR, case_type_id)',
+                    'group_type': 'CiviCRM Case Type',
+                    'count_type': 'record',
+                    'count_term': '*',
+                    **kwargs,
+                },
+            )
