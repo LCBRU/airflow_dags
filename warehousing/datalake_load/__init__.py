@@ -4,13 +4,10 @@ from airflow.operators.mssql_operator import MsSqlOperator
 from airflow.operators.python_operator import PythonOperator
 from itertools import groupby
 from tools import create_sub_dag_task
-from warehousing.database import WarehouseConnection, WarehouseCentralConnection
+from warehousing.database import MsSqlConnection, WarehouseConnection, WarehouseCentralConnection
 
 
-DWH_CONNECTION_NAME = 'DWH'
-
-
-def _create_indexes_procedure(destination_database, source_database):
+def _create_indexes_procedure(connection_name,destination_database, source_database):
     logging.info("_create_indexes_procedure: Started")
 
     create_index_template = '''
@@ -32,14 +29,14 @@ def _create_indexes_procedure(destination_database, source_database):
         ;
     '''
 
-    conn_dest = WarehouseConnection(destination_database)
+    conn_dest = MsSqlConnection(connection_name, destination_database)
 
     with conn_dest.query(sql=sql_updated) as cursor:
         updated = [r[0] for r in cursor]
 
     indexes = []
 
-    conn = WarehouseCentralConnection()
+    conn = MsSqlConnection(connection_name, 'master')
 
     with conn.query(
         file_path=Path(__file__).parent.absolute() / 'sql/QUERY__source_index_details.sql',
@@ -74,12 +71,12 @@ def _create_indexes_procedure(destination_database, source_database):
     logging.info("_create_indexes_procedure: Ended")
 
 
-def _create_database_copy_dag(dag, source_database, destination_database):
+def _create_database_copy_dag(dag, connection_name, source_database, destination_database):
     logging.info("_create_database_copy_dag: Started")
 
     create_destination_database = MsSqlOperator(
         task_id='create_destination_database',
-        mssql_conn_id=DWH_CONNECTION_NAME,
+        mssql_conn_id=connection_name,
         sql="datalake_load/sql/CREATE__databases.sql",
         autocommit=True,
         dag=dag,
@@ -88,7 +85,7 @@ def _create_database_copy_dag(dag, source_database, destination_database):
 
     create_etl_tables = MsSqlOperator(
         task_id='CREATE__etl_tables',
-        mssql_conn_id=DWH_CONNECTION_NAME,
+        mssql_conn_id=connection_name,
         sql="datalake_load/sql/CREATE__etl_tables.sql",
         autocommit=True,
         database=destination_database,
@@ -97,7 +94,7 @@ def _create_database_copy_dag(dag, source_database, destination_database):
 
     recreate_etl_tables = MsSqlOperator(
         task_id='recreate_etl_tables',
-        mssql_conn_id=DWH_CONNECTION_NAME,
+        mssql_conn_id=connection_name,
         sql="datalake_load/sql/INSERT__etl_tables.sql",
         autocommit=True,
         database=destination_database,
@@ -107,7 +104,7 @@ def _create_database_copy_dag(dag, source_database, destination_database):
 
     copy_tables = MsSqlOperator(
         task_id='copy_tables',
-        mssql_conn_id=DWH_CONNECTION_NAME,
+        mssql_conn_id=connection_name,
         sql="datalake_load/sql/INSERT__tables.sql",
         autocommit=True,
         database=destination_database,
@@ -117,7 +114,7 @@ def _create_database_copy_dag(dag, source_database, destination_database):
 
     change_text_columns_to_varchar = MsSqlOperator(
         task_id='change_text_columns_to_varchar',
-        mssql_conn_id=DWH_CONNECTION_NAME,
+        mssql_conn_id=connection_name,
         sql="datalake_load/sql/UPDATE__tables__alter_text_to_varchar.sql",
         autocommit=True,
         database=destination_database,
@@ -132,12 +129,13 @@ def _create_database_copy_dag(dag, source_database, destination_database):
         op_kwargs={
             'destination_database': destination_database,
             'source_database': source_database,
+            'connection_name': connection_name,
         },
     )
 
     mark_updated = MsSqlOperator(
         task_id='mark_updated',
-        mssql_conn_id=DWH_CONNECTION_NAME,
+        mssql_conn_id=connection_name,
         sql="datalake_load/sql/UPDATE__etl_tables__last_copied.sql",
         autocommit=True,
         database=destination_database,
@@ -176,13 +174,61 @@ details = {
 
 
 def create_datalake_mysql_import_dag(dag):
-    parent_subdag = create_sub_dag_task(dag, 'datalake_mysql_import', run_on_failures=True)
+    parent_subdag = create_sub_dag_task(
+        dag,
+        'datalake_mysql_import',
+        run_on_failures=True,
+    )
 
     for source, destination in details.items():
-        subdag = create_sub_dag_task(parent_subdag.subdag, f'{source}__to__{destination}')
+        subdag = create_sub_dag_task(
+            parent_subdag.subdag,
+            f'{source}__to__{destination}',
+        )
 
         _create_database_copy_dag(
             dag=subdag.subdag,
+            connection_name='DWH',
+            source_database=source,
+            destination_database=destination,
+        )
+
+    return parent_subdag
+
+
+legacy_details = {
+    'civicrmlive_docker4716': 'datalake_civicrmlive_docker4716',
+    'drupallive_docker4716': 'datalake_drupallive_docker4716',
+    'identity': 'datalake_identity',
+    'briccs_northampton': 'datalake_briccs_northampton',
+    'briccs': 'datalake_briccs',
+    'uol_openspecimen': 'datalake_openspecimen',
+    'uol_easyas_redcap': 'datalake_redcap_easyas',
+    'redcap_genvasc': 'datalake_redcap_genvasc',
+    'uol_survey_redcap': 'datalake_uol_survey_redcap',
+    'redcap6170_briccsext': 'datalake_redcap6170_briccsext',
+    'redcap_national': 'datalake_redcap_national',
+    'redcap6170_briccs': 'datalake_redcap6170_briccs',
+    'uol_crf_redcap': 'datalake_uol_crf_redcap',
+}
+
+
+def create_legacy_datalake_mysql_import_dag(dag):
+    parent_subdag = create_sub_dag_task(
+        dag,
+        'legacy_datalake_mysql_import',
+        run_on_failures=True,
+    )
+
+    for source, destination in legacy_details.items():
+        subdag = create_sub_dag_task(
+            parent_subdag.subdag,
+            f'legacy__{source}__to__{destination}',
+        )
+
+        _create_database_copy_dag(
+            dag=subdag.subdag,
+            connection_name='LEGACY_DWH',
             source_database=source,
             destination_database=destination,
         )

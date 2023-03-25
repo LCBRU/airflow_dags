@@ -8,7 +8,7 @@ from warehousing.warehouse_config import create_wh_central_config
 from warehousing.data_download.crf_manager_download import create_download_crf_manager_studies
 from warehousing.data_download.download_to_mysql import create_download_to_mysql_dag
 from warehousing.data_download.edge_download import create_download_edge_studies
-from warehousing.datalake_load import create_datalake_mysql_import_dag
+from warehousing.datalake_load import create_datalake_mysql_import_dag, create_legacy_datalake_mysql_import_dag
 from warehousing.study_warehouses import create_wh_create_studies
 from warehousing.integrate import create_warehouse
 
@@ -43,10 +43,11 @@ dag = DAG(
 
 download_data = create_download_data(dag)
 datalake_mysql_import = create_datalake_mysql_import_dag(dag)
+legacy_datalake_mysql_import = create_legacy_datalake_mysql_import_dag(dag)
 config = create_wh_central_config(dag)
 warehouse = create_warehouse(dag)
 create_study_warehouses = create_wh_create_studies(dag)
 audit = create_audit_dag(dag)
 email_dq = create_dq_reporting(dag)
 
-download_data >> datalake_mysql_import >> config >> warehouse >> create_study_warehouses >> audit >> email_dq
+download_data >> legacy_datalake_mysql_import >> datalake_mysql_import >> config >> warehouse >> create_study_warehouses >> audit >> email_dq
