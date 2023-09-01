@@ -78,7 +78,7 @@ dbs = {
     # 'etl_central',
     # 'genvasc_gp_portal',
     # 'grafana',
-    # 'identity',
+    'identity',
     # 'image_study_merge',
     # 'mrbs',
     # 'onyx',

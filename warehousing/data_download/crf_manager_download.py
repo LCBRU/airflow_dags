@@ -4,7 +4,7 @@ import logging
 from airflow.operators.python_operator import PythonOperator
 from warehousing.database import etl_central_session, Base
 from tools import create_sub_dag_task
-from lbrc_selenium import get_selenium, IdSelector, CssSelector
+from lbrc_selenium.selenium import get_selenium, IdSelector, CssSelector
 from selenium.webdriver.common.keys import Keys
 from sqlalchemy import Column, Integer, String
 
