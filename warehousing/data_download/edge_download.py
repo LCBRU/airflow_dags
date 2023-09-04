@@ -30,8 +30,6 @@ def _login(selenium):
     selenium.get("/")
     sleep(5)
     
-    selenium.email_screenshot()
-
     username = selenium.get_element(CssSelector("input[placeholder='Username']"))
     password = selenium.get_element(CssSelector("input[placeholder='Password']"))
 
@@ -62,6 +60,10 @@ def _download_study_file(selenium, filename):
     logging.info("_download_studies: Started")
 
     selenium.get("#/reports/ProjectAttributeReport")
+    sleep(5)
+    
+    selenium.email_screenshot()
+
     selenium.click_element(XpathSelector('//span[text()="Load"]'))
     selenium.click_element(XpathSelector('//div[text()="BRC Report (Richard)"]'))
     selenium.click_element(XpathSelector('//button/span[text()="Download"]'))
