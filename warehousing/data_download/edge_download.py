@@ -4,10 +4,8 @@ import tempfile
 import csv
 import datetime
 from time import sleep
-from airflow.operators.python_operator import PythonOperator
 from warehousing.database import etl_central_session
-from tools import create_sub_dag_task
-from lbrc_selenium.selenium import get_selenium, NameSelector, IdSelector, CssSelector, XpathSelector
+from lbrc_selenium.selenium import get_selenium, CssSelector, XpathSelector
 from selenium.webdriver.common.keys import Keys
 from lbrc_edge import EdgeSiteStudy
 
@@ -31,14 +29,14 @@ def _login(selenium):
 
     selenium.get("/")
 
-    username = selenium.get_element(NameSelector("fldUsername"))
-    password = selenium.get_element(NameSelector('fldPassword'))
+    username = selenium.get_element(CssSelector("input[placeholder='Username']"))
+    password = selenium.get_element(CssSelector("input[placeholder='Password']"))
 
     username.send_keys(os.environ['AIRFLOW_VAR_EDGE_USERNAME'])
     password.send_keys(os.environ['AIRFLOW_VAR_EDGE_PASSWORD'])
     password.send_keys(Keys.RETURN)
 
-    selenium.wait_to_appear(IdSelector("headerOrganisationName"))
+    selenium.wait_to_appear(CssSelector("h1.navHome"))
 
     logging.info("_login: Ended")
 
@@ -49,7 +47,7 @@ def _get_studies(selenium):
     download_file = tempfile.NamedTemporaryFile()
 
     _download_study_file(selenium, download_file.name)
-    studies= _extract_study_details(selenium, download_file.name)
+    studies = _extract_study_details(selenium, download_file.name)
     _save_studies(studies)
 
     download_file.close()
@@ -60,13 +58,13 @@ def _get_studies(selenium):
 def _download_study_file(selenium, filename):
     logging.info("_download_studies: Started")
 
-    selenium.get("ProjectAttributeReport")
-    selenium.click_element(CssSelector('input[value="Load query"]'))
-    selenium.click_element(XpathSelector('//a[@name="linkLoadQuery" and text()="BRC Report (Richard)"]'))
-    selenium.click_element(CssSelector('input[value="Submit query"]'))
-    sleep(15)
-    selenium.click_element(IdSelector('butDownloadCsv'))
-    sleep(30)
+    selenium.get("#/reports/ProjectAttributeReport")
+    selenium.click_element(XpathSelector('//span[text()="Load"]'))
+    selenium.click_element(XpathSelector('//div[text()="BRC Report (Richard)"]'))
+    selenium.click_element(XpathSelector('//button/span[text()="Download"]'))
+    sleep(1)
+    selenium.click_element(XpathSelector('//a[text()="CSV"]'))
+    sleep(10)
 
     selenium.download_file(filename)
 
@@ -170,15 +168,3 @@ def _boolean_or_none(boolean_element):
         return False
     else:
         return None
-
-
-def create_download_edge_studies(dag):
-    parent_subdag = create_sub_dag_task(dag, 'download_edge_studies', run_on_failures=True)
-
-    PythonOperator(
-        task_id=f"download_edge_studies",
-        python_callable=_download_edge_studies,
-        dag=parent_subdag.subdag,
-    )
-
-    return parent_subdag
