@@ -80,7 +80,7 @@ def _extract_study_details(selenium, download_filename):
     logging.info("_save_study_details: Started")
 
     try:
-        with open(download_filename, encoding="utf-16-be") as csvfile:
+        with open(download_filename) as csvfile:
             studies = []
             study_details = csv.DictReader(csvfile, delimiter=',', quotechar='"')
 
