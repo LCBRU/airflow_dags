@@ -28,6 +28,9 @@ def _login(selenium):
     logging.info("_login: Started")
 
     selenium.get("/")
+    sleep(5)
+    
+    selenium.email_screenshot()
 
     username = selenium.get_element(CssSelector("input[placeholder='Username']"))
     password = selenium.get_element(CssSelector("input[placeholder='Password']"))
