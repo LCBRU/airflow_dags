@@ -48,6 +48,6 @@ config = create_wh_central_config(dag)
 warehouse = create_warehouse(dag)
 create_study_warehouses = create_wh_create_studies(dag)
 audit = create_audit_dag(dag)
-email_dq = create_dq_reporting(dag)
+# email_dq = create_dq_reporting(dag)
 
-download_data >> legacy_datalake_mysql_import >> datalake_mysql_import >> config >> warehouse >> create_study_warehouses >> audit >> email_dq
+download_data >> legacy_datalake_mysql_import >> datalake_mysql_import >> config >> warehouse >> create_study_warehouses >> audit
