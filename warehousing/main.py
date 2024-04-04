@@ -14,20 +14,19 @@ from warehousing.datalake_load import create_datalake_mysql_import_dag, create_l
 from warehousing.study_warehouses import create_wh_create_studies
 from warehousing.integrate import create_warehouse
 
+details = {
+    # 'uol_openspecimen': 'https://catissue-live.lcbru.le.ac.uk/publish/catissue.db',
+    # 'uol_easyas_redcap': 'https://easy-as.lbrc.le.ac.uk/publish/redcap.db',
+    'uol_crf_redcap': 'https://crf.lcbru.le.ac.uk/publish/redcap.db',
+    'uol_survey_redcap': 'https://redcap.lcbru.le.ac.uk/publish/redcap.db',
+}
+
+
+
+
 def create_download_data(dag):
     with dag as daag:
-        parent_subdag = create_sub_dag_task(dag, 'download_data', run_on_failures=True)
-
         with TaskGroup('download_to_mysql') as download_to_mysql:
-            # create_download_to_mysql_dag(parent_subdag.subdag)
-
-            details = {
-                # 'uol_openspecimen': 'https://catissue-live.lcbru.le.ac.uk/publish/catissue.db',
-                # 'uol_easyas_redcap': 'https://easy-as.lbrc.le.ac.uk/publish/redcap.db',
-                'uol_crf_redcap': 'https://crf.lcbru.le.ac.uk/publish/redcap.db',
-                'uol_survey_redcap': 'https://redcap.lcbru.le.ac.uk/publish/redcap.db',
-            }
-
             for destination, source in details.items():
                 PythonOperator(
                     task_id=f"download_and_restore__{destination}",
