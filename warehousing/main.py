@@ -13,9 +13,11 @@ from warehousing.integrate import create_warehouse
 
 
 def create_download_data(dag):
-    parent_subdag = create_sub_dag_task(dag, 'download_data', run_on_failures=True)
+    with dag as daag:
+        parent_subdag = create_sub_dag_task(dag, 'download_data', run_on_failures=True)
 
-    download_to_mysql = create_download_to_mysql_dag(parent_subdag.subdag)
+        download_to_mysql = create_download_to_mysql_dag(parent_subdag.subdag)
+        
     # download_edge_studies = create_download_edge_studies(parent_subdag.subdag)
     # download_crfm_studies = create_download_crf_manager_studies(parent_subdag.subdag)
 
