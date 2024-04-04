@@ -9,7 +9,6 @@ import logging
 from airflow.operators.python_operator import PythonOperator
 from airflow.models import Variable
 from airflow import DAG
-from airflow.utils.task_group import TaskGroup
 from warehousing.database import ReplicantDbConnection
 from tools import default_dag_args
 
@@ -182,13 +181,13 @@ uhl_data_details = {
 
 
 with DAG(
-    dag_id="download_to_mysql",
+    dag_id="download_UOL_data",
     default_args=default_dag_args,
     schedule=None,
 ):
     for destination, source in uhl_data_details.items():
         PythonOperator(
-            task_id=f"download_and_restore__{destination}",
+            task_id=f"_download_and_restore__{destination}",
             python_callable=_download_and_restore,
             op_kwargs={
                 'destination_database': destination,
