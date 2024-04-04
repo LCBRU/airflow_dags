@@ -174,9 +174,9 @@ def _run_mysql(command):
 
 
 uhl_data_details = {
-    'uol_openspecimen': 'https://catissue-live.lcbru.le.ac.uk/publish/catissue.db',
+    # 'uol_openspecimen': 'https://catissue-live.lcbru.le.ac.uk/publish/catissue.db',
     'uol_easyas_redcap': 'https://easy-as.lbrc.le.ac.uk/publish/redcap.db',
-    'uol_crf_redcap': 'https://crf.lcbru.le.ac.uk/publish/redcap.db',
+    # 'uol_crf_redcap': 'https://crf.lcbru.le.ac.uk/publish/redcap.db',
     'uol_survey_redcap': 'https://redcap.lcbru.le.ac.uk/publish/redcap.db',
 }
 
@@ -184,7 +184,7 @@ uhl_data_details = {
 with DAG(
     dag_id="download_to_mysql",
     default_args=default_dag_args,
-    catchup=False,
+    schedule=None,
 ):
     for destination, source in uhl_data_details.items():
         PythonOperator(
