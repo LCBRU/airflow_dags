@@ -4,7 +4,7 @@ from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 from airflow.utils.task_group import TaskGroup
 
-import warehouse_config.data_download.download_to_mysql
+import warehousing.data_download.download_to_mysql
 
 from tools import create_sub_dag_task
 from warehousing.audit import create_audit_dag
