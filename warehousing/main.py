@@ -31,7 +31,6 @@ def create_download_data(dag):
                 PythonOperator(
                     task_id=f"download_and_restore__{destination}",
                     python_callable=_download_and_restore,
-                    dag=daag,
                     op_kwargs={
                         'destination_database': destination,
                         'source_url': source,
