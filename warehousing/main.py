@@ -41,8 +41,6 @@ def create_download_data(dag):
     # download_crfm_studies = create_download_crf_manager_studies(parent_subdag.subdag)
 
     # download_edge_studies << download_crfm_studies
-
-    return parent_subdag
     
 
 default_args = {
@@ -61,7 +59,8 @@ dag = DAG(
     catchup=False,
 )
 
-download_data = create_download_data(dag)
+
+create_download_data(dag)
 # datalake_mysql_import = create_datalake_mysql_import_dag(dag)
 # legacy_datalake_mysql_import = create_legacy_datalake_mysql_import_dag(dag)
 # config = create_wh_central_config(dag)
