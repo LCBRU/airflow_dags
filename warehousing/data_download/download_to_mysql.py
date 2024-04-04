@@ -182,17 +182,16 @@ uhl_data_details = {
 
 
 with DAG(
-    dag_id="load_warehouse",
+    dag_id="download_to_mysql",
     default_args=default_dag_args,
     catchup=False,
 ):
-    with TaskGroup('download_to_mysql') as download_to_mysql:
-        for destination, source in uhl_data_details.items():
-            PythonOperator(
-                task_id=f"download_and_restore__{destination}",
-                python_callable=_download_and_restore,
-                op_kwargs={
-                    'destination_database': destination,
-                    'source_url': source,
-                },
-            )
+    for destination, source in uhl_data_details.items():
+        PythonOperator(
+            task_id=f"download_and_restore__{destination}",
+            python_callable=_download_and_restore,
+            op_kwargs={
+                'destination_database': destination,
+                'source_url': source,
+            },
+        )
