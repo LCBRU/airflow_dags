@@ -4,6 +4,8 @@ from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 from airflow.utils.task_group import TaskGroup
 
+import warehouse_config.data_download.download_to_mysql
+
 from tools import create_sub_dag_task
 from warehousing.audit import create_audit_dag
 from warehousing.warehouse_config import create_wh_central_config
@@ -24,43 +26,43 @@ details = {
 
 
 
-def create_download_data(dag):
-    with dag as daag:
-        with TaskGroup('download_to_mysql') as download_to_mysql:
-            for destination, source in details.items():
-                PythonOperator(
-                    task_id=f"download_and_restore__{destination}",
-                    python_callable=_download_and_restore,
-                    op_kwargs={
-                        'destination_database': destination,
-                        'source_url': source,
-                    },
-                )
+# def create_download_data(dag):
+#     with dag as daag:
+#         with TaskGroup('download_to_mysql') as download_to_mysql:
+#             for destination, source in details.items():
+#                 PythonOperator(
+#                     task_id=f"download_and_restore__{destination}",
+#                     python_callable=_download_and_restore,
+#                     op_kwargs={
+#                         'destination_database': destination,
+#                         'source_url': source,
+#                     },
+#                 )
 
-    # download_edge_studies = create_download_edge_studies(parent_subdag.subdag)
-    # download_crfm_studies = create_download_crf_manager_studies(parent_subdag.subdag)
+#     # download_edge_studies = create_download_edge_studies(parent_subdag.subdag)
+#     # download_crfm_studies = create_download_crf_manager_studies(parent_subdag.subdag)
 
-    # download_edge_studies << download_crfm_studies
+#     # download_edge_studies << download_crfm_studies
     
 
-default_args = {
-    "owner": "airflow",
-    "reties": 3,
-    "retry_delay": timedelta(minutes=5),
-    "start_date": datetime(2020, 1, 1),
-	'email': os.environ.get('ERROR_EMAIL_ADDRESS', '').split(';'),
-	'email_on_failure': True,
-}
+# default_args = {
+#     "owner": "airflow",
+#     "reties": 3,
+#     "retry_delay": timedelta(minutes=5),
+#     "start_date": datetime(2020, 1, 1),
+# 	'email': os.environ.get('ERROR_EMAIL_ADDRESS', '').split(';'),
+# 	'email_on_failure': True,
+# }
 
-dag = DAG(
-    dag_id="load_warehouse",
-    schedule_interval=os.environ.get('SCHEDULE_LOAD_WAREHOUSE', None) or None,
-    default_args=default_args,
-    catchup=False,
-)
+# dag = DAG(
+#     dag_id="load_warehouse",
+#     schedule_interval=os.environ.get('SCHEDULE_LOAD_WAREHOUSE', None) or None,
+#     default_args=default_args,
+#     catchup=False,
+# )
 
 
-create_download_data(dag)
+# create_download_data(dag)
 # datalake_mysql_import = create_datalake_mysql_import_dag(dag)
 # legacy_datalake_mysql_import = create_legacy_datalake_mysql_import_dag(dag)
 # config = create_wh_central_config(dag)

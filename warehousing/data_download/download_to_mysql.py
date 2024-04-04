@@ -8,8 +8,10 @@ import shutil
 import logging
 from airflow.operators.python_operator import PythonOperator
 from airflow.models import Variable
-from tools import create_sub_dag_task
+from airflow import DAG
+from airflow.utils.task_group import TaskGroup
 from warehousing.database import ReplicantDbConnection
+from tools import default_dag_args
 
 
 def _download_and_restore(destination_database, source_url):
@@ -171,7 +173,7 @@ def _run_mysql(command):
     return result
 
 
-details = {
+uhl_data_details = {
     'uol_openspecimen': 'https://catissue-live.lcbru.le.ac.uk/publish/catissue.db',
     'uol_easyas_redcap': 'https://easy-as.lbrc.le.ac.uk/publish/redcap.db',
     'uol_crf_redcap': 'https://crf.lcbru.le.ac.uk/publish/redcap.db',
@@ -179,18 +181,18 @@ details = {
 }
 
 
-def create_download_to_mysql_dag(dag):
-    parent_subdag = create_sub_dag_task(dag, 'download_to_mysql', run_on_failures=True)
-
-    for destination, source in details.items():
-        PythonOperator(
-            task_id=f"download_and_restore__{destination}",
-            python_callable=_download_and_restore,
-            dag=parent_subdag.subdag,
-            op_kwargs={
-                'destination_database': destination,
-                'source_url': source,
-            },
-        )
-    
-    return parent_subdag
+with DAG(
+    dag_id="load_warehouse",
+    default_args=default_dag_args,
+    catchup=False,
+):
+    with TaskGroup('download_to_mysql') as download_to_mysql:
+        for destination, source in uhl_data_details.items():
+            PythonOperator(
+                task_id=f"download_and_restore__{destination}",
+                python_callable=_download_and_restore,
+                op_kwargs={
+                    'destination_database': destination,
+                    'source_url': source,
+                },
+            )
