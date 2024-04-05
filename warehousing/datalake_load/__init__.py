@@ -80,7 +80,6 @@ def _create_database_copy_dag(connection_name, source_database, destination_data
         mssql_conn_id=connection_name,
         sql="datalake_load/sql/CREATE__databases.sql",
         autocommit=True,
-        dag=dag,
         parameters={'db_name': destination_database},
     )
 
@@ -90,7 +89,6 @@ def _create_database_copy_dag(connection_name, source_database, destination_data
         sql="datalake_load/sql/CREATE__etl_tables.sql",
         autocommit=True,
         database=destination_database,
-        dag=dag,
     )
 
     recreate_etl_tables = MsSqlOperator(
@@ -99,7 +97,6 @@ def _create_database_copy_dag(connection_name, source_database, destination_data
         sql="datalake_load/sql/INSERT__etl_tables.sql",
         autocommit=True,
         database=destination_database,
-        dag=dag,
         parameters={'source_database': source_database},
     )
 
@@ -109,7 +106,6 @@ def _create_database_copy_dag(connection_name, source_database, destination_data
         sql="datalake_load/sql/INSERT__tables.sql",
         autocommit=True,
         database=destination_database,
-        dag=dag,
         parameters={'source_database': source_database},
     )
 
@@ -119,14 +115,12 @@ def _create_database_copy_dag(connection_name, source_database, destination_data
         sql="datalake_load/sql/UPDATE__tables__alter_text_to_varchar.sql",
         autocommit=True,
         database=destination_database,
-        dag=dag,
         parameters={},
     )
 
     create_indexes = PythonOperator(
         task_id="create_indexes",
         python_callable=_create_indexes_procedure,
-        dag=dag,
         op_kwargs={
             'destination_database': destination_database,
             'source_database': source_database,
@@ -140,7 +134,6 @@ def _create_database_copy_dag(connection_name, source_database, destination_data
         sql="datalake_load/sql/UPDATE__etl_tables__last_copied.sql",
         autocommit=True,
         database=destination_database,
-        dag=dag,
         parameters={'source_database': source_database},
     )
 
