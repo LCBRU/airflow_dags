@@ -6,6 +6,7 @@ from warehousing.data_download.crf_manager_download import download_crf_manager_
 from warehousing.data_download.download_to_mysql import download_mysql_backup_and_restore
 from warehousing.data_download.edge_download import download_edge_studies
 from tools import default_dag_args
+from airflow.utils.trigger_rule import TriggerRule
 
 
 with DAG(
@@ -40,6 +41,7 @@ with DAG(
         task_download_crfm_studies = PythonOperator(
             task_id=f"download_crf_manager_studies",
             python_callable=download_crf_manager_studies,
+            trigger_rule=TriggerRule.ALL_DONE,
         )
 
-        task_download_edge_studies << task_download_crfm_studies
+        task_download_edge_studies >> task_download_crfm_studies
