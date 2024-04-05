@@ -6,6 +6,7 @@ import tempfile
 import requests
 import shutil
 import logging
+import pathlib
 from airflow.operators.python_operator import PythonOperator
 from airflow.models import Variable
 from airflow import DAG
@@ -185,12 +186,15 @@ with DAG(
     default_args=default_dag_args,
     schedule=None,
 ):
-    for destination, source in uhl_data_details.items():
-        PythonOperator(
-            task_id=f"_download_and_restore__{destination}",
-            python_callable=_download_and_restore,
-            op_kwargs={
-                'destination_database': destination,
-                'source_url': source,
-            },
-        )
+    for conf_file in pathlib.Path('uol_data_sources').glob('*.yml'):
+        with conf_file.open() as f:
+            conf = f.safe_load(f)
+
+            PythonOperator(
+                task_id=f"_download_and_restore__{conf['destination']}",
+                python_callable=_download_and_restore,
+                op_kwargs={
+                    'destination_database': conf['destination'],
+                    'source_url': conf['sourcel_url'],
+                },
+            )

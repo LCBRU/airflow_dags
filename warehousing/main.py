@@ -15,29 +15,7 @@ from warehousing.datalake_load import create_datalake_mysql_import_dag, create_l
 from warehousing.study_warehouses import create_wh_create_studies
 from warehousing.integrate import create_warehouse
 
-details = {
-    # 'uol_openspecimen': 'https://catissue-live.lcbru.le.ac.uk/publish/catissue.db',
-    # 'uol_easyas_redcap': 'https://easy-as.lbrc.le.ac.uk/publish/redcap.db',
-    'uol_crf_redcap': 'https://crf.lcbru.le.ac.uk/publish/redcap.db',
-    'uol_survey_redcap': 'https://redcap.lcbru.le.ac.uk/publish/redcap.db',
-}
-
-
-
-
 # def create_download_data(dag):
-#     with dag as daag:
-#         with TaskGroup('download_to_mysql') as download_to_mysql:
-#             for destination, source in details.items():
-#                 PythonOperator(
-#                     task_id=f"download_and_restore__{destination}",
-#                     python_callable=_download_and_restore,
-#                     op_kwargs={
-#                         'destination_database': destination,
-#                         'source_url': source,
-#                     },
-#                 )
-
 #     # download_edge_studies = create_download_edge_studies(parent_subdag.subdag)
 #     # download_crfm_studies = create_download_crf_manager_studies(parent_subdag.subdag)
 
