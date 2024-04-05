@@ -4,21 +4,15 @@ from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 from airflow.utils.task_group import TaskGroup
 
-import warehousing.data_download.dags
+import warehousing.data_download
+import warehousing.datalake_load
 
 from tools import create_sub_dag_task
 from warehousing.audit import create_audit_dag
 from warehousing.warehouse_config import create_wh_central_config
-from warehousing.datalake_load import create_datalake_mysql_import_dag, create_legacy_datalake_mysql_import_dag
 from warehousing.study_warehouses import create_wh_create_studies
 from warehousing.integrate import create_warehouse
 
-# def create_download_data(dag):
-#     # download_edge_studies = create_download_edge_studies(parent_subdag.subdag)
-#     # download_crfm_studies = create_download_crf_manager_studies(parent_subdag.subdag)
-
-#     # download_edge_studies << download_crfm_studies
-    
 
 # default_args = {
 #     "owner": "airflow",
@@ -37,7 +31,6 @@ from warehousing.integrate import create_warehouse
 # )
 
 
-# create_download_data(dag)
 # datalake_mysql_import = create_datalake_mysql_import_dag(dag)
 # legacy_datalake_mysql_import = create_legacy_datalake_mysql_import_dag(dag)
 # config = create_wh_central_config(dag)
@@ -46,4 +39,4 @@ from warehousing.integrate import create_warehouse
 # audit = create_audit_dag(dag)
 # # email_dq = create_dq_reporting(dag)
 
-# download_data >> legacy_datalake_mysql_import >> datalake_mysql_import >> config >> warehouse >> create_study_warehouses >> audit
+# legacy_datalake_mysql_import >> datalake_mysql_import >> config >> warehouse >> create_study_warehouses >> audit

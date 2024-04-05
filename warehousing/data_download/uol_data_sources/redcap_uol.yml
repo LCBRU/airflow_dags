@@ -1,3 +1,0 @@
-destination: 'uol_crf_redcap'
-sourcel_url: 'https://crf.lcbru.le.ac.uk/publish/redcap.db'
-skip: False
