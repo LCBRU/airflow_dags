@@ -158,7 +158,7 @@ def _create_database_copy_dag(dag, connection_name, source_database, destination
 
 
 with DAG(
-    dag_id="Copy live DB to DWH",
+    dag_id="Copy_live_DB_to_DWH",
     default_args=default_dag_args,
     schedule=None,
 ):
