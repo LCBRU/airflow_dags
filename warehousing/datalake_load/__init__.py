@@ -75,8 +75,10 @@ def _create_indexes_procedure(connection_name,destination_database, source_datab
 def _create_database_copy_dag(connection_name, source_database, destination_database):
     logging.info("_create_database_copy_dag: Started")
 
+    task_id_suffix = f'__{connection_name}_{destination_database}'
+
     create_destination_database = MsSqlOperator(
-        task_id='create_destination_database',
+        task_id=f'create_destination_database{task_id_suffix}',
         mssql_conn_id=connection_name,
         sql="datalake_load/sql/CREATE__databases.sql",
         autocommit=True,
@@ -84,7 +86,7 @@ def _create_database_copy_dag(connection_name, source_database, destination_data
     )
 
     create_etl_tables = MsSqlOperator(
-        task_id='CREATE__etl_tables',
+        task_id=f'CREATE__etl_tables{task_id_suffix}',
         mssql_conn_id=connection_name,
         sql="datalake_load/sql/CREATE__etl_tables.sql",
         autocommit=True,
@@ -92,7 +94,7 @@ def _create_database_copy_dag(connection_name, source_database, destination_data
     )
 
     recreate_etl_tables = MsSqlOperator(
-        task_id='recreate_etl_tables',
+        task_id=f'recreate_etl_tables{task_id_suffix}',
         mssql_conn_id=connection_name,
         sql="datalake_load/sql/INSERT__etl_tables.sql",
         autocommit=True,
@@ -101,7 +103,7 @@ def _create_database_copy_dag(connection_name, source_database, destination_data
     )
 
     copy_tables = MsSqlOperator(
-        task_id='copy_tables',
+        task_id=f'copy_tables{task_id_suffix}',
         mssql_conn_id=connection_name,
         sql="datalake_load/sql/INSERT__tables.sql",
         autocommit=True,
@@ -110,7 +112,7 @@ def _create_database_copy_dag(connection_name, source_database, destination_data
     )
 
     change_text_columns_to_varchar = MsSqlOperator(
-        task_id='change_text_columns_to_varchar',
+        task_id=f'change_text_columns_to_varchar{task_id_suffix}',
         mssql_conn_id=connection_name,
         sql="datalake_load/sql/UPDATE__tables__alter_text_to_varchar.sql",
         autocommit=True,
@@ -119,7 +121,7 @@ def _create_database_copy_dag(connection_name, source_database, destination_data
     )
 
     create_indexes = PythonOperator(
-        task_id="create_indexes",
+        task_id=f"create_indexes{task_id_suffix}",
         python_callable=_create_indexes_procedure,
         op_kwargs={
             'destination_database': destination_database,
@@ -129,7 +131,7 @@ def _create_database_copy_dag(connection_name, source_database, destination_data
     )
 
     mark_updated = MsSqlOperator(
-        task_id='mark_updated',
+        task_id=f'mark_updated{task_id_suffix}',
         mssql_conn_id=connection_name,
         sql="datalake_load/sql/UPDATE__etl_tables__last_copied.sql",
         autocommit=True,
