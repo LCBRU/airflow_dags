@@ -190,11 +190,12 @@ with DAG(
         with conf_file.open() as f:
             conf = yaml.safe_load(f)
 
-            PythonOperator(
-                task_id=f"_download_and_restore__{conf['destination']}",
-                python_callable=_download_and_restore,
-                op_kwargs={
-                    'destination_database': conf['destination'],
-                    'source_url': conf['sourcel_url'],
-                },
-            )
+            if not conf.get('skip', False):
+                PythonOperator(
+                    task_id=f"_download_and_restore__{conf['destination']}",
+                    python_callable=_download_and_restore,
+                    op_kwargs={
+                        'destination_database': conf['destination'],
+                        'source_url': conf['sourcel_url'],
+                    },
+                )
