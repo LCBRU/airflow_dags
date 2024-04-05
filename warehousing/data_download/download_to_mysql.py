@@ -186,7 +186,7 @@ with DAG(
     default_args=default_dag_args,
     schedule=None,
 ):
-    for conf_file in (pathlib.Path(__file__).parent.absolute() / '/uol_data_sources').glob('*.yml'):
+    for conf_file in (pathlib.Path(__file__).parent.absolute() / 'uol_data_sources').glob('*.yml'):
         with conf_file.open() as f:
             conf = f.safe_load(f)
 
