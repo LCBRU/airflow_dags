@@ -72,7 +72,7 @@ def _create_indexes_procedure(connection_name,destination_database, source_datab
     logging.info("_create_indexes_procedure: Ended")
 
 
-def _create_database_copy_dag(dag, connection_name, source_database, destination_database):
+def _create_database_copy_dag(connection_name, source_database, destination_database):
     logging.info("_create_database_copy_dag: Started")
 
     create_destination_database = MsSqlOperator(
