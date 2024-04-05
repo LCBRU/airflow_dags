@@ -6,15 +6,11 @@ import tempfile
 import requests
 import shutil
 import logging
-import pathlib
-from airflow.operators.python_operator import PythonOperator
 from airflow.models import Variable
-from airflow import DAG
 from warehousing.database import ReplicantDbConnection
-from tools import default_dag_args
-import yaml
 
-def _download_and_restore(destination_database, source_url):
+
+def download_mysql_backup_and_restore(destination_database, source_url):
     logging.info("_download_and_restore: Started")
 
     downloaded_filename = tempfile.NamedTemporaryFile()
@@ -171,23 +167,3 @@ def _run_mysql(command):
     )
 
     return result
-
-
-with DAG(
-    dag_id="download_UOL_data",
-    default_args=default_dag_args,
-    schedule=None,
-):
-    for conf_file in (pathlib.Path(__file__).parent.absolute() / 'uol_data_sources').glob('*.yml'):
-        with conf_file.open() as f:
-            conf = yaml.safe_load(f)
-
-            if not conf.get('skip', False):
-                PythonOperator(
-                    task_id=f"_download_and_restore__{conf['destination']}",
-                    python_callable=_download_and_restore,
-                    op_kwargs={
-                        'destination_database': conf['destination'],
-                        'source_url': conf['sourcel_url'],
-                    },
-                )
