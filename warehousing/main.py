@@ -31,8 +31,6 @@ from warehousing.integrate import create_warehouse
 # )
 
 
-# datalake_mysql_import = create_datalake_mysql_import_dag(dag)
-# legacy_datalake_mysql_import = create_legacy_datalake_mysql_import_dag(dag)
 # config = create_wh_central_config(dag)
 # warehouse = create_warehouse(dag)
 # create_study_warehouses = create_wh_create_studies(dag)
