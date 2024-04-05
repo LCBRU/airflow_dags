@@ -80,7 +80,7 @@ def _create_database_copy_dag(connection_name, source_database, destination_data
     create_destination_database = MsSqlOperator(
         task_id=f'create_destination_database{task_id_suffix}',
         mssql_conn_id=connection_name,
-        sql=str(Path(__file__).parent.absolute() / "sql/CREATE__databases.sql"),
+        sql="CREATE__databases.sql",
         autocommit=True,
         parameters={'db_name': destination_database},
     )
@@ -88,7 +88,7 @@ def _create_database_copy_dag(connection_name, source_database, destination_data
     create_etl_tables = MsSqlOperator(
         task_id=f'CREATE__etl_tables{task_id_suffix}',
         mssql_conn_id=connection_name,
-        sql=str(Path(__file__).parent.absolute() / "sql/CREATE__etl_tables.sql"),
+        sql="CREATE__etl_tables.sql",
         autocommit=True,
         database=destination_database,
     )
@@ -96,7 +96,7 @@ def _create_database_copy_dag(connection_name, source_database, destination_data
     recreate_etl_tables = MsSqlOperator(
         task_id=f'recreate_etl_tables{task_id_suffix}',
         mssql_conn_id=connection_name,
-        sql=str(Path(__file__).parent.absolute() / "sql/INSERT__etl_tables.sql"),
+        sql="INSERT__etl_tables.sql",
         autocommit=True,
         database=destination_database,
         parameters={'source_database': source_database},
@@ -105,7 +105,7 @@ def _create_database_copy_dag(connection_name, source_database, destination_data
     copy_tables = MsSqlOperator(
         task_id=f'copy_tables{task_id_suffix}',
         mssql_conn_id=connection_name,
-        sql=str(Path(__file__).parent.absolute() / "sql/INSERT__tables.sql"),
+        sql="INSERT__tables.sql",
         autocommit=True,
         database=destination_database,
         parameters={'source_database': source_database},
@@ -114,7 +114,7 @@ def _create_database_copy_dag(connection_name, source_database, destination_data
     change_text_columns_to_varchar = MsSqlOperator(
         task_id=f'change_text_columns_to_varchar{task_id_suffix}',
         mssql_conn_id=connection_name,
-        sql=str(Path(__file__).parent.absolute() / "sql/UPDATE__tables__alter_text_to_varchar.sql"),
+        sql="UPDATE__tables__alter_text_to_varchar.sql",
         autocommit=True,
         database=destination_database,
         parameters={},
@@ -133,7 +133,7 @@ def _create_database_copy_dag(connection_name, source_database, destination_data
     mark_updated = MsSqlOperator(
         task_id=f'mark_updated{task_id_suffix}',
         mssql_conn_id=connection_name,
-        sql=str(Path(__file__).parent.absolute() / "sql/UPDATE__etl_tables__last_copied.sql"),
+        sql="UPDATE__etl_tables__last_copied.sql",
         autocommit=True,
         database=destination_database,
         parameters={'source_database': source_database},
@@ -156,6 +156,7 @@ with DAG(
     dag_id="Copy_live_DB_to_DWH",
     default_args=default_dag_args,
     schedule=None,
+    template_searchpath = ['/opt/airflow/dags/warehousing/datalake_load/sql/']
 ):
     # Legacy DWH
     _create_database_copy_dag(connection_name='LEGACY_DWH', source_database='civicrmlive_docker4716', destination_database='datalake_civicrmlive_docker4716')
