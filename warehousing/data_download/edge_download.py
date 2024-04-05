@@ -10,7 +10,7 @@ from selenium.webdriver.common.keys import Keys
 from lbrc_edge import EdgeSiteStudy
 
 
-def _download_edge_studies():
+def download_edge_studies():
     logging.info("_download_edge_studies: Started")
 
     s = get_selenium(base_url=os.environ['AIRFLOW_VAR_EDGE_BASE_URL'])

@@ -27,7 +27,7 @@ class CrfmStudy(Base):
     status = Column(String)
 
 
-def _download_crf_manager_studies():
+def download_crf_manager_studies():
     logging.info("_download_crf_manager_studies: Started")
 
     s = get_selenium(base_url=os.environ['AIRFLOW_VAR_CRFM_BASE_URL'])
@@ -132,15 +132,3 @@ def _save_studies(studies):
         session.add_all(studies)
 
     logging.info("_save_study_details: Ended")
-
-
-def create_download_crf_manager_studies(dag):
-    parent_subdag = create_sub_dag_task(dag, 'download_crfm_studies', run_on_failures=True)
-
-    PythonOperator(
-        task_id=f"download_crf_manager_studies",
-        python_callable=_download_crf_manager_studies,
-        dag=parent_subdag.subdag,
-    )
-
-    return parent_subdag

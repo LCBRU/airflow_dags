@@ -2,22 +2,10 @@ import yaml
 import pathlib
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
-from tools import create_sub_dag_task
+from warehousing.data_download.crf_manager_download import download_crf_manager_studies
 from warehousing.data_download.download_to_mysql import download_mysql_backup_and_restore
-from warehousing.data_download.edge_download import _download_edge_studies
+from warehousing.data_download.edge_download import download_edge_studies
 from tools import default_dag_args
-
-
-def create_download_edge_studies(dag):
-    parent_subdag = create_sub_dag_task(dag, 'download_edge_studies', run_on_failures=True)
-
-    PythonOperator(
-        task_id=f"download_edge_studies",
-        python_callable=_download_edge_studies,
-        dag=parent_subdag.subdag,
-    )
-
-    return parent_subdag
 
 
 with DAG(
@@ -38,3 +26,20 @@ with DAG(
                         'source_url': conf['sourcel_url'],
                     },
                 )
+
+
+with DAG(
+    dag_id="download_external_data",
+    default_args=default_dag_args,
+    schedule=None,
+):
+        task_download_edge_studies = PythonOperator(
+            task_id=f"download_edge_studies",
+            python_callable=download_edge_studies,
+        )
+        task_download_crfm_studies = PythonOperator(
+            task_id=f"download_crf_manager_studies",
+            python_callable=download_crf_manager_studies,
+        )
+
+        task_download_edge_studies << task_download_crfm_studies
