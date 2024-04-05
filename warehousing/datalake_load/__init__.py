@@ -80,7 +80,7 @@ def _create_database_copy_dag(connection_name, source_database, destination_data
     create_destination_database = MsSqlOperator(
         task_id=f'create_destination_database{task_id_suffix}',
         mssql_conn_id=connection_name,
-        sql="datalake_load/sql/CREATE__databases.sql",
+        sql="sql/CREATE__databases.sql",
         autocommit=True,
         parameters={'db_name': destination_database},
     )
@@ -88,7 +88,7 @@ def _create_database_copy_dag(connection_name, source_database, destination_data
     create_etl_tables = MsSqlOperator(
         task_id=f'CREATE__etl_tables{task_id_suffix}',
         mssql_conn_id=connection_name,
-        sql="datalake_load/sql/CREATE__etl_tables.sql",
+        sql="sql/CREATE__etl_tables.sql",
         autocommit=True,
         database=destination_database,
     )
@@ -96,7 +96,7 @@ def _create_database_copy_dag(connection_name, source_database, destination_data
     recreate_etl_tables = MsSqlOperator(
         task_id=f'recreate_etl_tables{task_id_suffix}',
         mssql_conn_id=connection_name,
-        sql="datalake_load/sql/INSERT__etl_tables.sql",
+        sql="sql/INSERT__etl_tables.sql",
         autocommit=True,
         database=destination_database,
         parameters={'source_database': source_database},
@@ -105,7 +105,7 @@ def _create_database_copy_dag(connection_name, source_database, destination_data
     copy_tables = MsSqlOperator(
         task_id=f'copy_tables{task_id_suffix}',
         mssql_conn_id=connection_name,
-        sql="datalake_load/sql/INSERT__tables.sql",
+        sql="sql/INSERT__tables.sql",
         autocommit=True,
         database=destination_database,
         parameters={'source_database': source_database},
@@ -114,7 +114,7 @@ def _create_database_copy_dag(connection_name, source_database, destination_data
     change_text_columns_to_varchar = MsSqlOperator(
         task_id=f'change_text_columns_to_varchar{task_id_suffix}',
         mssql_conn_id=connection_name,
-        sql="datalake_load/sql/UPDATE__tables__alter_text_to_varchar.sql",
+        sql="sql/UPDATE__tables__alter_text_to_varchar.sql",
         autocommit=True,
         database=destination_database,
         parameters={},
@@ -133,7 +133,7 @@ def _create_database_copy_dag(connection_name, source_database, destination_data
     mark_updated = MsSqlOperator(
         task_id=f'mark_updated{task_id_suffix}',
         mssql_conn_id=connection_name,
-        sql="datalake_load/sql/UPDATE__etl_tables__last_copied.sql",
+        sql="sql/UPDATE__etl_tables__last_copied.sql",
         autocommit=True,
         database=destination_database,
         parameters={'source_database': source_database},
