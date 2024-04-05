@@ -12,7 +12,7 @@ from airflow.models import Variable
 from airflow import DAG
 from warehousing.database import ReplicantDbConnection
 from tools import default_dag_args
-
+import yaml
 
 def _download_and_restore(destination_database, source_url):
     logging.info("_download_and_restore: Started")
@@ -188,7 +188,7 @@ with DAG(
 ):
     for conf_file in (pathlib.Path(__file__).parent.absolute() / 'uol_data_sources').glob('*.yml'):
         with conf_file.open() as f:
-            conf = f.safe_load(f)
+            conf = yaml.safe_load(f)
 
             PythonOperator(
                 task_id=f"_download_and_restore__{conf['destination']}",
