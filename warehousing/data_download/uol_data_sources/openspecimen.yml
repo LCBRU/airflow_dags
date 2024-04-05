@@ -1,3 +1,3 @@
 destination: 'uol_openspecimen'
 sourcel_url: 'https://catissue-live.lcbru.le.ac.uk/publish/catissue.db'
-skip: True
+skip: False

@@ -173,14 +173,6 @@ def _run_mysql(command):
     return result
 
 
-uhl_data_details = {
-    # 'uol_openspecimen': 'https://catissue-live.lcbru.le.ac.uk/publish/catissue.db',
-    'uol_easyas_redcap': 'https://easy-as.lbrc.le.ac.uk/publish/redcap.db',
-    # 'uol_crf_redcap': 'https://crf.lcbru.le.ac.uk/publish/redcap.db',
-    'uol_survey_redcap': 'https://redcap.lcbru.le.ac.uk/publish/redcap.db',
-}
-
-
 with DAG(
     dag_id="download_UOL_data",
     default_args=default_dag_args,
