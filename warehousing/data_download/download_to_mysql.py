@@ -148,7 +148,7 @@ def _restore_database(destination_database, input_filename):
 
     d = '\n'.join(str)
 
-    c = "USE {destination_database};\n {d}"
+    c = f"USE {destination_database};\n {d}"
 
     logging.info(c)
 
