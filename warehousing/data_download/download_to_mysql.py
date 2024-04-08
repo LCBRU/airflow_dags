@@ -146,10 +146,11 @@ def _restore_database(destination_database, input_filename):
     logging.info('\n'.join(str))
     logging.info('****************************************************************')
 
-    proc = _run_mysql('USE {};\n {}'.format(
-        destination_database,
-        '\n'.join(str),
-    ))
+    c = "USE {destination_database};\n {'\n'.join(str)}"
+
+    logging.info(c)
+
+    proc = _run_mysql(c)
 
     # proc = _run_mysql('USE {};\nSOURCE {}'.format(
     #     destination_database,
