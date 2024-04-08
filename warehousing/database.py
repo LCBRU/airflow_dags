@@ -152,38 +152,6 @@ class MsSqlConnection(SqlConnection):
         return MsSqlHook(mssql_conn_id=self._connection_name, schema=self._schema)
 
 
-DWH_CONNECTION_NAME = 'DWH'
-SCH_WAREHOUSE_CENTRAL = 'warehouse_central'
-SCH_WAREHOUSE_CONFIG = 'warehouse_config'
-SCH_WAREHOUSE_MASTER = 'master'
-SCH_DATALAKE_CIVICRM = 'datalake_civicrm'
-
-
-class WarehouseConnection(MsSqlConnection):
-    def __init__(self, schema=''):
-        super().__init__(DWH_CONNECTION_NAME, schema)
-
-
-class WarehouseCentralConnection(WarehouseConnection):
-    def __init__(self):
-        super().__init__(SCH_WAREHOUSE_CENTRAL)
-
-
-class WarehouseConfigConnection(WarehouseConnection):
-    def __init__(self):
-        super().__init__(SCH_WAREHOUSE_CONFIG)
-
-
-class WarehouseMasterConnection(WarehouseConnection):
-    def __init__(self):
-        super().__init__(SCH_WAREHOUSE_MASTER)
-
-
-class DatalakeCiviCRMConnection(WarehouseConnection):
-    def __init__(self):
-        super().__init__(SCH_DATALAKE_CIVICRM)
-
-
 LIVE_DB_CONNECTION_NAME = 'LIVE_DB'
 REPLICANT_DB_CONNECTION_NAME = 'REPLICANT_DB'
 
