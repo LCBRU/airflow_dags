@@ -144,16 +144,16 @@ def _restore_database(destination_database, input_filename):
 
     logging.info('****************************************************************')
 
-    # proc = _run_mysql('USE {};\nSOURCE {}'.format(
-    #     destination_database,
-    #     input_filename,
-    # ))
+    proc = _run_mysql('USE {};\nSOURCE {}'.format(
+        destination_database,
+        input_filename,
+    ))
 
-    # if proc.returncode != 0:
-    #     raise Exception('Could not restore database "{}" (ERROR: {})'.format(
-    #         destination_database,
-    #         proc.returncode,
-    #     ))
+    if proc.returncode != 0:
+        raise Exception('Could not restore database "{}" (ERROR: {})'.format(
+            destination_database,
+            proc.returncode,
+        ))
 
     logging.info("_restore_database: Ended")
 
