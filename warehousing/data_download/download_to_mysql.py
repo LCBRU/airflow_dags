@@ -138,8 +138,9 @@ def _restore_database(destination_database, input_filename):
 
     logging.info('****************************************************************')
 
-    for _ in range(10):
-        logging.info(Path(input_filename).open().readline())
+    with Path(input_filename).open() as input:
+        for _ in range(10):
+            logging.info(input.readline())
 
     logging.info('****************************************************************')
 
