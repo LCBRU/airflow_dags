@@ -140,6 +140,8 @@ def _restore_database(destination_database, input_filename):
         input_filename,
     ))
 
+    logging.info("{proc}")
+
     if proc.returncode != 0:
         raise Exception('Could not restore database "{}" (ERROR: {})'.format(
             destination_database,
