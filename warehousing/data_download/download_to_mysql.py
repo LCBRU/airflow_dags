@@ -1,5 +1,6 @@
 import fileinput
 import gzip
+from pathlib import Path
 import re
 import subprocess
 import tempfile
@@ -133,14 +134,18 @@ def _create_database(destination_database):
 
 def _restore_database(destination_database, input_filename):
     logging.info("_restore_database: Started")
-    logging.info("File = {input_filename}")
+    logging.info(f"File = {input_filename}")
+
+    logging.info('****************************************************************')
+
+    logging.info(Path(input_filename).read())
+
+    logging.info('****************************************************************')
 
     proc = _run_mysql('USE {};\nSOURCE {}'.format(
         destination_database,
         input_filename,
     ))
-
-    logging.info(proc)
 
     if proc.returncode != 0:
         raise Exception('Could not restore database "{}" (ERROR: {})'.format(
