@@ -138,16 +138,23 @@ def _restore_database(destination_database, input_filename):
 
     logging.info('****************************************************************')
 
+    str = []
     with Path(input_filename).open() as input:
-        for _ in range(100):
-            logging.info(input.readline())
+        for _ in range(35):
+            str.append(input.readline())
 
+    logging.info('\n'.join(str))
     logging.info('****************************************************************')
 
     proc = _run_mysql('USE {};\nSOURCE {}'.format(
         destination_database,
-        input_filename,
+        '\n'.join(str),
     ))
+
+    # proc = _run_mysql('USE {};\nSOURCE {}'.format(
+    #     destination_database,
+    #     input_filename,
+    # ))
 
     if proc.returncode != 0:
         raise Exception('Could not restore database "{}" (ERROR: {})'.format(
