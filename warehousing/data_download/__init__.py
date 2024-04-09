@@ -21,32 +21,32 @@ with DAG(
         },
     )
     
-    # PythonOperator(
-    #     task_id=f"download_mysql_backup_and_restore__uol_easyas_redcap",
-    #     python_callable=download_mysql_backup_and_restore,
-    #     op_kwargs={
-    #         'destination_database': 'uol_easyas_redcap',
-    #         'source_url': 'https://easy-as.lbrc.le.ac.uk/publish/redcap.db',
-    #     },
-    # )
+    PythonOperator(
+        task_id=f"download_mysql_backup_and_restore__uol_easyas_redcap",
+        python_callable=download_mysql_backup_and_restore,
+        op_kwargs={
+            'destination_database': 'uol_easyas_redcap',
+            'source_url': 'https://easy-as.lbrc.le.ac.uk/publish/redcap.db',
+        },
+    )
     
-    # PythonOperator(
-    #     task_id=f"download_mysql_backup_and_restore__uol_survey_redcap",
-    #     python_callable=download_mysql_backup_and_restore,
-    #     op_kwargs={
-    #         'destination_database': 'uol_survey_redcap',
-    #         'source_url': 'https://redcap.lcbru.le.ac.uk/publish/redcap.db',
-    #     },
-    # )
+    PythonOperator(
+        task_id=f"download_mysql_backup_and_restore__uol_survey_redcap",
+        python_callable=download_mysql_backup_and_restore,
+        op_kwargs={
+            'destination_database': 'uol_survey_redcap',
+            'source_url': 'https://redcap.lcbru.le.ac.uk/publish/redcap.db',
+        },
+    )
     
-    # PythonOperator(
-    #     task_id=f"download_mysql_backup_and_restore__uol_crf_redcap",
-    #     python_callable=download_mysql_backup_and_restore,
-    #     op_kwargs={
-    #         'destination_database': 'uol_crf_redcap',
-    #         'source_url': 'https://crf.lcbru.le.ac.uk/publish/redcap.db',
-    #     },
-    # )
+    PythonOperator(
+        task_id=f"download_mysql_backup_and_restore__uol_crf_redcap",
+        python_callable=download_mysql_backup_and_restore,
+        op_kwargs={
+            'destination_database': 'uol_crf_redcap',
+            'source_url': 'https://crf.lcbru.le.ac.uk/publish/redcap.db',
+        },
+    )
 
 
 with DAG(
