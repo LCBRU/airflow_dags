@@ -8,6 +8,7 @@ default_dag_args = {
     "owner": "airflow",
 	'email': os.environ.get('ERROR_EMAIL_ADDRESS', '').split(';'),
 	'email_on_failure': True,
+    "start_date": datetime(2020, 1, 1),
 }
 
 
