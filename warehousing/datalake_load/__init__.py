@@ -157,7 +157,7 @@ with DAG(
     dag_id="Copy_live_DB_to_DWH",
     default_args=default_dag_args,
     schedule=os.environ.get('SCHEDULE_DATALAKE_LOAD', None) or None,
-    template_searchpath = ['/opt/airflow/dags/warehousing/datalake_load/sql/']
+    template_searchpath = ['/opt/airflow/dags/warehousing/datalake_load/sql/'],
     catchup=False,
 ):
     # Legacy DWH
