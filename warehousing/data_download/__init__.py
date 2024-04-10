@@ -1,3 +1,4 @@
+import os
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 from warehousing.data_download.crf_manager_download import download_crf_manager_studies
@@ -10,7 +11,8 @@ from airflow.utils.trigger_rule import TriggerRule
 with DAG(
     dag_id="download_UOL_data",
     default_args=default_dag_args,
-    schedule=None,
+    schedule=os.environ.get('SCHEDULE_DOWNLOAD_UOL_DATA', None) or None,
+    catchup=False,
 ):
     PythonOperator(
         task_id=f"download_mysql_backup_and_restore__uol_openspecimen",
@@ -52,7 +54,8 @@ with DAG(
 with DAG(
     dag_id="download_external_data",
     default_args=default_dag_args,
-    schedule=None,
+    schedule=os.environ.get('SCHEDULE_DOWNLOAD_EXTERNAL_DATA', None) or None,
+    catchup=False,
 ):
         task_download_edge_studies = PythonOperator(
             task_id=f"download_edge_studies",

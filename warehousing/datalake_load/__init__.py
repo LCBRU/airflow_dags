@@ -1,3 +1,4 @@
+import os
 import logging
 from pathlib import Path
 from airflow import DAG
@@ -155,8 +156,9 @@ def _create_database_copy_dag(connection_name, source_database, destination_data
 with DAG(
     dag_id="Copy_live_DB_to_DWH",
     default_args=default_dag_args,
-    schedule=None,
+    schedule=os.environ.get('SCHEDULE_DATALAKE_LOAD', None) or None,
     template_searchpath = ['/opt/airflow/dags/warehousing/datalake_load/sql/']
+    catchup=False,
 ):
     # Legacy DWH
     _create_database_copy_dag(connection_name='LEGACY_DWH', source_database='civicrmlive_docker4716', destination_database='datalake_civicrmlive_docker4716')
