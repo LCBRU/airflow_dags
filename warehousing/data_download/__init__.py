@@ -1,3 +1,4 @@
+from datetime import datetime
 import os
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
@@ -13,6 +14,7 @@ with DAG(
     default_args=default_dag_args,
     schedule=os.environ.get('SCHEDULE_DOWNLOAD_UOL_DATA', None) or None,
     catchup=False,
+    start_date=datetime(2020, 1, 1),
 ):
     PythonOperator(
         task_id=f"download_mysql_backup_and_restore__uol_openspecimen",
@@ -56,6 +58,7 @@ with DAG(
     default_args=default_dag_args,
     schedule=os.environ.get('SCHEDULE_DOWNLOAD_EXTERNAL_DATA', None) or None,
     catchup=False,
+    start_date=datetime(2020, 1, 1),
 ):
         task_download_edge_studies = PythonOperator(
             task_id=f"download_edge_studies",

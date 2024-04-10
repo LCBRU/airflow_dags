@@ -23,6 +23,7 @@ dag = DAG(
     schedule_interval=os.environ.get('SCHEDULE_REPLICATE', None) or None,
     default_args=default_args,
     catchup=False,
+    start_date=datetime(2020, 1, 1),
 )
 
 def _replicate_database(db, live_conn, replicant_conn):
