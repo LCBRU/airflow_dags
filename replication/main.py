@@ -48,6 +48,8 @@ def _replicate_database(db, live_conn, replicant_conn):
     # output, errors = load.communicate()
     # dump.stdout.close()
 
+    dump.wait()
+
     output, errors = dump.communicate()
 
     print(f'errors=')
