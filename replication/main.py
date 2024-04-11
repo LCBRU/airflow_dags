@@ -13,9 +13,7 @@ from airflow.operators.python_operator import PythonOperator
 def _replicate_database(db, live_conn, replicant_conn):
     logging.info("_replicate_database: Started")
 
-    with open(pathlib.Path("/backup/test.sql"), "w") as outfile:
-        subprocess.run(
-            [
+    params = [
                 'mysqldump',
                 '-h',
                 live_conn.host,
@@ -26,7 +24,13 @@ def _replicate_database(db, live_conn, replicant_conn):
                 '--column-statistics=0',
                 '--databases',
                 db,
-            ],
+            ]
+    
+    logging.info(' '.join(params)
+
+    with open(pathlib.Path("/backup/test.sql"), "w") as outfile:
+        subprocess.run(
+            params,
             stdout=outfile,
         )
 
