@@ -27,6 +27,7 @@ def _replicate_database(db, live_conn, replicant_conn):
         ],
         bufsize=0,
         stdout=subprocess.PIPE,
+        text=True,
     )
 
     load = subprocess.Popen(
@@ -40,12 +41,14 @@ def _replicate_database(db, live_conn, replicant_conn):
         ],
         stdin=dump.stdout,
         stdout=subprocess.PIPE,
+        text=True,
     )
 
+    output, errors = load.communicate()
     dump.stdout.close()
-    result = load.communicate()[0]
 
-    print(result)
+    print(f'errors=')
+    print(f'output=')
 
     logging.info("_replicate_database: Ended")
 
