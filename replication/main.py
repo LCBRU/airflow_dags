@@ -83,7 +83,6 @@ with DAG(
     default_args=default_dag_args,
     catchup=False,
     start_date=datetime(2020, 1, 1),
-    catchup=False,
 ):
     for db in dbs:
         live_conn = LiveDbConnection(db)
