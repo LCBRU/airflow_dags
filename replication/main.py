@@ -1,30 +1,13 @@
 import logging
 import os
-from datetime import timedelta, datetime
+from datetime import datetime
 import subprocess
 from airflow import DAG
-from tools import create_sub_dag_task
+from tools import default_dag_args
 from warehousing.database import LiveDbConnection, ReplicantDbConnection
 from airflow.operators.python_operator import PythonOperator
 
 
-
-default_args = {
-    "owner": "airflow",
-    "reties": 3,
-    "retry_delay": timedelta(minutes=5),
-    "start_date": datetime(2020, 1, 1),
-	'email': os.environ.get('ERROR_EMAIL_ADDRESS', '').split(';'),
-	'email_on_failure': True,
-}
-
-dag = DAG(
-    dag_id="replication",
-    schedule_interval=os.environ.get('SCHEDULE_REPLICATE', None) or None,
-    default_args=default_args,
-    catchup=False,
-    start_date=datetime(2020, 1, 1),
-)
 
 def _replicate_database(db, live_conn, replicant_conn):
     logging.info("_replicate_database: Started")
@@ -93,9 +76,15 @@ dbs = {
     # 'scratch',
 }
 
-def create_download_to_mysql_dag(dag):
-    parent_subdag = create_sub_dag_task(dag, 'replicate_mysql', run_on_failures=True)
 
+with DAG(
+    dag_id="replication",
+    schedule_interval=os.environ.get('SCHEDULE_REPLICATE', None) or None,
+    default_args=default_dag_args,
+    catchup=False,
+    start_date=datetime(2020, 1, 1),
+    catchup=False,
+):
     for db in dbs:
         live_conn = LiveDbConnection(db)
         replicant_conn = ReplicantDbConnection(db)
@@ -103,14 +92,9 @@ def create_download_to_mysql_dag(dag):
         PythonOperator(
             task_id=f"replicate__replicate_database__{db}",
             python_callable=_replicate_database,
-            dag=parent_subdag.subdag,
             op_kwargs={
                 'db': db,
                 'live_conn': live_conn,
                 'replicant_conn': replicant_conn,
             },
         )
-    
-    return parent_subdag
-
-create_download_to_mysql_dag(dag)
