@@ -22,6 +22,6 @@ SELECT @SQL = '
 
 SELECT @OPENQUERY = '
     SELECT *
-    FROM OpenQuery(db02, ''' + @SQL + ''')'
+    FROM OpenQuery(db01, ''' + @SQL + ''')'
 
 EXEC sp_executesql @OPENQUERY
