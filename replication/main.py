@@ -25,27 +25,30 @@ def _replicate_database(db, live_conn, replicant_conn):
             '--databases',
             db,
         ],
-        bufsize=0,
-        stdout=subprocess.PIPE,
+        capture_output=True,
+        # bufsize=0,
+        # stdout=subprocess.PIPE,
         text=True,
     )
 
-    load = subprocess.Popen(
-        [
-            'mysql',
-            '-h',
-            replicant_conn.host,
-            '-u',
-            replicant_conn.login,
-            f'--password={replicant_conn.password}',
-        ],
-        stdin=dump.stdout,
-        stdout=subprocess.PIPE,
-        text=True,
-    )
+    # load = subprocess.Popen(
+    #     [
+    #         'mysql',
+    #         '-h',
+    #         replicant_conn.host,
+    #         '-u',
+    #         replicant_conn.login,
+    #         f'--password={replicant_conn.password}',
+    #     ],
+    #     stdin=dump.stdout,
+    #     stdout=subprocess.PIPE,
+    #     text=True,
+    # )
 
-    output, errors = load.communicate()
-    dump.stdout.close()
+    # output, errors = load.communicate()
+    # dump.stdout.close()
+
+    output, errors = dump.communicate()
 
     print(f'errors=')
     print(f'output=')
