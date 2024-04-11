@@ -26,7 +26,7 @@ def _replicate_database(db, live_conn, replicant_conn):
                 db,
             ]
     
-    logging.info(' '.join(params)
+    logging.info(' '.join(params))
 
     with open(pathlib.Path("/backup/test.sql"), "w") as outfile:
         subprocess.run(
