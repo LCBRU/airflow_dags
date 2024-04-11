@@ -83,6 +83,10 @@ dbs = {
 }
 
 
+dbs = {
+    'redcap_genvasc',
+}
+
 with DAG(
     dag_id="replication",
     schedule_interval=os.environ.get('SCHEDULE_REPLICATE', None) or None,
