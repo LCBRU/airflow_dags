@@ -1,5 +1,6 @@
 import logging
 import os
+import pathlib
 from datetime import datetime
 import subprocess
 from airflow import DAG
@@ -12,24 +13,22 @@ from airflow.operators.python_operator import PythonOperator
 def _replicate_database(db, live_conn, replicant_conn):
     logging.info("_replicate_database: Started")
 
-    dump = subprocess.Popen(
-        [
-            'mysqldump',
-            '-h',
-            live_conn.host,
-            '-u',
-            live_conn.login,
-            f'--password={live_conn.password}',
-            '--add-drop-database',
-            '--column-statistics=0',
-            '--databases',
-            db,
-        ],
-        # capture_output=True,
-        # bufsize=0,
-        stdout=subprocess.PIPE,
-        text=True,
-    )
+    with open(pathlib.Path("/backup/test.sql", "w")) as outfile:
+        subprocess.run(
+            [
+                'mysqldump',
+                '-h',
+                live_conn.host,
+                '-u',
+                live_conn.login,
+                f'--password={live_conn.password}',
+                '--add-drop-database',
+                '--column-statistics=0',
+                '--databases',
+                db,
+            ],
+            stdout=outfile,
+        )
 
     # load = subprocess.Popen(
     #     [
@@ -48,12 +47,12 @@ def _replicate_database(db, live_conn, replicant_conn):
     # output, errors = load.communicate()
     # dump.stdout.close()
 
-    dump.wait()
+    # dump.wait()
 
-    output, errors = dump.communicate()
+    # output, errors = dump.communicate()
 
-    print(f'errors=')
-    print(f'output=')
+    # print(f'errors=')
+    # print(f'output=')
 
     logging.info("_replicate_database: Ended")
 
