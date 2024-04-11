@@ -25,9 +25,9 @@ def _replicate_database(db, live_conn, replicant_conn):
             '--databases',
             db,
         ],
-        capture_output=True,
+        # capture_output=True,
         # bufsize=0,
-        # stdout=subprocess.PIPE,
+        stdout=subprocess.PIPE,
         text=True,
     )
 
