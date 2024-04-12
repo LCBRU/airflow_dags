@@ -10,7 +10,7 @@ from warehousing.database import MsSqlConnection
 from tools import default_dag_args
 
 
-def _create_indexes_procedure(connection_name,destination_database, source_database):
+def _create_indexes_procedure(connection_name, destination_database, source_database):
     logging.info("_create_indexes_procedure: Started")
 
     create_index_template = '''

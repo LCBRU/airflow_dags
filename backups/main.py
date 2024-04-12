@@ -10,51 +10,48 @@ from airflow.operators.python_operator import PythonOperator
 
 
 def _backup_database(db, live_conn, replicant_conn):
-    logging.info("_replicate_database: Started")
+    logging.info("_backup_database: Started")
 
-    params = [
-                'mysqldump',
+    ls_process = subprocess.Popen(["ls"], stdout=subprocess.PIPE, text=True)
+
+    grep_process = subprocess.Popen(["grep", "sample"], stdin=ls_process.stdout, stdout=subprocess.PIPE, text=True)
+
+    output, error = grep_process.communicate()
+
+    dump = subprocess.run(
+        [
+            'mysqldump',
+            '-h',
+            live_conn.host,
+            '-u',
+            live_conn.login,
+            f'--password={live_conn.password}',
+            '--add-drop-database',
+            '--databases',
+            db,
+        ],
+        stdout=subprocess.PIPE,
+        text=True,
+    )
+
+    with open(pathlib.Path(f"/backup/{db}_{datetime.now():%Y-%m5d}.sql"), "w") as zipfile:
+        zip = subprocess.Popen(
+            [
+                'mysql',
                 '-h',
-                live_conn.host,
+                replicant_conn.host,
                 '-u',
-                live_conn.login,
-                f'--password={live_conn.password}',
-                '--add-drop-database',
-                '--databases',
-                db,
-            ]
-    
-    with open(pathlib.Path("/backup/test.sql"), "w") as outfile:
-        subprocess.run(
-            params,
-            stdout=outfile,
+                replicant_conn.login,
+                f'--password={replicant_conn.password}',
+            ],
+            stdin=dump.stdout,
+            stdout=zipfile,
         )
 
-    # load = subprocess.Popen(
-    #     [
-    #         'mysql',
-    #         '-h',
-    #         replicant_conn.host,
-    #         '-u',
-    #         replicant_conn.login,
-    #         f'--password={replicant_conn.password}',
-    #     ],
-    #     stdin=dump.stdout,
-    #     stdout=subprocess.PIPE,
-    #     text=True,
-    # )
+    output, errors = zip.communicate()
+    logging.error(errors)
+    logging.info("_backup_database: Ended")
 
-    # output, errors = load.communicate()
-    # dump.stdout.close()
-
-    # dump.wait()
-
-    # output, errors = dump.communicate()
-
-    # print(f'errors=')
-    # print(f'output=')
-
-    logging.info("_replicate_database: Ended")
 
 dbs = {
     # 'Yakult',
