@@ -9,7 +9,7 @@ from warehousing.database import LiveDbConnection, ReplicantDbConnection
 from airflow.operators.python_operator import PythonOperator
 
 
-def _backup_database(db, live_conn):
+def _backup_database(db, conn):
     logging.info("_backup_database: Started")
 
     master = LiveDbConnection()
@@ -21,10 +21,10 @@ def _backup_database(db, live_conn):
         [
             'mysqldump',
             '-h',
-            live_conn.host,
+            conn.host,
             '-u',
-            live_conn.login,
-            f'--password={live_conn.password}',
+            conn.login,
+            f'--password={conn.password}',
             '--add-drop-database',
             '--databases',
             db,
