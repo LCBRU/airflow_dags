@@ -12,12 +12,6 @@ from airflow.operators.python_operator import PythonOperator
 def _backup_database(db, live_conn, replicant_conn):
     logging.info("_backup_database: Started")
 
-    ls_process = subprocess.Popen(["ls"], stdout=subprocess.PIPE, text=True)
-
-    grep_process = subprocess.Popen(["grep", "sample"], stdin=ls_process.stdout, stdout=subprocess.PIPE, text=True)
-
-    output, error = grep_process.communicate()
-
     dump = subprocess.run(
         [
             'mysqldump',
@@ -34,15 +28,11 @@ def _backup_database(db, live_conn, replicant_conn):
         text=True,
     )
 
-    with open(pathlib.Path(f"/backup/{db}_{datetime.now():%Y-%m5d}.sql"), "w") as zipfile:
+    with open(pathlib.Path(f"/backup/{db}_{datetime.now():%Y-%m-%d}.sql.gz"), "w") as zipfile:
         zip = subprocess.Popen(
             [
-                'mysql',
-                '-h',
-                replicant_conn.host,
-                '-u',
-                replicant_conn.login,
-                f'--password={replicant_conn.password}',
+                'gzip',
+                '-c',
             ],
             stdin=dump.stdout,
             stdout=zipfile,
