@@ -73,8 +73,17 @@ dbs = {
 }
 
 
-dbs = {
-    'redcap_genvasc',
+exclude = {
+    'information_schema',
+    'mysql',
+    'performance_schema',
+    'reporting',
+    'scratch',
+    'sys',
+    'uol_crf_redcap',
+    'uol_easyas_redcap',
+    'uol_openspecimen',
+    'uol_survey_redcap',
 }
 
 with DAG(
@@ -89,8 +98,9 @@ with DAG(
 
     with master.query('SHOW DATABASES;') as cursor:
         for db, in cursor:
-            PythonOperator(
-                task_id=f"backup_database_{db}",
-                python_callable=_backup_database,
-                op_kwargs={'db': db},
-            )
+            if db not in exclude:
+                PythonOperator(
+                    task_id=f"backup_database_{db}",
+                    python_callable=_backup_database,
+                    op_kwargs={'db': db},
+                )
