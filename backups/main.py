@@ -1,12 +1,13 @@
 import logging
 import os
 import pathlib
-from datetime import datetime
+from datetime import datetime, date, timedelta, timezone
 import subprocess
 from airflow import DAG
 from tools import default_dag_args
-from warehousing.database import LiveDbConnection, ReplicantDbConnection
+from warehousing.database import LiveDbConnection
 from airflow.operators.python_operator import PythonOperator
+from dateutil.relativedelta import relativedelta
 
 
 BACKUP_DIRECTORY = '/backup/live_db/'
@@ -51,6 +52,45 @@ def _backup_database(db):
     logging.info("_backup_database: Ended")
 
 
+def _cleanup_old_backups():
+    logging.info("_cleanup_old_backups: Started")
+
+    backup_dir = pathlib.Path(BACKUP_DIRECTORY)
+    backup_dir.mkdir(parents=True, exist_ok=True)
+
+    today = date.today()
+    oldest_daily = today - timedelta(days=7)
+    oldest_weekly = today - timedelta(weeks=4)
+    oldest_monthly = today - relativedelta(months=12)
+    oldest_yearly = today - relativedelta(years=5)
+
+    to_delete = []
+
+    for f in [f for f in  backup_dir('**/*') if f.is_file()]:
+        modifield_date  = datetime.fromtimestamp(f.stat().st_mtime, tz=timezone.utc).date()
+
+        if modifield_date >= oldest_daily:
+            continue
+    
+        if modifield_date >= oldest_weekly and modifield_date.weekday() == 0:
+            continue
+
+        if modifield_date >= oldest_monthly and modifield_date.day == 1:
+            continue
+
+        if modifield_date >= oldest_yearly and modifield_date.day == 1 and modifield_date.month == 1:
+            continue
+
+        to_delete.append(f)
+
+    for f in to_delete:
+        logging.info(f"Deleting file: {f}")
+        f.unlink()
+
+
+    logging.info("_cleanup_old_backups: Ended")
+
+
 exclude = {
     'information_schema',
     'mysql',
@@ -82,3 +122,8 @@ with DAG(
                     python_callable=_backup_database,
                     op_kwargs={'db': db},
                 )
+
+    PythonOperator(
+        task_id="_cleanup_old_backups",
+        python_callable=_cleanup_old_backups,
+    )
