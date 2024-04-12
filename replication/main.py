@@ -21,7 +21,6 @@ def _replicate_database(db, live_conn, replicant_conn):
             live_conn.login,
             f'--password={live_conn.password}',
             '--add-drop-database',
-            '--column-statistics=0',
             '--databases',
             db,
         ],
