@@ -9,14 +9,10 @@ from warehousing.database import LiveDbConnection, ReplicantDbConnection
 from airflow.operators.python_operator import PythonOperator
 
 
-def _backup_database(db, conn):
+def _backup_database(db):
     logging.info("_backup_database: Started")
 
-    master = LiveDbConnection()
-
-    with master.query('SHOW DATABASES;') as cursor:
-        for row, in cursor:
-            logging.info(row)
+    conn = LiveDbConnection(db)
 
     dump = subprocess.Popen(
         [
@@ -88,15 +84,17 @@ with DAG(
     catchup=False,
     start_date=datetime(2020, 1, 1),
 ):
-    
-    for db in dbs:
-        live_conn = LiveDbConnection(db)
 
+    # master = LiveDbConnection()
+
+    # with master.query('SHOW DATABASES;') as cursor:
+    #     for db, in cursor:
+    #         logging.info(db)
+
+
+    for db in dbs:
         PythonOperator(
             task_id=f"backup_database_{db}",
             python_callable=_backup_database,
-            op_kwargs={
-                'db': db,
-                'conn': live_conn,
-            },
+            op_kwargs={'db': db},
         )
