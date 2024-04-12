@@ -105,7 +105,7 @@ exclude = {
 
 with DAG(
     dag_id="backup",
-    schedule_interval=os.environ.get('SCHEDULE_REPLICATE', None) or None,
+    schedule_interval=os.environ.get('SCHEDULE_BACKUP', None) or None,
     default_args=default_dag_args,
     catchup=False,
     start_date=datetime(2020, 1, 1),
