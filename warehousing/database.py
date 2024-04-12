@@ -100,8 +100,6 @@ class SqlConnection:
         if context:
             sql = sql.format(**context)
 
-        print(sql)
-
         cursor.execute(sql, parameters)
 
         try:

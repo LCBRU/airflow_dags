@@ -82,6 +82,12 @@ with DAG(
     catchup=False,
     start_date=datetime(2020, 1, 1),
 ):
+    
+    master = LiveDbConnection()
+
+    with master.query_dict('SHOW DATABASES;') as cursor:
+        print(list(cursor))
+
     for db in dbs:
         live_conn = LiveDbConnection(db)
         replicant_conn = ReplicantDbConnection(db)
