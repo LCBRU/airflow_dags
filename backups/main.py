@@ -12,7 +12,7 @@ from airflow.operators.python_operator import PythonOperator
 def _backup_database(db, live_conn, replicant_conn):
     logging.info("_backup_database: Started")
 
-    dump = subprocess.run(
+    dump = subprocess.Popen(
         [
             'mysqldump',
             '-h',
@@ -25,6 +25,7 @@ def _backup_database(db, live_conn, replicant_conn):
             db,
         ],
         stdout=subprocess.PIPE,
+        text=True,
     )
 
     with open(pathlib.Path(f"/backup/{db}_{datetime.now():%Y-%m-%d}.sql.gz"), "w") as zipfile:
