@@ -85,16 +85,12 @@ with DAG(
     start_date=datetime(2020, 1, 1),
 ):
 
-    # master = LiveDbConnection()
+    master = LiveDbConnection()
 
-    # with master.query('SHOW DATABASES;') as cursor:
-    #     for db, in cursor:
-    #         logging.info(db)
-
-
-    for db in dbs:
-        PythonOperator(
-            task_id=f"backup_database_{db}",
-            python_callable=_backup_database,
-            op_kwargs={'db': db},
-        )
+    with master.query('SHOW DATABASES;') as cursor:
+        for db, in cursor:
+            PythonOperator(
+                task_id=f"backup_database_{db}",
+                python_callable=_backup_database,
+                op_kwargs={'db': db},
+            )
