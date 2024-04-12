@@ -9,6 +9,9 @@ from warehousing.database import LiveDbConnection, ReplicantDbConnection
 from airflow.operators.python_operator import PythonOperator
 
 
+BACKUP_DIRECTORY = '/backup/live_db/'
+
+
 def _backup_database(db):
     logging.info("_backup_database: Started")
 
@@ -30,7 +33,10 @@ def _backup_database(db):
         text=True,
     )
 
-    with open(pathlib.Path(f"/backup/{db}_{datetime.now():%Y%m%d_%H%M%S}.sql.gz"), "w") as zipfile:
+    backup_dir = pathlib.Path(BACKUP_DIRECTORY)
+    backup_dir.mkdir(parents=True, exist_ok=True)
+
+    with open(pathlib.Path(backup_dir / f"{db}_{datetime.now():%Y%m%d_%H%M%S}.sql.gz"), "w") as zipfile:
         zip = subprocess.Popen(
             [
                 'gzip',
