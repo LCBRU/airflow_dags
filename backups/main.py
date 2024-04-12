@@ -30,7 +30,7 @@ def _backup_database(db):
         text=True,
     )
 
-    with open(pathlib.Path(f"/backup/{db}_{datetime.now():%Y-%m-%d}.sql.gz"), "w") as zipfile:
+    with open(pathlib.Path(f"/backup/{db}_{datetime.now():%Y%m%d_%H%M%S}.sql.gz"), "w") as zipfile:
         zip = subprocess.Popen(
             [
                 'gzip',
@@ -43,34 +43,6 @@ def _backup_database(db):
     output, errors = zip.communicate()
     logging.error(errors)
     logging.info("_backup_database: Ended")
-
-
-dbs = {
-    # 'Yakult',
-    # 'briccs',
-    # 'briccs_auditor_temp',
-    # 'briccs_kettering',
-    # 'briccs_northampton',
-    # 'briccsids',
-    'civicrmlive_docker4716',
-    # 'dq_central',
-    'drupallive_docker4716',
-    # 'etl_central',
-    # 'genvasc_gp_portal',
-    # 'grafana',
-    'identity',
-    # 'image_study_merge',
-    # 'mrbs',
-    # 'onyx',
-    'redcap6170_briccs',
-    'redcap6170_briccsext',
-    # 'redcap_dev',
-    'redcap_genvasc',
-    'redcap_national',
-    # 'redcap_test',
-    # 'reporting',
-    # 'scratch',
-}
 
 
 exclude = {
