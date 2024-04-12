@@ -15,7 +15,7 @@ def _backup_database(db, conn):
     master = LiveDbConnection()
 
     with master.query('SHOW DATABASES;') as cursor:
-        for row in cursor:
+        for row, in cursor:
             logging.info(row)
 
     dump = subprocess.Popen(
