@@ -66,7 +66,7 @@ def _cleanup_old_backups():
 
     to_delete = []
 
-    for f in [f for f in  backup_dir('**/*') if f.is_file()]:
+    for f in [f for f in backup_dir.glob('**/*') if f.is_file()]:
         modifield_date  = datetime.fromtimestamp(f.stat().st_mtime, tz=timezone.utc).date()
 
         if modifield_date >= oldest_daily:
@@ -86,7 +86,6 @@ def _cleanup_old_backups():
     for f in to_delete:
         logging.info(f"Deleting file: {f}")
         f.unlink()
-
 
     logging.info("_cleanup_old_backups: Ended")
 
