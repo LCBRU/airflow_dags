@@ -37,7 +37,7 @@ BEGIN
     SELECT @OPENQUERY = '
         SELECT *
         INTO [' + @table_name + ']
-        FROM OpenQuery(db01, ''' + @SQL + ''')'
+        FROM OpenQuery(db02, ''' + @SQL + ''')'
 
     EXEC sp_executesql @OPENQUERY
 

@@ -31,7 +31,7 @@ ELSE
 SELECT @OPENQUERY = '
     SELECT table_name, update_time
     INTO dbo.[__etl_tables]
-    FROM OpenQuery(db01, ''' + @SQL + ''')'
+    FROM OpenQuery(db02, ''' + @SQL + ''')'
 
 EXEC sp_executesql @OPENQUERY
 
