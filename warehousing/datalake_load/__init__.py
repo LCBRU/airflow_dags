@@ -168,14 +168,15 @@ with DAG(
     _create_database_copy_dag(connection_name='LEGACY_DWH', source_database='identity', destination_database='datalake_identity')
     _create_database_copy_dag(connection_name='LEGACY_DWH', source_database='briccs_northampton', destination_database='datalake_briccs_northampton')
     _create_database_copy_dag(connection_name='LEGACY_DWH', source_database='briccs', destination_database='datalake_briccs')
-    _create_database_copy_dag(connection_name='LEGACY_DWH', source_database='uol_openspecimen', destination_database='datalake_openspecimen')
-    _create_database_copy_dag(connection_name='LEGACY_DWH', source_database='uol_easyas_redcap', destination_database='datalake_redcap_easyas')
-    _create_database_copy_dag(connection_name='LEGACY_DWH', source_database='redcap_genvasc', destination_database='datalake_redcap_genvasc')
-    _create_database_copy_dag(connection_name='LEGACY_DWH', source_database='uol_survey_redcap', destination_database='datalake_uol_survey_redcap')
     _create_database_copy_dag(connection_name='LEGACY_DWH', source_database='redcap6170_briccsext', destination_database='datalake_redcap6170_briccsext')
     _create_database_copy_dag(connection_name='LEGACY_DWH', source_database='redcap_national', destination_database='datalake_redcap_national')
     _create_database_copy_dag(connection_name='LEGACY_DWH', source_database='redcap6170_briccs', destination_database='datalake_redcap6170_briccs')
+    _create_database_copy_dag(connection_name='LEGACY_DWH', source_database='redcap_genvasc', destination_database='datalake_redcap_genvasc')
+
+    _create_database_copy_dag(connection_name='LEGACY_DWH', source_database='uol_survey_redcap', destination_database='datalake_uol_survey_redcap')
     _create_database_copy_dag(connection_name='LEGACY_DWH', source_database='uol_crf_redcap', destination_database='datalake_uol_crf_redcap')
+    _create_database_copy_dag(connection_name='LEGACY_DWH', source_database='uol_openspecimen', destination_database='datalake_openspecimen')
+    _create_database_copy_dag(connection_name='LEGACY_DWH', source_database='uol_easyas_redcap', destination_database='datalake_redcap_easyas')
 
     # # New DWH
     # _create_database_copy_dag(connection_name='DWH', source_database='civicrmlive_docker4716', destination_database='datalake_civicrm')
