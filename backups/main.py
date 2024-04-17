@@ -13,10 +13,8 @@ from dateutil.relativedelta import relativedelta
 BACKUP_DIRECTORY = '/backup/live_db/'
 
 
-def _backup_database(db):
+def _backup_database(conn, db):
     logging.info("_backup_database: Started")
-
-    conn = LiveDbConnection(db)
 
     dump = subprocess.Popen(
         [
@@ -34,7 +32,7 @@ def _backup_database(db):
         text=True,
     )
 
-    backup_dir = pathlib.Path(BACKUP_DIRECTORY)
+    backup_dir = pathlib.Path(BACKUP_DIRECTORY) / f"{datetime.now():%Y%m%d}"
     backup_dir.mkdir(parents=True, exist_ok=True)
 
     with open(pathlib.Path(backup_dir / f"{db}_{datetime.now():%Y%m%d_%H%M%S}.sql.gz"), "w") as zipfile:
@@ -119,7 +117,10 @@ with DAG(
                 PythonOperator(
                     task_id=f"backup_database_{db}",
                     python_callable=_backup_database,
-                    op_kwargs={'db': db},
+                    op_kwargs={
+                        'conn': LiveDbConnection(),
+                        'db': db,
+                    },
                 )
 
     PythonOperator(
