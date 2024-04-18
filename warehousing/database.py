@@ -151,7 +151,7 @@ class MsSqlConnection(SqlConnection):
 
 
 LIVE_DB_CONNECTION_NAME = 'LIVE_DB'
-REPLICANT_DB_CONNECTION_NAME = 'REPLICANT_DB'
+OPS_DB_CONNECTION_NAME = 'OPS_DB'
 
 
 class LiveDbConnection(MySqlConnection):
@@ -159,6 +159,6 @@ class LiveDbConnection(MySqlConnection):
         super().__init__(LIVE_DB_CONNECTION_NAME, schema)
 
 
-class ReplicantDbConnection(MySqlConnection):
+class OpsDbConnection(MySqlConnection):
     def __init__(self, schema=''):
-        super().__init__(REPLICANT_DB_CONNECTION_NAME, schema)
+        super().__init__(OPS_DB_CONNECTION_NAME, schema)

@@ -8,7 +8,7 @@ import requests
 import shutil
 import logging
 from airflow.models import Variable
-from warehousing.database import ReplicantDbConnection
+from warehousing.database import LiveDbConnection
 
 
 def download_mysql_backup_and_restore(destination_database, source_url):
@@ -117,7 +117,7 @@ def _drop_database(destination_database):
     logging.info("_drop_database: Started")
 
     sql = 'DROP DATABASE IF EXISTS {};'.format(destination_database)
-    conn = ReplicantDbConnection()
+    conn = LiveDbConnection()
     conn.execute(sql)
     logging.info("_drop_database: Ended")
 
@@ -126,7 +126,7 @@ def _create_database(destination_database):
     logging.info("_create_database: Started")
 
     sql = 'CREATE DATABASE {};'.format(destination_database)
-    conn = ReplicantDbConnection()
+    conn = LiveDbConnection()
     conn.execute(sql)
 
     logging.info("_create_database: Ended")
@@ -151,7 +151,7 @@ def _restore_database(destination_database, input_filename):
 
 
 def _run_mysql(command):
-    conn = ReplicantDbConnection()
+    conn = LiveDbConnection()
 
     result = subprocess.run(
         [

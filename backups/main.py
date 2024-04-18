@@ -5,7 +5,7 @@ from datetime import datetime, date, timedelta, timezone
 import subprocess
 from airflow import DAG
 from tools import default_dag_args
-from warehousing.database import LiveDbConnection
+from warehousing.database import LIVE_DB_CONNECTION_NAME, LiveDbConnection, MySqlConnection
 from airflow.operators.python_operator import PythonOperator
 from dateutil.relativedelta import relativedelta
 
@@ -88,18 +88,24 @@ def _cleanup_old_backups():
     logging.info("_cleanup_old_backups: Ended")
 
 
-exclude = {
-    'information_schema',
-    'mysql',
-    'performance_schema',
-    'reporting',
-    'scratch',
-    'sys',
-    'uol_crf_redcap',
-    'uol_easyas_redcap',
-    'uol_openspecimen',
-    'uol_survey_redcap',
-}
+servers = [
+    {
+        'conn_name': LIVE_DB_CONNECTION_NAME,
+        'exclude': {
+            'information_schema',
+            'mysql',
+            'performance_schema',
+            'reporting',
+            'scratch',
+            'sys',
+            'uol_crf_redcap',
+            'uol_easyas_redcap',
+            'uol_openspecimen',
+            'uol_survey_redcap',
+        }
+    }
+]
+
 
 with DAG(
     dag_id="backup",
@@ -109,19 +115,20 @@ with DAG(
     start_date=datetime(2020, 1, 1),
 ):
 
-    master = LiveDbConnection()
+    for s in servers:
+        conn = MySqlConnection(conn['conn_name'])
 
-    with master.query('SHOW DATABASES;') as cursor:
-        for db, in cursor:
-            if db not in exclude:
-                PythonOperator(
-                    task_id=f"backup_database_{db}",
-                    python_callable=_backup_database,
-                    op_kwargs={
-                        'conn': LiveDbConnection(),
-                        'db': db,
-                    },
-                )
+        with conn.query('SHOW DATABASES;') as cursor:
+            for db, in cursor:
+                if db not in conn['exclude']:
+                    PythonOperator(
+                        task_id=f"backup_database_{db}",
+                        python_callable=_backup_database,
+                        op_kwargs={
+                            'conn': conn,
+                            'db': db,
+                        },
+                    )
 
     PythonOperator(
         task_id="_cleanup_old_backups",
