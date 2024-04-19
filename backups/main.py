@@ -116,7 +116,7 @@ with DAG(
 ):
 
     for s in servers:
-        conn = MySqlConnection(conn['conn_name'])
+        conn = MySqlConnection(s['conn_name'])
 
         with conn.query('SHOW DATABASES;') as cursor:
             for db, in cursor:
