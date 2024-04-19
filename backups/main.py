@@ -120,7 +120,7 @@ with DAG(
 
         with conn.query('SHOW DATABASES;') as cursor:
             for db, in cursor:
-                if db not in conn['exclude']:
+                if db not in s['exclude']:
                     PythonOperator(
                         task_id=f"backup_database_{db}",
                         python_callable=_backup_database,
