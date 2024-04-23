@@ -154,6 +154,67 @@ def _create_database_copy_dag(connection_name, source_database, destination_data
     logging.info("_create_database_copy_dag: Ended")
 
 
+servers = [
+    {
+        'conn_name': 'LEGACY_DWH',
+        'databases': [
+            {
+                'source_database': 'civicrmlive_docker4716',
+                'destination_database': 'datalake_civicrmlive_docker4716',
+            },
+            {
+                'source_database': 'drupallive_docker4716',
+                'destination_database': 'datalake_drupallive_docker4716',
+            },
+            {
+                'source_database': 'identity',
+                'destination_database': 'datalake_identity',
+            },
+            {
+                'source_database': 'briccs_northampton',
+                'destination_database': 'datalake_briccs_northampton',
+            },
+            {
+                'source_database': 'briccs',
+                'destination_database': 'datalake_briccs',
+            },
+            {
+                'source_database': 'redcap6170_briccsext',
+                'destination_database': 'datalake_redcap6170_briccsext',
+            },
+            {
+                'source_database': 'redcap_national',
+                'destination_database': 'datalake_redcap_national',
+            },
+            {
+                'source_database': 'redcap6170_briccs',
+                'destination_database': 'datalake_redcap6170_briccs',
+            },
+            {
+                'source_database': 'redcap_genvasc',
+                'destination_database': 'datalake_redcap_genvasc',
+            },
+            {
+                'source_database': 'uol_survey_redcap',
+                'destination_database': 'datalake_uol_survey_redcap',
+            },
+            {
+                'source_database': 'uol_crf_redcap',
+                'destination_database': 'datalake_uol_crf_redcap',
+            },
+            {
+                'source_database': 'uol_openspecimen',
+                'destination_database': 'datalake_openspecimen',
+            },
+            {
+                'source_database': 'uol_easyas_redcap',
+                'destination_database': 'datalake_redcap_easyas',
+            }
+        ]
+    }
+]
+
+
 with DAG(
     dag_id="Copy_live_DB_to_DWH",
     default_args=default_dag_args,
