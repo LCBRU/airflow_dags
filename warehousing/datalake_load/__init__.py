@@ -8,6 +8,8 @@ from airflow.operators.python_operator import PythonOperator
 from itertools import groupby
 from warehousing.database import MsSqlConnection
 from tools import default_dag_args
+from airflow.decorators import task_group
+from airflow.models.baseoperator import chain
 
 
 def _create_indexes_procedure(connection_name, destination_database, source_database):
@@ -223,6 +225,33 @@ with DAG(
     start_date=datetime(2020, 1, 1),
     catchup=False,
 ):
+    @task_group(group_id='create_databases')
+    def create_databases():
+        for s in servers:
+            for d in s['databases']:
+                # create database
+                pass
+
+    @task_group(group_id='create_etl_tables')
+    def create_etl_tables():
+        tasks = []
+        for s in servers:
+            for d in s['databases']:
+                # create database
+                tasks.append(None) # Replace with actual operator 
+                pass
+        
+        chain(*tasks)
+
+    @task_group(group_id='do_next_step')
+    def do_next_step():
+        for s in servers:
+            for d in s['databases']:
+                # create database
+                pass
+
+    create_databases >> create_etl_tables >> do_next_step
+
     # Legacy DWH
     _create_database_copy_dag(connection_name='LEGACY_DWH', source_database='civicrmlive_docker4716', destination_database='datalake_civicrmlive_docker4716')
     _create_database_copy_dag(connection_name='LEGACY_DWH', source_database='drupallive_docker4716', destination_database='datalake_drupallive_docker4716')
