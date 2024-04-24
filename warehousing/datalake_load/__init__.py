@@ -229,28 +229,96 @@ with DAG(
     def create_databases():
         for s in servers:
             for d in s['databases']:
-                # create database
-                pass
+                MsSqlOperator(
+                    task_id=f'create_destination_database{task_id_suffix}',
+                    mssql_conn_id=connection_name,
+                    sql="CREATE__databases.sql",
+                    autocommit=True,
+                    parameters={'db_name': destination_database},
+                )
 
     @task_group(group_id='create_etl_tables')
     def create_etl_tables():
         tasks = []
         for s in servers:
             for d in s['databases']:
-                # create database
-                tasks.append(None) # Replace with actual operator 
-                pass
-        
-        chain(*tasks)
+                MsSqlOperator (
+                    task_id=f'CREATE__etl_tables{task_id_suffix}',
+                    mssql_conn_id=connection_name,
+                    sql="CREATE__etl_tables.sql",
+                    autocommit=True,
+                    database=destination_database,
+                )
 
-    @task_group(group_id='do_next_step')
+    @task_group(group_id='recreate_etl_tables')
     def do_next_step():
         for s in servers:
             for d in s['databases']:
-                # create database
-                pass
+                MsSqlOperator (
+                    task_id=f'recreate_etl_tables{task_id_suffix}',
+                    mssql_conn_id=connection_name,
+                    sql="INSERT__etl_tables.sql",
+                    autocommit=True,
+                    database=destination_database,
+                    parameters={'source_database': source_database},
+                )
 
-    create_databases >> create_etl_tables >> do_next_step
+    @task_group(group_id='copy_tables')
+    def do_next_step():
+        for s in servers:
+            for d in s['databases']:
+                MsSqlOperator (
+                    task_id=f'copy_tables{task_id_suffix}',
+                    mssql_conn_id=connection_name,
+                    sql="INSERT__tables.sql",
+                    autocommit=True,
+                    database=destination_database,
+                    parameters={'source_database': source_database},
+                )
+
+    @task_group(group_id='change_text_columns_to_varchar')
+    def do_next_step():
+        for s in servers:
+            for d in s['databases']:
+                MsSqlOperator (
+                    task_id=f'change_text_columns_to_varchar{task_id_suffix}',
+                    mssql_conn_id=connection_name,
+                    sql="UPDATE__tables__alter_text_to_varchar.sql",
+                    autocommit=True,
+                    database=destination_database,
+                    parameters={},
+                )
+
+    @task_group(group_id='create_indexes')
+    def do_next_step():
+        for s in servers:
+            for d in s['databases']:
+                PythonOperator (
+                    task_id=f"create_indexes{task_id_suffix}",
+                    python_callable=_create_indexes_procedure,
+                    op_kwargs={
+                        'destination_database': destination_database,
+                        'source_database': source_database,
+                        'connection_name': connection_name,
+                    },
+                )
+
+    @task_group(group_id='mark_updated')
+    def do_next_step():
+        for s in servers:
+            for d in s['databases']:
+                MsSqlOperator (
+                    task_id=f'mark_updated{task_id_suffix}',
+                    mssql_conn_id=connection_name,
+                    sql="UPDATE__etl_tables__last_copied.sql",
+                    autocommit=True,
+                    database=destination_database,
+                    parameters={'source_database': source_database},
+                )
+
+    chain(*tasks)
+
+    # chain should produce something like... create_databases >> create_etl_tables >> do_next_step
 
     # Legacy DWH
     _create_database_copy_dag(connection_name='LEGACY_DWH', source_database='civicrmlive_docker4716', destination_database='datalake_civicrmlive_docker4716')
