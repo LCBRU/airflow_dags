@@ -5,7 +5,7 @@ from datetime import datetime, date, timedelta, timezone
 import subprocess
 from airflow import DAG
 from tools import default_dag_args
-from warehousing.database import LIVE_DB_CONNECTION_NAME, LiveDbConnection, MySqlConnection
+from warehousing.database import LIVE_DB_CONNECTION_NAME, OPS_DB_CONNECTION_NAME, MySqlConnection
 from airflow.operators.python_operator import PythonOperator
 from dateutil.relativedelta import relativedelta
 
@@ -103,7 +103,37 @@ servers = [
             'uol_openspecimen',
             'uol_survey_redcap',
         }
-    }
+    },
+    {
+        'conn_name': OPS_DB_CONNECTION_NAME,
+        'exclude': {
+            'information_schema',
+            'mysql',
+            'performance_schema',
+            'reporting',
+            'scratch',
+            'sys',
+            'uol_crf_redcap',
+            'uol_easyas_redcap',
+            'uol_openspecimen',
+            'uol_survey_redcap',
+            'briccs',
+            'briccs_northampton',
+            'civicrmlive_docker4716',
+            'drupallive_docker4716',
+            'identity',
+            'redcap6170_briccs',
+            'redcap6170_briccsext',
+            'redcap_genvasc',
+            'redcap_national',
+            'redcap_test',
+            'redcap_dev',
+            'uol_crf_redcap',
+            'uol_easyas_redcap',
+            'uol_openspecimen',
+            'uol_survey_redcap',
+        }
+    },
 ]
 
 
