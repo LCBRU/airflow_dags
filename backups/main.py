@@ -127,6 +127,7 @@ servers = [
             'redcap_genvasc',
             'redcap_national',
             'redcap_test',
+            'redcap_dev',
             'uol_crf_redcap',
             'uol_easyas_redcap',
             'uol_openspecimen',
