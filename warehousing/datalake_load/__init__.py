@@ -73,89 +73,6 @@ def _create_indexes_procedure(connection_name, destination_database, source_data
 
     conn_dest.execute(sql=sql)
 
-    logging.info("_create_indexes_procedure: Ended")
-
-
-def _create_database_copy_dag(connection_name, source_database, destination_database):
-    logging.info("_create_database_copy_dag: Started")
-
-    task_id_suffix = f'__{connection_name}_{destination_database}'
-
-    create_destination_database = MsSqlOperator(
-        task_id=f'create_destination_database{task_id_suffix}',
-        mssql_conn_id=connection_name,
-        sql="CREATE__databases.sql",
-        autocommit=True,
-        parameters={'db_name': destination_database},
-    )
-
-    create_etl_tables = MsSqlOperator(
-        task_id=f'CREATE__etl_tables{task_id_suffix}',
-        mssql_conn_id=connection_name,
-        sql="CREATE__etl_tables.sql",
-        autocommit=True,
-        database=destination_database,
-    )
-
-    recreate_etl_tables = MsSqlOperator(
-        task_id=f'recreate_etl_tables{task_id_suffix}',
-        mssql_conn_id=connection_name,
-        sql="INSERT__etl_tables.sql",
-        autocommit=True,
-        database=destination_database,
-        parameters={'source_database': source_database},
-    )
-
-    copy_tables = MsSqlOperator(
-        task_id=f'copy_tables{task_id_suffix}',
-        mssql_conn_id=connection_name,
-        sql="INSERT__tables.sql",
-        autocommit=True,
-        database=destination_database,
-        parameters={'source_database': source_database},
-    )
-
-    change_text_columns_to_varchar = MsSqlOperator(
-        task_id=f'change_text_columns_to_varchar{task_id_suffix}',
-        mssql_conn_id=connection_name,
-        sql="UPDATE__tables__alter_text_to_varchar.sql",
-        autocommit=True,
-        database=destination_database,
-        parameters={},
-    )
-
-    create_indexes = PythonOperator(
-        task_id=f"create_indexes{task_id_suffix}",
-        python_callable=_create_indexes_procedure,
-        op_kwargs={
-            'destination_database': destination_database,
-            'source_database': source_database,
-            'connection_name': connection_name,
-        },
-    )
-
-    mark_updated = MsSqlOperator(
-        task_id=f'mark_updated{task_id_suffix}',
-        mssql_conn_id=connection_name,
-        sql="UPDATE__etl_tables__last_copied.sql",
-        autocommit=True,
-        database=destination_database,
-        parameters={'source_database': source_database},
-    )
-
-    (
-        create_destination_database >>
-        create_etl_tables >>
-        recreate_etl_tables >>
-        copy_tables >>
-        change_text_columns_to_varchar >>
-        create_indexes >>
-        mark_updated
-    )
-
-    logging.info("_create_database_copy_dag: Ended")
-
-
 servers = [
     {
         'conn_name': 'LEGACY_DWH',
@@ -221,132 +138,110 @@ with DAG(
     dag_id="Copy_live_DB_to_DWH",
     default_args=default_dag_args,
     schedule=os.environ.get('SCHEDULE_DATALAKE_LOAD', None) or None,
-    template_searchpath = ['/opt/airflow/dags/warehousing/datalake_load/sql/'],
+    template_searchpath=['/opt/airflow/dags/warehousing/datalake_load/sql/'],
     start_date=datetime(2020, 1, 1),
     catchup=False,
 ):
     @task_group(group_id='create_databases')
     def create_databases():
+        tasks = []
         for s in servers:
             for d in s['databases']:
+                task_id_suffix = f'__{d.connection_name}_{d.destination_database}'
                 MsSqlOperator(
                     task_id=f'create_destination_database{task_id_suffix}',
-                    mssql_conn_id=connection_name,
+                    mssql_conn_id=d.connection_name,
                     sql="CREATE__databases.sql",
                     autocommit=True,
-                    parameters={'db_name': destination_database},
+                    parameters={'db_name': d.destination_database},
                 )
+        chain(*tasks)
 
     @task_group(group_id='create_etl_tables')
     def create_etl_tables():
         tasks = []
         for s in servers:
             for d in s['databases']:
-                MsSqlOperator (
+                task_id_suffix = f'__{d.connection_name}_{d.destination_database}'
+                MsSqlOperator(
                     task_id=f'CREATE__etl_tables{task_id_suffix}',
-                    mssql_conn_id=connection_name,
+                    mssql_conn_id=d.connection_name,
                     sql="CREATE__etl_tables.sql",
                     autocommit=True,
-                    database=destination_database,
+                    database=d.destination_database,
                 )
+        chain(*tasks)
 
     @task_group(group_id='recreate_etl_tables')
-    def do_next_step():
+    def recreate_etl_tables():
         for s in servers:
             for d in s['databases']:
-                MsSqlOperator (
+                task_id_suffix = f'__{d.connection_name}_{d.destination_database}'
+                MsSqlOperator(
                     task_id=f'recreate_etl_tables{task_id_suffix}',
-                    mssql_conn_id=connection_name,
+                    mssql_conn_id=d.connection_name,
                     sql="INSERT__etl_tables.sql",
                     autocommit=True,
-                    database=destination_database,
-                    parameters={'source_database': source_database},
+                    database=d.destination_database,
+                    parameters={'source_database': d.source_database},
                 )
 
     @task_group(group_id='copy_tables')
-    def do_next_step():
+    def copy_tables():
         for s in servers:
             for d in s['databases']:
-                MsSqlOperator (
+                task_id_suffix = f'__{d.connection_name}_{d.destination_database}'
+                MsSqlOperator(
                     task_id=f'copy_tables{task_id_suffix}',
-                    mssql_conn_id=connection_name,
+                    mssql_conn_id=d.connection_name,
                     sql="INSERT__tables.sql",
                     autocommit=True,
-                    database=destination_database,
-                    parameters={'source_database': source_database},
+                    database=d.destination_database,
+                    parameters={'source_database': d.source_database},
                 )
 
     @task_group(group_id='change_text_columns_to_varchar')
-    def do_next_step():
+    def change_text_columns_to_varchar():
         for s in servers:
             for d in s['databases']:
-                MsSqlOperator (
+                task_id_suffix = f'__{d.connection_name}_{d.destination_database}'
+                MsSqlOperator(
                     task_id=f'change_text_columns_to_varchar{task_id_suffix}',
-                    mssql_conn_id=connection_name,
+                    mssql_conn_id=d.connection_name,
                     sql="UPDATE__tables__alter_text_to_varchar.sql",
                     autocommit=True,
-                    database=destination_database,
+                    database=d.destination_database,
                     parameters={},
                 )
 
     @task_group(group_id='create_indexes')
-    def do_next_step():
+    def create_indexes():
         for s in servers:
             for d in s['databases']:
-                PythonOperator (
+                task_id_suffix = f'__{d.connection_name}_{d.destination_database}'
+                PythonOperator(
                     task_id=f"create_indexes{task_id_suffix}",
                     python_callable=_create_indexes_procedure,
                     op_kwargs={
-                        'destination_database': destination_database,
-                        'source_database': source_database,
-                        'connection_name': connection_name,
+                        'destination_database': d.destination_database,
+                        'source_database': d.source_database,
+                        'connection_name': d.connection_name,
                     },
                 )
 
     @task_group(group_id='mark_updated')
-    def do_next_step():
+    def mark_updated():
         for s in servers:
             for d in s['databases']:
+                task_id_suffix = f'__{d.connection_name}_{d.destination_database}'
                 MsSqlOperator (
                     task_id=f'mark_updated{task_id_suffix}',
-                    mssql_conn_id=connection_name,
+                    mssql_conn_id=d.connection_name,
                     sql="UPDATE__etl_tables__last_copied.sql",
                     autocommit=True,
-                    database=destination_database,
-                    parameters={'source_database': source_database},
+                    database=d.destination_database,
+                    parameters={'source_database': d.source_database},
                 )
 
-    chain(*tasks)
-
-    # chain should produce something like... create_databases >> create_etl_tables >> do_next_step
-
-    # Legacy DWH
-    _create_database_copy_dag(connection_name='LEGACY_DWH', source_database='civicrmlive_docker4716', destination_database='datalake_civicrmlive_docker4716')
-    _create_database_copy_dag(connection_name='LEGACY_DWH', source_database='drupallive_docker4716', destination_database='datalake_drupallive_docker4716')
-    _create_database_copy_dag(connection_name='LEGACY_DWH', source_database='identity', destination_database='datalake_identity')
-    _create_database_copy_dag(connection_name='LEGACY_DWH', source_database='briccs_northampton', destination_database='datalake_briccs_northampton')
-    _create_database_copy_dag(connection_name='LEGACY_DWH', source_database='briccs', destination_database='datalake_briccs')
-    _create_database_copy_dag(connection_name='LEGACY_DWH', source_database='redcap6170_briccsext', destination_database='datalake_redcap6170_briccsext')
-    _create_database_copy_dag(connection_name='LEGACY_DWH', source_database='redcap_national', destination_database='datalake_redcap_national')
-    _create_database_copy_dag(connection_name='LEGACY_DWH', source_database='redcap6170_briccs', destination_database='datalake_redcap6170_briccs')
-    _create_database_copy_dag(connection_name='LEGACY_DWH', source_database='redcap_genvasc', destination_database='datalake_redcap_genvasc')
-
-    _create_database_copy_dag(connection_name='LEGACY_DWH', source_database='uol_survey_redcap', destination_database='datalake_uol_survey_redcap')
-    _create_database_copy_dag(connection_name='LEGACY_DWH', source_database='uol_crf_redcap', destination_database='datalake_uol_crf_redcap')
-    _create_database_copy_dag(connection_name='LEGACY_DWH', source_database='uol_openspecimen', destination_database='datalake_openspecimen')
-    _create_database_copy_dag(connection_name='LEGACY_DWH', source_database='uol_easyas_redcap', destination_database='datalake_redcap_easyas')
-
-    # # New DWH
-    # _create_database_copy_dag(connection_name='DWH', source_database='civicrmlive_docker4716', destination_database='datalake_civicrm')
-    # _create_database_copy_dag(connection_name='DWH', source_database='drupallive_docker4716', destination_database='datalake_civicrm_drupal')
-    # _create_database_copy_dag(connection_name='DWH', source_database='identity', destination_database='datalake_identity')
-    # _create_database_copy_dag(connection_name='DWH', source_database='briccs_northampton', destination_database='datalake_onyx_northampton')
-    # _create_database_copy_dag(connection_name='DWH', source_database='briccs', destination_database='datalake_onyx_uhl')
-    # _create_database_copy_dag(connection_name='DWH', source_database='uol_openspecimen', destination_database='datalake_openspecimen')
-    # _create_database_copy_dag(connection_name='DWH', source_database='uol_easyas_redcap', destination_database='datalake_redcap_easyas')
-    # _create_database_copy_dag(connection_name='DWH', source_database='redcap_genvasc', destination_database='datalake_redcap_genvasc')
-    # _create_database_copy_dag(connection_name='DWH', source_database='uol_survey_redcap', destination_database='datalake_redcap_internet')
-    # _create_database_copy_dag(connection_name='DWH', source_database='redcap6170_briccsext', destination_database='datalake_redcap_n3')
-    # _create_database_copy_dag(connection_name='DWH', source_database='redcap_national', destination_database='datalake_redcap_national')
-    # _create_database_copy_dag(connection_name='DWH', source_database='redcap6170_briccs', destination_database='datalake_redcap_uhl')
-    # _create_database_copy_dag(connection_name='DWH', source_database='uol_crf_redcap', destination_database='datalake_redcap_uol')
+# Set task group's dependencies
+create_databases >> create_etl_tables
