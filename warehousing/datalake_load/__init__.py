@@ -244,10 +244,10 @@ with DAG(
                 )
 
 # Set task group's dependencies
-chain(create_databases,
-      create_etl_tables,
-      recreate_etl_tables,
-      copy_tables,
-      change_text_columns_to_varchar,
-      create_indexes,
-      mark_updated)
+chain(create_databases(),
+      create_etl_tables(),
+      recreate_etl_tables(),
+      copy_tables(),
+      change_text_columns_to_varchar(),
+      create_indexes(),
+      mark_updated())
