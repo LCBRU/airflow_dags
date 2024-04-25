@@ -147,14 +147,14 @@ with DAG(
         tasks = []
         for s in servers:
             for d in s['databases']:
-                task_id_suffix = f'__{d.connection_name}_{d.destination_database}'
-                MsSqlOperator(
-                    task_id=f'create_destination_database{task_id_suffix}',
-                    mssql_conn_id=d.connection_name,
-                    sql="CREATE__databases.sql",
-                    autocommit=True,
-                    parameters={'db_name': d.destination_database},
-                )
+                task_id_suffix = f'__{s["connection_name"]}_{d["destination_database"]}'
+                tasks.append(MsSqlOperator(
+                        task_id=f'create_destination_database{task_id_suffix}',
+                        mssql_conn_id=s["connection_name"],
+                        sql="CREATE__databases.sql",
+                        autocommit=True,
+                        parameters={'db_name': d["destination_database"]},
+                    ))
         chain(*tasks)
 
     @task_group(group_id='create_etl_tables')
@@ -162,55 +162,55 @@ with DAG(
         tasks = []
         for s in servers:
             for d in s['databases']:
-                task_id_suffix = f'__{d.connection_name}_{d.destination_database}'
-                MsSqlOperator(
-                    task_id=f'CREATE__etl_tables{task_id_suffix}',
-                    mssql_conn_id=d.connection_name,
-                    sql="CREATE__etl_tables.sql",
-                    autocommit=True,
-                    database=d.destination_database,
-                )
+                task_id_suffix = f'__{s["connection_name"]}_{d["destination_database"]}'
+                tasks.append(MsSqlOperator(
+                        task_id=f'CREATE__etl_tables{task_id_suffix}',
+                        mssql_conn_id=s["connection_name"],
+                        sql="CREATE__etl_tables.sql",
+                        autocommit=True,
+                        database=d["destination_database"],
+                    ))
         chain(*tasks)
 
     @task_group(group_id='recreate_etl_tables')
     def recreate_etl_tables():
         for s in servers:
             for d in s['databases']:
-                task_id_suffix = f'__{d.connection_name}_{d.destination_database}'
+                task_id_suffix = f'__{s["connection_name"]}_{d["destination_database"]}'
                 MsSqlOperator(
                     task_id=f'recreate_etl_tables{task_id_suffix}',
-                    mssql_conn_id=d.connection_name,
+                    mssql_conn_id=s["connection_name"],
                     sql="INSERT__etl_tables.sql",
                     autocommit=True,
-                    database=d.destination_database,
-                    parameters={'source_database': d.source_database},
+                    database=d["destination_database"],
+                    parameters={'source_database': d["source_database"]},
                 )
 
     @task_group(group_id='copy_tables')
     def copy_tables():
         for s in servers:
             for d in s['databases']:
-                task_id_suffix = f'__{d.connection_name}_{d.destination_database}'
+                task_id_suffix = f'__{s["connection_name"]}_{d["destination_database"]}'
                 MsSqlOperator(
                     task_id=f'copy_tables{task_id_suffix}',
-                    mssql_conn_id=d.connection_name,
+                    mssql_conn_id=s["connection_name"],
                     sql="INSERT__tables.sql",
                     autocommit=True,
-                    database=d.destination_database,
-                    parameters={'source_database': d.source_database},
+                    database=d["destination_database"],
+                    parameters={'source_database': d["source_database"]},
                 )
 
     @task_group(group_id='change_text_columns_to_varchar')
     def change_text_columns_to_varchar():
         for s in servers:
             for d in s['databases']:
-                task_id_suffix = f'__{d.connection_name}_{d.destination_database}'
+                task_id_suffix = f'__{s["connection_name"]}_{d["destination_database"]}'
                 MsSqlOperator(
                     task_id=f'change_text_columns_to_varchar{task_id_suffix}',
-                    mssql_conn_id=d.connection_name,
+                    mssql_conn_id=s["connection_name"],
                     sql="UPDATE__tables__alter_text_to_varchar.sql",
                     autocommit=True,
-                    database=d.destination_database,
+                    database=d["destination_database"],
                     parameters={},
                 )
 
@@ -218,14 +218,14 @@ with DAG(
     def create_indexes():
         for s in servers:
             for d in s['databases']:
-                task_id_suffix = f'__{d.connection_name}_{d.destination_database}'
+                task_id_suffix = f'__{s["connection_name"]}_{d.destination_database"]}'
                 PythonOperator(
                     task_id=f"create_indexes{task_id_suffix}",
                     python_callable=_create_indexes_procedure,
                     op_kwargs={
-                        'destination_database': d.destination_database,
-                        'source_database': d.source_database,
-                        'connection_name': d.connection_name,
+                        'destination_database': d["destination_database"],
+                        'source_database': d["source_database"],
+                        'connection_name': s["connection_name"],
                     },
                 )
 
@@ -233,15 +233,21 @@ with DAG(
     def mark_updated():
         for s in servers:
             for d in s['databases']:
-                task_id_suffix = f'__{d.connection_name}_{d.destination_database}'
+                task_id_suffix = f'__{s["connection_name"]}_{d.destination_database"]}'
                 MsSqlOperator (
                     task_id=f'mark_updated{task_id_suffix}',
-                    mssql_conn_id=d.connection_name,
+                    mssql_conn_id=s["connection_name"],
                     sql="UPDATE__etl_tables__last_copied.sql",
                     autocommit=True,
-                    database=d.destination_database,
-                    parameters={'source_database': d.source_database},
+                    database=d["destination_database"],
+                    parameters={'source_database': d["source_database"]},
                 )
 
 # Set task group's dependencies
-create_databases >> create_etl_tables
+chain(create_databases,
+      create_etl_tables,
+      recreate_etl_tables,
+      copy_tables,
+      change_text_columns_to_varchar,
+      create_indexes,
+      mark_updated)
