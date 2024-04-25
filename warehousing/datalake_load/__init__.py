@@ -218,7 +218,7 @@ with DAG(
     def create_indexes():
         for s in servers:
             for d in s['databases']:
-                task_id_suffix = f'__{s["connection_name"]}_{d.destination_database"]}'
+                task_id_suffix = f'__{s["connection_name"]}_{d["destination_database"]}'
                 PythonOperator(
                     task_id=f"create_indexes{task_id_suffix}",
                     python_callable=_create_indexes_procedure,
@@ -233,7 +233,7 @@ with DAG(
     def mark_updated():
         for s in servers:
             for d in s['databases']:
-                task_id_suffix = f'__{s["connection_name"]}_{d.destination_database"]}'
+                task_id_suffix = f'__{s["connection_name"]}_{d["destination_database"]}'
                 MsSqlOperator (
                     task_id=f'mark_updated{task_id_suffix}',
                     mssql_conn_id=s["connection_name"],
