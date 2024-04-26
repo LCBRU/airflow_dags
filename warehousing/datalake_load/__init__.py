@@ -243,11 +243,11 @@ with DAG(
                     parameters={'source_database': d["source_database"]},
                 )
 
-# Set task group's dependencies
-chain(create_databases(),
-      create_etl_tables(),
-      recreate_etl_tables(),
-      copy_tables(),
-      change_text_columns_to_varchar(),
-      create_indexes(),
-      mark_updated())
+    # Set task group's dependencies
+    chain(create_databases(),
+          create_etl_tables(),
+          recreate_etl_tables(),
+          copy_tables(),
+          change_text_columns_to_varchar(),
+          create_indexes(),
+          mark_updated())
