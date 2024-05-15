@@ -1,6 +1,18 @@
-sqlalchemy
--e git+https://github.com/LCBRU/lbrc_selenium.git@main#egg=lbrc_selenium
--e git+https://github.com/LCBRU/lbrc_edge.git@main#egg=lbrc_edge
-jsonlines
 Werkzeug
 python-dotenv
+python-ldap
+flask-appbuilder
+mysqlclient
+apache-airflow-providers-mysql
+apache-airflow-providers-microsoft-mssql
+apache-airflow-providers-celery
+mysql-connector-python
+apache-airflow-providers-common-sql
+plyvel
+selenium
+jsonlines
+sqlalchemy
+pymysql
+python-dateutil
+-e git+https://github.com/LCBRU/lbrc_selenium.git@main#egg=lbrc_selenium
+-e git+https://github.com/LCBRU/lbrc_edge.git@main#egg=lbrc_edge

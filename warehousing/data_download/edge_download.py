@@ -62,10 +62,10 @@ def _download_study_file(selenium, filename):
     selenium.get("#/reports/ProjectAttributeReport")
     sleep(5)
     
-    selenium.email_screenshot()
+    # selenium.email_screenshot()
 
     selenium.click_element(XpathSelector('//span[text()="Load"]'))
-    selenium.click_element(XpathSelector('//div[text()="BRC Report (Richard)"]'))
+    selenium.click_element(XpathSelector('//div[text()="Airflow Project Export"]'))
     selenium.click_element(XpathSelector('//button/span[text()="Download"]'))
     sleep(1)
     selenium.click_element(XpathSelector('//a[text()="CSV"]'))
@@ -93,13 +93,13 @@ def _extract_study_details(selenium, download_filename):
                     project_id=_int_or_none(row['Project ID']),
                     iras_number=_string_or_none(row['IRAS Number']),
                     project_short_title=_string_or_none(row['Project Short title']),
-                    primary_clinical_management_areas=_string_or_none(row['Primary Clinical Management Areas']),
+                    primary_clinical_management_areas=_string_or_none(row['Primary Clinical Management Areas (1)']),
                     project_site_status=_string_or_none(row['Project site status']),
-                    project_site_rand_submission_date=_date_or_none(row['Project site R&D Submission Date']),
-                    project_site_start_date_nhs_permission=_date_or_none(row['Project site Start date (NHS Permission)']),
+                    project_site_rand_submission_date=_date_or_none(row['Project site Date R&D Submission']),
+                    project_site_start_date_nhs_permission=_date_or_none(row['Date of NHS Permission']),
                     project_site_date_site_confirmed=_date_or_none(row['Project site date site confirmed']),
-                    project_site_planned_closing_date=_date_or_none(row['Project site Planned closing date']),
-                    project_site_closed_date=_date_or_none(row['Project site Closed date']),
+                    project_site_planned_closing_date=_date_or_none(row['Project site Closing Date (Planned)']),
+                    project_site_closed_date=_date_or_none(row['End Date']),
                     project_site_planned_recruitment_end_date=_date_or_none(row['Project site planned recruitment end date']),
                     project_site_actual_recruitment_end_date=_date_or_none(row['Project site actual recruitment end date']),
                     principal_investigator=_name_or_none(row['Principal Investigator']),
@@ -118,6 +118,7 @@ def _extract_study_details(selenium, download_filename):
     finally:
         logging.info("_save_study_details: Ended")
 
+
 def _save_studies(studies):
     logging.info("_save_study_details: Started")
 
@@ -130,6 +131,7 @@ def _save_studies(studies):
         session.add_all(studies)
 
     logging.info("_save_study_details: Ended")
+
 
 def _string_or_none(string_element):
     string_element = string_element.strip()
