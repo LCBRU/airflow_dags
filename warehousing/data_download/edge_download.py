@@ -117,7 +117,10 @@ def _extract_study_details(selenium, download_filename):
 
                 e.calculate_values()
 
+                logging.info(f"STUDY: {e}")
+
                 studies.append(e)
+                logging.info(f"STUDIES SIZE int: {len(studies)}")
         
         logging.info(f"STUDIES SIZE: {len(studies)}")
 
