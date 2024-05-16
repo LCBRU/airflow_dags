@@ -79,12 +79,13 @@ def _download_study_file(selenium, filename):
 def _extract_study_details(selenium, download_filename):
     logging.info("_extract_study_details: Started")
 
+    studies = []
+
     try:
         logging.info(f"DOWNLOAD FILE: {download_filename}")
         logging.info(f"DOWNLOAD FILE SIZE: {os.path.getsize(download_filename)}")
 
         with open(download_filename) as csvfile:
-            studies = []
             study_details = csv.DictReader(csvfile, delimiter=',', quotechar='"')
 
             for row in study_details:
