@@ -77,7 +77,7 @@ def _download_study_file(selenium, filename):
 
 
 def _extract_study_details(selenium, download_filename):
-    logging.info("_save_study_details: Started")
+    logging.info("_extract_study_details: Started")
 
     try:
         logging.info(f"DOWNLOAD FILE: {download_filename}")
@@ -88,6 +88,7 @@ def _extract_study_details(selenium, download_filename):
             study_details = csv.DictReader(csvfile, delimiter=',', quotechar='"')
 
             for row in study_details:
+                logging.info(f"STUDy FOUND: {row}")
 
                 if row.get('Primary Clinical Management Areas', '').upper() not in ['CARDIOLOGY', 'VASCULAR SERVICES', 'CARDIAC SURGERY']:
                     continue
