@@ -80,6 +80,9 @@ def _extract_study_details(selenium, download_filename):
     logging.info("_save_study_details: Started")
 
     try:
+        logging.info(f"DOWNLOAD FILE: {download_filename}")
+        logging.info(f"DOWNLOAD FILE SIZE: {os.path.getsize(download_filename)}")
+
         with open(download_filename) as csvfile:
             studies = []
             study_details = csv.DictReader(csvfile, delimiter=',', quotechar='"')
@@ -114,6 +117,8 @@ def _extract_study_details(selenium, download_filename):
 
                 studies.append(e)
         
+        logging.info(f"STUDIES SIZE: {len(studies)}")
+
         return studies
     finally:
         logging.info("_save_study_details: Ended")
