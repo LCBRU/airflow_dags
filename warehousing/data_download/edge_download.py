@@ -91,7 +91,7 @@ def _extract_study_details(selenium, download_filename):
             for row in study_details:
                 logging.info(f"STUDy FOUND: {row}")
 
-                if row.get('Primary Clinical Management Areas', '').upper() not in ['CARDIOLOGY', 'VASCULAR SERVICES', 'CARDIAC SURGERY']:
+                if row.get('Primary Clinical Management Areas (1)', '').upper() not in ['CARDIOLOGY', 'VASCULAR SERVICES', 'CARDIAC SURGERY']:
                     continue
 
                 e = EdgeSiteStudy(
@@ -117,10 +117,7 @@ def _extract_study_details(selenium, download_filename):
 
                 e.calculate_values()
 
-                logging.info(f"STUDY: {e}")
-
                 studies.append(e)
-                logging.info(f"STUDIES SIZE int: {len(studies)}")
         
         logging.info(f"STUDIES SIZE: {len(studies)}")
 
