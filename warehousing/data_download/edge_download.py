@@ -169,7 +169,7 @@ def _int_or_none(int_element):
 def _date_or_none(date_element):
     date_string = date_element.strip()
     if date_string:
-        return datetime.datetime.strptime(date_string, "%d/%m/%Y").date()
+        return datetime.datetime.strptime(date_string, "%d-%m-%Y").date()
     else:
         return None
 
