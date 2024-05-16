@@ -126,7 +126,7 @@ def _extract_study_details(selenium, download_filename):
 
         return studies
     finally:
-        logging.info("_save_study_details: Ended")
+        logging.info("_extract_study_details: Ended")
 
 
 def _save_studies(studies):
