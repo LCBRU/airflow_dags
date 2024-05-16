@@ -85,7 +85,7 @@ def _extract_study_details(selenium, download_filename):
         logging.info(f"DOWNLOAD FILE: {download_filename}")
         logging.info(f"DOWNLOAD FILE SIZE: {os.path.getsize(download_filename)}")
 
-        with open(download_filename) as csvfile:
+        with open(download_filename, encoding='utf-8')  as csvfile:
             study_details = csv.DictReader(csvfile, delimiter=',', quotechar='"')
 
             for row in study_details:
