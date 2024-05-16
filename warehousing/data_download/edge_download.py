@@ -89,7 +89,7 @@ def _extract_study_details(selenium, download_filename):
             study_details = csv.DictReader(csvfile, delimiter=',', quotechar='"')
 
             for row in study_details:
-                logging.info(f"STUDy FOUND: {row}")
+                logging.info(f"STUDY FOUND: {row}")
 
                 if row.get('Primary Clinical Management Areas (1)', '').upper() not in ['CARDIOLOGY', 'VASCULAR SERVICES', 'CARDIAC SURGERY']:
                     continue
