@@ -64,10 +64,10 @@ with DAG(
             task_id=f"download_edge_studies",
             python_callable=download_edge_studies,
         )
-        # task_download_crfm_studies = PythonOperator(
-        #     task_id=f"download_crf_manager_studies",
-        #     python_callable=download_crf_manager_studies,
-        #     trigger_rule=TriggerRule.ALL_DONE,
-        # )
+        task_download_crfm_studies = PythonOperator(
+            task_id=f"download_crf_manager_studies",
+            python_callable=download_crf_manager_studies,
+            trigger_rule=TriggerRule.ALL_DONE,
+        )
 
-        # task_download_edge_studies >> task_download_crfm_studies
+        task_download_edge_studies >> task_download_crfm_studies
