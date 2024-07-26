@@ -13,7 +13,7 @@ SELECT name
 FROM _etl_tables
 WHERE extant = 1
     AND exclude = 0
-    AND (last_copied IS NULL OR last_copied < last_updated)
+    AND (last_copied_updated IS NULL OR last_copied_updated < last_updated)
 
 OPEN TABLE_CURSOR
 FETCH NEXT FROM TABLE_CURSOR INTO @table_name

@@ -4,6 +4,7 @@ IF OBJECT_ID(N'dbo._etl_tables', N'U') IS NULL
             name VARCHAR(255) not null,
             last_copied DATETIME NULL,
             last_updated DATETIME NULL,
+            last_copied_updated DATETIME NULL,
             extant BIT,
             exclude BIT
         );
