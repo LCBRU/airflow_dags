@@ -30,8 +30,8 @@ def _login(selenium):
     selenium.get("/")
     sleep(5)
     
-    username = selenium.get_element(CssSelector("input[placeholder='Username']"))
-    password = selenium.get_element(CssSelector("input[placeholder='Password']"))
+    username = selenium.get_element(CssSelector("input[id='username']"))
+    password = selenium.get_element(CssSelector("input[id='password']"))
 
     username.send_keys(os.environ['AIRFLOW_VAR_EDGE_USERNAME'])
     password.send_keys(os.environ['AIRFLOW_VAR_EDGE_PASSWORD'])
