@@ -152,7 +152,7 @@ with DAG(
             for db, in cursor:
                 if db not in s['exclude']:
                     PythonOperator(
-                        task_id=f"backup_database_{db}",
+                        task_id=f"backup_database__{s['conn_name']}__{db}",
                         python_callable=_backup_database,
                         op_kwargs={
                             'conn': conn,
