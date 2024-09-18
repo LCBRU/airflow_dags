@@ -1,6 +1,5 @@
 import fileinput
 import gzip
-from pathlib import Path
 import re
 import subprocess
 import tempfile
