@@ -128,6 +128,10 @@ servers = [
             {
                 'source_database': 'uol_easyas_redcap',
                 'destination_database': 'datalake_redcap_easyas',
+            },
+            {
+                'source_database': 'image_study_merge',
+                'destination_database': 'datalake_image_study_merge',
             }
         ]
     }
