@@ -37,7 +37,7 @@ EXEC sp_executesql @OPENQUERY
 
 UPDATE _etl_tables
 SET extant = 0
-WHERE name NOT IN (SELECT table_name FROM __etl_tables)
+WHERE name COLLATE Latin1_General_CI_AS NOT IN (SELECT table_name COLLATE Latin1_General_CI_AS FROM __etl_tables)
 ;
 
 UPDATE et
@@ -45,11 +45,11 @@ SET extant = 1,
     last_updated = update_time
 FROM _etl_tables et
 JOIN __etl_tables t
-    ON t.table_name = et.name
+    ON t.table_name COLLATE Latin1_General_CI_AS = et.name COLLATE Latin1_General_CI_AS
 ;
 
 DELETE FROM __etl_tables
-WHERE table_name IN (SELECT name FROM _etl_tables)
+WHERE table_name COLLATE Latin1_General_CI_AS IN (SELECT name COLLATE Latin1_General_CI_AS FROM _etl_tables)
 
 INSERT INTO _etl_tables(name, last_copied, last_updated, extant, exclude)
 SELECT table_name, NULL, update_time, 1, 0
