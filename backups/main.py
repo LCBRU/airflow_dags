@@ -72,19 +72,19 @@ def _cleanup_old_backups():
     for f in [f for f in backup_dir.glob('**/*') if f.is_file()]:
         modifield_date = datetime.fromtimestamp(f.stat().st_mtime, tz=timezone.utc).date()
 
-        if modifield_date <= oldest_daily:
+        if modifield_date >= oldest_daily:
             logging.info(f"Keeping file {f!r} because it's younger than daily oldest daily date")
             continue
     
-        if modifield_date <= oldest_weekly and modifield_date.weekday() == 0:
+        if modifield_date >= oldest_weekly and modifield_date.weekday() == 0:
             logging.info(f"Keeping file {f!r} because it's younger than daily oldest weekly date")
             continue
 
-        if modifield_date <= oldest_monthly and modifield_date.day == 1:
+        if modifield_date >= oldest_monthly and modifield_date.day == 1:
             logging.info(f"Keeping file {f!r} because it's younger than daily oldest monthly date")
             continue
 
-        if modifield_date <= oldest_yearly and modifield_date.day == 1 and modifield_date.month == 1:
+        if modifield_date >= oldest_yearly and modifield_date.day == 1 and modifield_date.month == 1:
             logging.info(f"Keeping file {f!r} because it's younger than daily oldest yearly date")
             continue
 
