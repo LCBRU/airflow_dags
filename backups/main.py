@@ -98,7 +98,7 @@ def _cleanup_old_backups():
         is_empty = not any(d.iterdir())
         if is_empty:
             logging.info(f"Deleted empty directory: {d}")
-            d.unlink()
+            os.rmdir(d)
         else:
             logging.info(f"Keeping directory: {d}")
 
