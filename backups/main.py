@@ -94,11 +94,13 @@ def _cleanup_old_backups():
         logging.info(f"Deleted file: {f}")
         f.unlink()
 
-    for d in [d for d in backup_dir.glob('**/*') if f.is_dir()]:
+    for d in [d for d in backup_dir.glob('**/*') if d.is_dir()]:
         is_empty = not any(d.iterdir())
         if is_empty:
-            logging.info(f"Deleted empty directory: {f}")
+            logging.info(f"Deleted empty directory: {d}")
             # f.unlink()
+        else:
+            logging.info(f"Keeping directory: {d}")
 
 
     logging.info("_cleanup_old_backups: Ended")
