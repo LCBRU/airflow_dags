@@ -73,26 +73,33 @@ def _cleanup_old_backups():
         modifield_date = datetime.fromtimestamp(f.stat().st_mtime, tz=timezone.utc).date()
 
         if modifield_date >= oldest_daily:
-            logging.info(f"Keeping file {f!r} because it's younger than daily oldest daily date")
+            logging.info(f"Keeping file {f} because it's younger than daily oldest daily date")
             continue
     
         if modifield_date >= oldest_weekly and modifield_date.weekday() == 0:
-            logging.info(f"Keeping file {f!r} because it's younger than daily oldest weekly date")
+            logging.info(f"Keeping file {f} because it's younger than daily oldest weekly date")
             continue
 
         if modifield_date >= oldest_monthly and modifield_date.day == 1:
-            logging.info(f"Keeping file {f!r} because it's younger than daily oldest monthly date")
+            logging.info(f"Keeping file {f} because it's younger than daily oldest monthly date")
             continue
 
         if modifield_date >= oldest_yearly and modifield_date.day == 1 and modifield_date.month == 1:
-            logging.info(f"Keeping file {f!r} because it's younger than daily oldest yearly date")
+            logging.info(f"Keeping file {f} because it's younger than daily oldest yearly date")
             continue
 
         to_delete.append(f)
 
     for f in to_delete:
-        logging.info(f"Would've deleted file: {f!r}")
-        # f.unlink()
+        logging.info(f"Deleted file: {f}")
+        f.unlink()
+
+    for d in [d for d in backup_dir.glob('**/*') if f.is_dir()]:
+        is_empty = not any(d.iterdir())
+        if is_empty:
+            logging.info(f"Deleted empty directory: {f}")
+            # f.unlink()
+
 
     logging.info("_cleanup_old_backups: Ended")
 
