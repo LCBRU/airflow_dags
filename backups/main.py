@@ -62,28 +62,37 @@ def _cleanup_old_backups():
     oldest_monthly = today - relativedelta(months=12)
     oldest_yearly = today - relativedelta(years=5)
 
+    logging.info(f"Oldest daily date: {oldest_daily!r}")
+    logging.info(f"Oldest weekly date: {oldest_weekly!r}")
+    logging.info(f"Oldest monthly date: {oldest_monthly!r}")
+    logging.info(f"Oldest yearly date: {oldest_yearly!r}")
+
     to_delete = []
 
     for f in [f for f in backup_dir.glob('**/*') if f.is_file()]:
-        modifield_date  = datetime.fromtimestamp(f.stat().st_mtime, tz=timezone.utc).date()
+        modifield_date = datetime.fromtimestamp(f.stat().st_mtime, tz=timezone.utc).date()
 
-        if modifield_date >= oldest_daily:
+        if modifield_date <= oldest_daily:
+            logging.info(f"Keeping file {f!r} because it's younger than daily oldest daily date")
             continue
     
-        if modifield_date >= oldest_weekly and modifield_date.weekday() == 0:
+        if modifield_date <= oldest_weekly and modifield_date.weekday() == 0:
+            logging.info(f"Keeping file {f!r} because it's younger than daily oldest weekly date")
             continue
 
-        if modifield_date >= oldest_monthly and modifield_date.day == 1:
+        if modifield_date <= oldest_monthly and modifield_date.day == 1:
+            logging.info(f"Keeping file {f!r} because it's younger than daily oldest monthly date")
             continue
 
-        if modifield_date >= oldest_yearly and modifield_date.day == 1 and modifield_date.month == 1:
+        if modifield_date <= oldest_yearly and modifield_date.day == 1 and modifield_date.month == 1:
+            logging.info(f"Keeping file {f!r} because it's younger than daily oldest yearly date")
             continue
 
         to_delete.append(f)
 
     for f in to_delete:
-        logging.info(f"Deleting file: {f}")
-        f.unlink()
+        logging.info(f"Would've deleted file: {f!r}")
+        # f.unlink()
 
     logging.info("_cleanup_old_backups: Ended")
 
