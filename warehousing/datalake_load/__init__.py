@@ -3,8 +3,8 @@ import os
 import logging
 from pathlib import Path
 from airflow import DAG
-from airflow.operators.mssql_operator import MsSqlOperator
-from airflow.operators.python_operator import PythonOperator
+from airflow.operators.python import PythonOperator
+from airflow.providers.microsoft.mssql.operators.mssql import MsSqlOperator
 from itertools import groupby
 from warehousing.database import MsSqlConnection
 from tools import default_dag_args
