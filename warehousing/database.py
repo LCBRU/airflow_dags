@@ -1,12 +1,11 @@
 import logging
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, declarative_base
 from contextlib import contextmanager
 from airflow.providers.mysql.hooks.mysql import MySqlHook
-from sqlalchemy.ext.declarative import declarative_base
+from airflow.providers.mysql.operators.mysql import MySqlOperator
 from airflow.providers.microsoft.mssql.hooks.mssql import MsSqlHook
-from airflow.operators.mssql_operator import MsSqlOperator
-from airflow.operators.mysql_operator import MySqlOperator
+from airflow.providers.microsoft.mssql.operators.mssql import MsSqlOperator
 
 
 Base = declarative_base()
@@ -32,7 +31,7 @@ def etl_central_session():
         session.commit()
         session.close()
     finally:
-        engine.dispose
+        engine.dispose()
 
 
 class SqlConnection:
@@ -122,7 +121,7 @@ class MySqlConnection(SqlConnection):
     def get_operator(self, dag, task_id, sql, params=None):
         return MySqlOperator(
             task_id=task_id.replace(" ", "_"),
-            mssql_conn_id=self._connection_name,
+            mysql_conn_id=self._connection_name,
             sql=sql,
             autocommit=True,
             database=self._schema,

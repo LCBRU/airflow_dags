@@ -4,9 +4,9 @@ import pathlib
 from datetime import datetime, date, timedelta, timezone
 import subprocess
 from airflow import DAG
+from airflow.operators.python import PythonOperator
 from tools import default_dag_args
 from warehousing.database import LIVE_DB_CONNECTION_NAME, OPS_DB_CONNECTION_NAME, MySqlConnection
-from airflow.operators.python_operator import PythonOperator
 from dateutil.relativedelta import relativedelta
 
 
@@ -157,7 +157,7 @@ servers = [
 
 with DAG(
     dag_id="backup",
-    schedule_interval=os.environ.get('SCHEDULE_BACKUP', None) or None,
+    schedule=os.environ.get('SCHEDULE_BACKUP', None) or None,
     default_args=default_dag_args,
     catchup=False,
     start_date=datetime(2020, 1, 1),
