@@ -3,7 +3,7 @@ import os
 import logging
 from pathlib import Path
 from airflow import DAG
-from airflow.operators.mssql_operator import MsSqlOperator
+from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from airflow.operators.python_operator import PythonOperator
 from itertools import groupby
 from warehousing.database import MsSqlConnection
@@ -213,7 +213,7 @@ with DAG(
         for s in servers:
             for d in s['databases']:
                 task_id_suffix = f'__{s["conn_name"]}_{d["destination_database"]}'
-                tasks.append(MsSqlOperator(
+                tasks.append(SQLExecuteQueryOperator(
                         task_id=f'create_destination_database{task_id_suffix}',
                         mssql_conn_id=s["conn_name"],
                         sql="CREATE__databases.sql",
@@ -228,7 +228,7 @@ with DAG(
         for s in servers:
             for d in s['databases']:
                 task_id_suffix = f'__{s["conn_name"]}_{d["destination_database"]}'
-                tasks.append(MsSqlOperator(
+                tasks.append(SQLExecuteQueryOperator(
                         task_id=f'CREATE__etl_tables{task_id_suffix}',
                         mssql_conn_id=s["conn_name"],
                         sql="CREATE__etl_tables.sql",
@@ -242,7 +242,7 @@ with DAG(
         for s in servers:
             for d in s['databases']:
                 task_id_suffix = f'__{s["conn_name"]}_{d["destination_database"]}'
-                MsSqlOperator(
+                SQLExecuteQueryOperator(
                     task_id=f'recreate_etl_tables{task_id_suffix}',
                     mssql_conn_id=s["conn_name"],
                     sql="INSERT__etl_tables.sql",
@@ -256,7 +256,7 @@ with DAG(
         for s in servers:
             for d in s['databases']:
                 task_id_suffix = f'__{s["conn_name"]}_{d["destination_database"]}'
-                MsSqlOperator(
+                SQLExecuteQueryOperator(
                     task_id=f'copy_tables{task_id_suffix}',
                     mssql_conn_id=s["conn_name"],
                     sql="INSERT__tables.sql",
@@ -270,7 +270,7 @@ with DAG(
         for s in servers:
             for d in s['databases']:
                 task_id_suffix = f'__{s["conn_name"]}_{d["destination_database"]}'
-                MsSqlOperator(
+                SQLExecuteQueryOperator(
                     task_id=f'change_text_columns_to_varchar{task_id_suffix}',
                     mssql_conn_id=s["conn_name"],
                     sql="UPDATE__tables__alter_text_to_varchar.sql",
@@ -299,7 +299,7 @@ with DAG(
         for s in servers:
             for d in s['databases']:
                 task_id_suffix = f'__{s["conn_name"]}_{d["destination_database"]}'
-                MsSqlOperator (
+                SQLExecuteQueryOperator (
                     task_id=f'mark_updated{task_id_suffix}',
                     mssql_conn_id=s["conn_name"],
                     sql="UPDATE__etl_tables__last_copied.sql",

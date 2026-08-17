@@ -5,9 +5,7 @@ from contextlib import contextmanager
 from airflow.providers.mysql.hooks.mysql import MySqlHook
 from sqlalchemy.ext.declarative import declarative_base
 from airflow.providers.microsoft.mssql.hooks.mssql import MsSqlHook
-from airflow.operators.mssql_operator import MsSqlOperator
-from airflow.operators.mysql_operator import MySqlOperator
-
+from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 
 Base = declarative_base()
 
@@ -120,7 +118,7 @@ class SqlConnection:
 
 class MySqlConnection(SqlConnection):
     def get_operator(self, dag, task_id, sql, params=None):
-        return MySqlOperator(
+        return SQLExecuteQueryOperator(
             task_id=task_id.replace(" ", "_"),
             mssql_conn_id=self._connection_name,
             sql=sql,
@@ -136,7 +134,7 @@ class MySqlConnection(SqlConnection):
 
 class MsSqlConnection(SqlConnection):
     def get_operator(self, dag, task_id, sql, params=None):
-        return MsSqlOperator(
+        return SQLExecuteQueryOperator(
             task_id=task_id.replace(" ", "_"),
             mssql_conn_id=self._connection_name,
             sql=sql,
