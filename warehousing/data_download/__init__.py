@@ -1,7 +1,7 @@
 from datetime import datetime
 import os
 from airflow import DAG
-from airflow.operators.python_operator import PythonOperator
+from airflow.operators.python import PythonOperator
 from warehousing.data_download.crf_manager_download import download_crf_manager_studies
 from warehousing.data_download.download_to_mysql import download_mysql_backup_and_restore
 from warehousing.data_download.edge_download import download_edge_studies
