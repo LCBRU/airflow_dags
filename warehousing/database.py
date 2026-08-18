@@ -3,7 +3,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from contextlib import contextmanager
 from airflow.providers.mysql.hooks.mysql import MySqlHook
-from airflow.providers.mysql.operators.mysql import MySqlOperator
 from airflow.providers.microsoft.mssql.hooks.mssql import MsSqlHook
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 
