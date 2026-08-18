@@ -4,7 +4,7 @@ import logging
 from pathlib import Path
 from airflow import DAG
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
-from airflow.operators.python_operator import PythonOperator
+from airflow.providers.standard.operators.python import PythonOperator
 from itertools import groupby
 from warehousing.database import MsSqlConnection
 from tools import default_dag_args
