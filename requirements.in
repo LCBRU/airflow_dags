@@ -1,4 +1,0 @@
--r requirements.include
-
-git+https://github.com/LCBRU/lbrc_selenium.git@main#egg=lbrc_selenium
-git+https://github.com/LCBRU/lbrc_edge.git@main#egg=lbrc_edge
