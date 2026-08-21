@@ -12,6 +12,7 @@ default_dag_args = {
     'email': error_emails,
     'email_on_failure': True,
     "start_date": datetime(2020, 1, 1),
+    "retries": 0,
 }
 
 

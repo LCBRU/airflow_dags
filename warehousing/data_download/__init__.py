@@ -46,3 +46,6 @@ with DAG(
             email=error_emails,
             email_on_failure=True,
         )
+
+        print(task_download_edge_studies.email)
+        print(task_download_edge_studies.email_on_failure)
