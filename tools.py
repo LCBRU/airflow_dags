@@ -1,10 +1,15 @@
 import os
 from datetime import datetime
 
+error_emails = [
+    e.strip()
+    for e in os.environ.get("ERROR_EMAIL_ADDRESS", "").split(";")
+    if e.strip()
+]
 
 default_dag_args = {
     "owner": "airflow",
-    'email': os.environ.get('ERROR_EMAIL_ADDRESS', '').split(';'),
+    'email': error_emails,
     'email_on_failure': True,
     "start_date": datetime(2020, 1, 1),
 }

@@ -8,12 +8,14 @@ from warehousing.database import etl_central_session
 from lbrc_selenium.selenium import get_selenium, CssSelector, XpathSelector
 from selenium.webdriver.common.keys import Keys
 from lbrc_edge import EdgeSiteStudy
+from tools import error_emails
 
 
 def download_edge_studies():
     logging.info("_download_edge_studies: Started")
-    logging.info("Email Address: " + os.environ['ERROR_EMAIL_ADDRESS'])
-
+    logging.info("Email Address: " + error_emails)
+    print("Email Address: " + str(error_emails))
+    
     s = get_selenium(base_url=os.environ['AIRFLOW_VAR_EDGE_BASE_URL'])
 
     try:
