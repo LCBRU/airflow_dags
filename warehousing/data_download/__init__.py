@@ -4,7 +4,7 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 from warehousing.data_download.download_to_mysql import download_mysql_backup_and_restore
 from warehousing.data_download.edge_download import download_edge_studies
-from tools import default_dag_args
+from tools import default_dag_args, error_emails
 
 
 with DAG(
@@ -43,4 +43,6 @@ with DAG(
         task_download_edge_studies = PythonOperator(
             task_id=f"download_edge_studies",
             python_callable=download_edge_studies,
+            email=error_emails,
+            email_on_failure=True,
         )
