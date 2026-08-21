@@ -13,7 +13,7 @@ from tools import error_emails
 
 def download_edge_studies():
     logging.info("_download_edge_studies: Started")
-    logging.info("Email Address: " + error_emails)
+    logging.info("Email Address: " + str(error_emails))
     print("Email Address: " + str(error_emails))
     
     s = get_selenium(base_url=os.environ['AIRFLOW_VAR_EDGE_BASE_URL'])
