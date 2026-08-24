@@ -99,8 +99,8 @@ def _unzip_file(input_filename, output_filename):
 def _amend_database_name(input_filename):
     logging.info("_amend_database_name: Started")
 
-    create_db = re.compile('create\s*database', re.IGNORECASE)
-    use_db = re.compile('use\s', re.IGNORECASE)
+    create_db = re.compile(r'create\s*database', re.IGNORECASE)
+    use_db = re.compile(r'use\s', re.IGNORECASE)
 
     with fileinput.FileInput(input_filename, inplace=True) as file:
         for line in file:
