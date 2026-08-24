@@ -11,6 +11,7 @@ error_emails = [
 
 on_failure_callback = send_smtp_notification(
     to="richard.bramley5@nhs.net",
+    from_email="richard.a.bramley@uhl-tr.nhs.uk",
     subject="Airflow task failed",
 )
 
@@ -21,8 +22,6 @@ default_dag_args = {
     "start_date": datetime(2020, 1, 1),
     "retries": 0,
 }
-
-
 
 
 
