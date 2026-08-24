@@ -66,6 +66,7 @@ with DAG(
              "richard.bramley5@nhs.net",
              "rab63@leicester.ac.uk",
         ],
+        from_email="richard.bramley5@nhs.net",
         subject="Airflow Email Test",
         html_content="<h3>Email from Airflow</h3>",
     )
