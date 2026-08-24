@@ -1,11 +1,10 @@
 from datetime import datetime
 import os
 from airflow import DAG
-from airflow.operators.python import PythonOperator
+from airflow.providers.standard.operators.python import PythonOperator
 from warehousing.data_download.download_to_mysql import download_mysql_backup_and_restore
 from warehousing.data_download.edge_download import download_edge_studies
-from tools import default_dag_args, error_emails
-from airflow.providers.smtp.operators.smtp import EmailOperator
+from tools import default_dag_args, on_failure_callback
 
 
 with DAG(
@@ -44,29 +43,5 @@ with DAG(
         task_download_edge_studies = PythonOperator(
             task_id=f"download_edge_studies",
             python_callable=download_edge_studies,
-            email=error_emails,
-            email_on_failure=True,
+            on_failure_callback=on_failure_callback,
         )
-
-        print(task_download_edge_studies.email)
-        print(task_download_edge_studies.email_on_failure)
-
-
-with DAG(
-    dag_id="test_email",
-    start_date=datetime(2025, 1, 1),
-    schedule=None,
-    catchup=False,
-) as dag:
-
-    send_email = EmailOperator(
-        task_id="send_email",
-        to=[
-             "rabramley@gmail.com",
-             "richard.bramley5@nhs.net",
-             "rab63@leicester.ac.uk",
-        ],
-        from_email="richard.a.bramley@uhl-tr.nhs.uk",
-        subject="Airflow Email Test 2",
-        html_content="<h3>Email from Airflow 2</h3>",
-    )

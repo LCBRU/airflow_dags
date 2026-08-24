@@ -4,7 +4,7 @@ import pathlib
 from datetime import datetime, date, timedelta, timezone
 import subprocess
 from airflow import DAG
-from airflow.operators.python import PythonOperator
+from airflow.providers.standard.operators.python import PythonOperator
 from tools import default_dag_args
 from warehousing.database import LIVE_DB_CONNECTION_NAME, OPS_DB_CONNECTION_NAME, MySqlConnection
 from dateutil.relativedelta import relativedelta

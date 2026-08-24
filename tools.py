@@ -1,5 +1,7 @@
 import os
 from datetime import datetime
+from airflow.providers.smtp.notifications.smtp import send_smtp_notification
+
 
 error_emails = [
     e.strip()
@@ -7,13 +9,21 @@ error_emails = [
     if e.strip()
 ]
 
+on_failure_callback = send_smtp_notification(
+    to="richard.bramley5@nhs.net",
+    subject="Airflow task failed",
+)
+
+
 default_dag_args = {
     "owner": "airflow",
-    'email': error_emails,
-    'email_on_failure': True,
+    "on_failure_callback": on_failure_callback,
     "start_date": datetime(2020, 1, 1),
     "retries": 0,
 }
+
+
+
 
 
 def create_sub_dag_task(dag, sub_task_id, run_on_failures=False):
