@@ -4,14 +4,15 @@ import logging
 from pathlib import Path
 from airflow import DAG
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
-from airflow.providers.standard.operators.python import PythonOperator
 from itertools import groupby
 from warehousing.database import MsSqlConnection
-from tools import default_dag_args
+from tools import default_dag_args, email_notification_callback
 from airflow.decorators import task_group
 from airflow.models.baseoperator import chain
+from airflow.sdk import task
 
 
+@task(on_failure_callback=email_notification_callback)
 def _create_indexes_procedure(connection_name, destination_database, source_database):
     logging.info("_create_indexes_procedure: Started")
 
@@ -284,14 +285,10 @@ with DAG(
         for s in servers:
             for d in s['databases']:
                 task_id_suffix = f'__{s["conn_name"]}_{d["destination_database"]}'
-                PythonOperator(
-                    task_id=f"create_indexes{task_id_suffix}",
-                    python_callable=_create_indexes_procedure,
-                    op_kwargs={
-                        'destination_database': d["destination_database"],
-                        'source_database': d["source_database"],
-                        'connection_name': s["conn_name"],
-                    },
+                _create_indexes_procedure.override(task_id=f"create_indexes{task_id_suffix}")(
+                    destination_database=d["destination_database"],
+                    source_database=d["source_database"],
+                    connection_name=s["conn_name"],
                 )
 
     @task_group(group_id='mark_updated')

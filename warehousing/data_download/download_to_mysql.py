@@ -8,8 +8,11 @@ import shutil
 import logging
 from airflow.models import Variable
 from warehousing.database import LiveDbConnection
+from airflow.sdk import task
+from tools import email_notification_callback
 
 
+@task(on_failure_callback=email_notification_callback)
 def download_mysql_backup_and_restore(destination_database, source_url):
     logging.info("_download_and_restore: Started")
 

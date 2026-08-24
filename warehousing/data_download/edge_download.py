@@ -9,8 +9,11 @@ from lbrc_selenium.selenium import get_selenium, CssSelector, XpathSelector
 from selenium.webdriver.common.keys import Keys
 from lbrc_edge import EdgeSiteStudy
 from tools import error_emails
+from airflow.sdk import task
+from tools import email_notification_callback
 
 
+@task(on_failure_callback=email_notification_callback)
 def download_edge_studies():
     logging.info("_download_edge_studies: Started")
     logging.info("Email Address: " + str(error_emails))

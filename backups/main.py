@@ -4,15 +4,16 @@ import pathlib
 from datetime import datetime, date, timedelta, timezone
 import subprocess
 from airflow import DAG
-from airflow.providers.standard.operators.python import PythonOperator
-from tools import default_dag_args
+from tools import default_dag_args, email_notification_callback
 from warehousing.database import LIVE_DB_CONNECTION_NAME, OPS_DB_CONNECTION_NAME, MySqlConnection
 from dateutil.relativedelta import relativedelta
+from airflow.sdk import task
 
 
 BACKUP_DIRECTORY = '/backup/live_db/'
 
 
+@task(on_failure_callback=email_notification_callback)
 def _backup_database(conn, db):
     logging.info("_backup_database: Started")
 
@@ -50,6 +51,7 @@ def _backup_database(conn, db):
     logging.info("_backup_database: Ended")
 
 
+@task(on_failure_callback=email_notification_callback)
 def _cleanup_old_backups():
     logging.info("_cleanup_old_backups: Started")
 
@@ -169,16 +171,6 @@ with DAG(
         with conn.query('SHOW DATABASES;') as cursor:
             for db, in cursor:
                 if db not in s['exclude']:
-                    PythonOperator(
-                        task_id=f"backup_database__{s['conn_name']}__{db}",
-                        python_callable=_backup_database,
-                        op_kwargs={
-                            'conn': conn,
-                            'db': db,
-                        },
-                    )
+                    _backup_database.override(task_id=f"backup_database__{s['conn_name']}__{db}")(conn=conn, db=db)
 
-    PythonOperator(
-        task_id="_cleanup_old_backups",
-        python_callable=_cleanup_old_backups,
-    )
+    _cleanup_old_backups()
