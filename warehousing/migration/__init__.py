@@ -2,7 +2,7 @@ import os
 from airflow import DAG
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from tools import default_dag_args
-import reports
+import warehousing.migration.reports
 
 
 with DAG(
