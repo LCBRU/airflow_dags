@@ -1,16 +1,14 @@
 import os
-from datetime import datetime
 from airflow import DAG
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from tools import default_dag_args
-
+import warehousing.migration.reports
 
 with DAG(
     dag_id="migration_processing",
     default_args=default_dag_args,
     schedule=os.environ.get('SCHEDULE_BACKUP', None) or None,
     template_searchpath=['/opt/airflow/dags/warehousing/datalake_load/sql/'],
-    start_date=datetime(2020, 1, 1),
     catchup=False,
 ):
     legacydwh_update_databases = SQLExecuteQueryOperator(
