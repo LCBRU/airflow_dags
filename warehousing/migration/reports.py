@@ -3,7 +3,7 @@ from airflow.sdk import DAG, task
 from airflow.providers.common.sql.hooks.sql import DbApiHook
 from airflow.sdk import task
 from airflow.utils.email import send_email
-from tools import default_dag_args
+from tools import default_dag_args, error_emails
 
 
 with DAG(
@@ -38,7 +38,7 @@ with DAG(
         html += "</table></body></html>"
 
         send_email(
-            to=[""],
+            to=error_emails,
             subject="Migration Database Mismatch Report",
             html_content=html,
         )
