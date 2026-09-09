@@ -41,3 +41,5 @@ with DAG(
             subject="Migration Database Mismatch Report",
             html_content=html,
         )
+
+    database_mismatch_report()
