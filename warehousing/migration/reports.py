@@ -15,7 +15,8 @@ with DAG(
     
     @task
     def database_mismatch_report():
-        hook = DbApiHook.get_hook(conn_id="DWH", database="warehouse_central")
+        hook = DbApiHook.get_hook(conn_id="DWH")
+        hook.schema = "warehouse_central"
         
         records = hook.get_records("""
             SELECT database_name, status
