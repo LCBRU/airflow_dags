@@ -17,14 +17,14 @@ with DAG(
         task_id="legacy_update_databases",
         conn_id="LEGACY_DWH",
         database="warehouse_central",
-        sql="EXEC mig__update_datebases;",
+        sql="EXEC mig__update_databases;",
     )
 
     dwh_update_databases = SQLExecuteQueryOperator(
         task_id="new_update_databases",
         conn_id="DWH",
         database="warehouse_central",
-        sql="EXEC mig__update_datebases;",
+        sql="EXEC mig__update_databases;",
     )
 
     legacydwh_update_tables = SQLExecuteQueryOperator(
