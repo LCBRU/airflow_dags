@@ -121,8 +121,8 @@ def schema_export():
                             NUMERIC_SCALE,
                             IS_NULLABLE
                         FROM INFORMATION_SCHEMA.COLUMNS
-                        WHERE TABLE_SCHEMA=?
-                          AND TABLE_NAME=?
+                        WHERE TABLE_SCHEMA=%s
+                          AND TABLE_NAME=%s
                         ORDER BY ORDINAL_POSITION
                         """,
                         (schema, table),
