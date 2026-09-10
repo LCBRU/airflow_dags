@@ -125,8 +125,7 @@ def schema_export():
                           AND TABLE_NAME=?
                         ORDER BY ORDINAL_POSITION
                         """,
-                        schema,
-                        table,
+                        (schema, table),
                     )
 
             cols = cursor.fetchall()
