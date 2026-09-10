@@ -93,10 +93,10 @@ def schema_export():
                 encoding="utf-8",
             ) as f:
 
-                extract_tables(cursor, f)
+                extract_tables(db_hook, cursor, f)
         return str(outfile)
 
-    def extract_tables(cursor, f):
+    def extract_tables(hook, cursor, f):
         cursor.execute(
                     """
                     SELECT TABLE_SCHEMA,
@@ -128,7 +128,21 @@ def schema_export():
                         (schema, table),
                     )
 
-            cols = cursor.fetchall()
+            cols = hook.get_records("""
+                        SELECT
+                            COLUMN_NAME,
+                            DATA_TYPE,
+                            CHARACTER_MAXIMUM_LENGTH,
+                            NUMERIC_PRECISION,
+                            NUMERIC_SCALE,
+                            IS_NULLABLE
+                        FROM INFORMATION_SCHEMA.COLUMNS
+                        WHERE TABLE_SCHEMA=%s
+                          AND TABLE_NAME=%s
+                        ORDER BY ORDINAL_POSITION
+                        """,
+                        (schema, table),
+                )
 
             ddl = (
                         f"\nCREATE TABLE "
@@ -138,7 +152,7 @@ def schema_export():
             definitions = []
 
             for c in cols:
-                dtype = c.DATA_TYPE
+                dtype = c["DATA_TYPE"]
 
                 if dtype in {
                             "varchar",
@@ -147,13 +161,13 @@ def schema_export():
                             "nchar",
                         }:
                     if (
-                                c.CHARACTER_MAXIMUM_LENGTH
+                                c["CHARACTER_MAXIMUM_LENGTH"]
                                 == -1
                             ):
                         dtype += "(MAX)"
                     else:
                         dtype += (
-                                    f"({c.CHARACTER_MAXIMUM_LENGTH})"
+                                    f"({c['CHARACTER_MAXIMUM_LENGTH']})"
                                 )
 
                 elif dtype in {
@@ -161,18 +175,18 @@ def schema_export():
                             "numeric",
                         }:
                     dtype += (
-                                f"({c.NUMERIC_PRECISION},"
-                                f"{c.NUMERIC_SCALE})"
+                                f"({c['NUMERIC_PRECISION']},"
+                                f"{c['NUMERIC_SCALE']})"
                             )
 
                 nullable = (
                             "NULL"
-                            if c.IS_NULLABLE == "YES"
+                            if c["IS_NULLABLE"] == "YES"
                             else "NOT NULL"
                         )
 
                 definitions.append(
-                            f"[{c.COLUMN_NAME}] "
+                            f"[{c['COLUMN_NAME']}] "
                             f"{dtype} {nullable}"
                         )
 
