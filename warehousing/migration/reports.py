@@ -10,7 +10,6 @@ with DAG(
     dag_id="migration_reports",
     default_args=default_dag_args,
     schedule=os.environ.get('SCHEDULE_BACKUP', None) or None,
-    catchup=False,
 ):
     
     @task

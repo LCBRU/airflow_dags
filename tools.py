@@ -21,4 +21,5 @@ default_dag_args = {
     "on_failure_callback": email_notification_callback,
     "start_date": datetime(2020, 1, 1),
     "retries": 0,
+    "catchup": False,
 }

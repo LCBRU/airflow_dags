@@ -205,8 +205,6 @@ with DAG(
     default_args=default_dag_args,
     schedule=os.environ.get('SCHEDULE_DATALAKE_LOAD', None) or None,
     template_searchpath=['/opt/airflow/dags/warehousing/datalake_load/sql/'],
-    start_date=datetime(2020, 1, 1),
-    catchup=False,
 ):
     @task_group(group_id='create_databases')
     def create_databases():

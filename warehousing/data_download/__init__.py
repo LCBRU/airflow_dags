@@ -10,8 +10,6 @@ with DAG(
     dag_id="download_UOL_data",
     default_args=default_dag_args,
     schedule=os.environ.get('SCHEDULE_DOWNLOAD_UOL_DATA', None) or None,
-    catchup=False,
-    start_date=datetime(2020, 1, 1),
 ):
     download_mysql_backup_and_restore.override(task_id=f"download_mysql_backup_and_restore__uol_openspecimen")(
         destination_database='uol_openspecimen',
@@ -28,8 +26,6 @@ with DAG(
     dag_id="download_external_data",
     default_args=default_dag_args,
     schedule=os.environ.get('SCHEDULE_DOWNLOAD_EXTERNAL_DATA', None) or None,
-    catchup=False,
-    start_date=datetime(2020, 1, 1),
 ):
         download_mysql_backup_and_restore.override(task_id=f"download_mysql_backup_and_restore__uol_crf_redcap")(
             destination_database='uol_crf_redcap',
