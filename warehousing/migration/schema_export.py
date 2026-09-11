@@ -204,3 +204,4 @@ def schema_export(conn_id: str):
 
 
 schema_export('DWH')
+schema_export('LEGACY_DWH')
