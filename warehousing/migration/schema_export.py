@@ -55,6 +55,7 @@ def schema_export():
 
         extract_tables(hook, output_directory)
         export_primary_keys(hook, output_directory)
+        export_views(hook, output_directory)
 
     def extract_tables(hook, output_directory):
         with open(output_directory / "tables.sql", "w", encoding="utf-8",) as f:
@@ -138,6 +139,24 @@ def schema_export():
                 GO
                 """
                 f.write(sql)
+
+    def export_views(hook, output_directory):
+        with open(output_directory / "views.sql", "w", encoding="utf-8",) as f:
+            views = hook.get_records("""
+                    SELECT m.definition
+                    FROM sys.views o
+                    JOIN sys.schemas s
+                        ON o.schema_id=s.schema_id
+                    JOIN sys.sql_modules m
+                        ON o.object_id=m.object_id
+                    ORDER BY s.name,o.name
+                    """
+                )
+
+            for definition in views:
+                f.write("\n")
+                f.write(definition)
+                f.write("\nGO\n")
 
     conn_id = "{{ params.conn_id }}"
 
