@@ -31,10 +31,7 @@ BACKUP_DIRECTORY = '/backup/dwh_schema/'
 @dag(
     dag_id="schema_export",
     schedule=None,
-    params={
-        "conn_id": "DWH",
-        "output_dir": BACKUP_DIRECTORY,
-    },
+    params={"conn_id": "DWH"},
 )
 def schema_export():
 
@@ -44,11 +41,10 @@ def schema_export():
         hook = get_hook(conn_id)
 
         rows = hook.get_records("""
-            SELECT name
+            SELECT TOP 4 name
             FROM sys.databases
             WHERE database_id > 4
-            AND state_desc = 'ONLINE'
-            ORDER BY name
+                AND state_desc = 'ONLINE'
             """)
 
         return [row[0] for row in rows]
@@ -57,29 +53,14 @@ def schema_export():
     def export_database(database: str, conn_id: str, output_dir: str) -> str:
 
         hook = get_hook(conn_id)
+        hook.schema = database
 
-        #
-        # MsSqlHook supports schema override.
-        # This creates a hook connected to the
-        # target database.
-        #
-        db_hook = hook.__class__(
-            mssql_conn_id=conn_id,
-            schema=database,
-        )
+        outfile = Path(output_dir)/ database /  "schema.sql"
 
-        outfile = (
-            Path(output_dir)
-            / f"{database}_Schema.sql"
-        )
-
-        outfile.parent.mkdir(
-            parents=True,
-            exist_ok=True,
-        )
+        outfile.parent.mkdir(parents=True, exist_ok=True)
 
         with open(outfile, "w", encoding="utf-8",) as f:
-            extract_tables(db_hook, f)
+            extract_tables(hook, f)
 
         return str(outfile)
 
@@ -132,15 +113,9 @@ def schema_export():
             f.write(ddl)
 
     conn_id = "{{ params.conn_id }}"
-    output_dir = "{{ params.output_dir }}"
 
-    databases = get_databases(conn_id)
-
-    export_database.partial(
-        conn_id=conn_id,
-        output_dir=output_dir,
-    ).expand(
-        database=databases,
+    export_database.partial(conn_id=conn_id, output_dir=BACKUP_DIRECTORY).expand(
+        database=get_databases(conn_id),
     )
 
 
