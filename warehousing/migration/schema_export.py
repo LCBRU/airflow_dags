@@ -153,7 +153,7 @@ def schema_export():
                     """
                 )
 
-            for definition in views:
+            for definition, in views:
                 f.write("\n")
                 f.write(definition)
                 f.write("\nGO\n")
