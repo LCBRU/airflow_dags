@@ -151,9 +151,7 @@ def schema_export():
 
             definitions = []
 
-            for c in cols:
-                dtype = c["DATA_TYPE"]
-
+            for (col_name, dtype, char_max_len, numeric_precision, numeric_scale, is_nullable) in cols:
                 if dtype in {
                             "varchar",
                             "nvarchar",
@@ -161,13 +159,13 @@ def schema_export():
                             "nchar",
                         }:
                     if (
-                                c["CHARACTER_MAXIMUM_LENGTH"]
+                                char_max_len
                                 == -1
                             ):
                         dtype += "(MAX)"
                     else:
                         dtype += (
-                                    f"({c['CHARACTER_MAXIMUM_LENGTH']})"
+                                    f"({char_max_len})"
                                 )
 
                 elif dtype in {
@@ -175,18 +173,18 @@ def schema_export():
                             "numeric",
                         }:
                     dtype += (
-                                f"({c['NUMERIC_PRECISION']},"
-                                f"{c['NUMERIC_SCALE']})"
+                                f"({numeric_precision},"
+                                f"{numeric_scale})"
                             )
 
                 nullable = (
                             "NULL"
-                            if c["IS_NULLABLE"] == "YES"
+                            if is_nullable == "YES"
                             else "NOT NULL"
                         )
 
                 definitions.append(
-                            f"[{c['COLUMN_NAME']}] "
+                            f"[{col_name}] "
                             f"{dtype} {nullable}"
                         )
 
