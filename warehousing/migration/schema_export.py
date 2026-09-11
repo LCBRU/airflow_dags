@@ -27,9 +27,8 @@ BACKUP_DIRECTORY = '/backup/dwh_schema/'
 @dag(
     dag_id="schema_export",
     schedule=None,
-    params={"conn_id": "DWH"},
 )
-def schema_export():
+def schema_export(conn_id: str):
 
     @task
     def get_databases(conn_id: str) -> list[str]:
@@ -203,4 +202,4 @@ def schema_export():
     )
 
 
-schema_export()
+schema_export('DWH')
