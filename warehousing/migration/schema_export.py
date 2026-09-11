@@ -7,7 +7,7 @@ from airflow.hooks.base import BaseHook
 from airflow.providers.common.sql.hooks.sql import DbApiHook
 
 
-def get_hook(conn_id: str, database: str | None) -> DbApiHook:
+def get_hook(conn_id: str, database: str | None = None) -> DbApiHook:
     conn = BaseHook.get_connection(conn_id)
     hook = conn.get_hook()
 
