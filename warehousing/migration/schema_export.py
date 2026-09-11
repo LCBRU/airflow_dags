@@ -180,18 +180,19 @@ def schema_export(conn_id: str):
     def export_triggers(hook, output_directory):
         with open(output_directory / "triggers.sql", "w", encoding="utf-8",) as f:
             triggers = hook.get_records("""
-                    SELECT m.definition
-                    FROM sys.triggers o
-                    JOIN sys.schemas s
-                        ON o.schema_id=s.schema_id
-                    JOIN sys.sql_modules m
-                        ON o.object_id=m.object_id
-                    ORDER BY s.name,o.name
-                    """
+                SELECT
+                    t.name,
+                    m.definition
+                FROM sys.triggers t
+                JOIN sys.sql_modules m
+                    ON t.object_id=m.object_id
+                WHERE t.parent_class = 1
+                ORDER BY t.name
+                """
                 )
 
-            for definition, in triggers:
-                f.write("\n")
+            for name, definition in triggers:
+                f.write(f"\n-- Trigger: {name}\n")
                 f.write(definition)
                 f.write("\nGO\n")
 
