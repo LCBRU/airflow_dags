@@ -56,6 +56,8 @@ def schema_export():
         extract_tables(hook, output_directory)
         export_primary_keys(hook, output_directory)
         export_views(hook, output_directory)
+        export_stored_procedures(hook, output_directory)
+        export_triggers(hook, output_directory)
 
     def extract_tables(hook, output_directory):
         with open(output_directory / "tables.sql", "w", encoding="utf-8",) as f:
@@ -154,6 +156,42 @@ def schema_export():
                 )
 
             for definition, in views:
+                f.write("\n")
+                f.write(definition)
+                f.write("\nGO\n")
+
+    def export_stored_procedures(hook, output_directory):
+        with open(output_directory / "stored_procedures.sql", "w", encoding="utf-8",) as f:
+            sps = hook.get_records("""
+                    SELECT m.definition
+                    FROM sys.procedures o
+                    JOIN sys.schemas s
+                        ON o.schema_id=s.schema_id
+                    JOIN sys.sql_modules m
+                        ON o.object_id=m.object_id
+                    ORDER BY s.name,o.name
+                    """
+                )
+
+            for definition, in sps:
+                f.write("\n")
+                f.write(definition)
+                f.write("\nGO\n")
+
+    def export_triggers(hook, output_directory):
+        with open(output_directory / "triggers.sql", "w", encoding="utf-8",) as f:
+            triggers = hook.get_records("""
+                    SELECT m.definition
+                    FROM sys.triggers o
+                    JOIN sys.schemas s
+                        ON o.schema_id=s.schema_id
+                    JOIN sys.sql_modules m
+                        ON o.object_id=m.object_id
+                    ORDER BY s.name,o.name
+                    """
+                )
+
+            for definition, in triggers:
                 f.write("\n")
                 f.write(definition)
                 f.write("\nGO\n")
