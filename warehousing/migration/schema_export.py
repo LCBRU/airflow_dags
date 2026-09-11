@@ -7,15 +7,8 @@ from airflow.hooks.base import BaseHook
 from airflow.providers.common.sql.hooks.sql import DbApiHook
 
 
-def get_hook(conn_id: str) -> DbApiHook:
-    """
-    Generic DbApiHook resolver.
-
-    Works for MsSqlHook, PostgresHook, MySqlHook, etc.
-    provided the connection type has a registered provider.
-    """
+def get_hook(conn_id: str, database: str | None) -> DbApiHook:
     conn = BaseHook.get_connection(conn_id)
-
     hook = conn.get_hook()
 
     if not isinstance(hook, DbApiHook):
@@ -23,6 +16,9 @@ def get_hook(conn_id: str) -> DbApiHook:
             f"Connection '{conn_id}' resolved to "
             f"{type(hook).__name__}, not a DbApiHook."
         )
+
+    if database is not None:
+        hook.schema = database
 
     return hook
 
@@ -52,65 +48,61 @@ def schema_export():
     @task
     def export_database(database: str, conn_id: str, output_dir: str) -> str:
 
-        hook = get_hook(conn_id)
-        hook.schema = database
+        hook = get_hook(conn_id, database)
 
-        outfile = Path(output_dir)/ database /  "schema.sql"
+        output_directory = Path(output_dir)/ database
+        output_directory.mkdir(parents=True, exist_ok=True)
 
-        outfile.parent.mkdir(parents=True, exist_ok=True)
+        extract_tables(hook, output_directory)
 
-        with open(outfile, "w", encoding="utf-8",) as f:
-            extract_tables(hook, f)
-
-        return str(outfile)
-
-    def extract_tables(hook, f):
-        tables = hook.get_records("""
-                SELECT TABLE_SCHEMA, TABLE_NAME
-                FROM INFORMATION_SCHEMA.TABLES
-                WHERE TABLE_TYPE='BASE TABLE'
-                ORDER BY TABLE_SCHEMA, TABLE_NAME
-                """
-            )
-
-        for schema, table in tables:
-            cols = hook.get_records("""
-                    SELECT
-                        COLUMN_NAME,
-                        DATA_TYPE,
-                        CHARACTER_MAXIMUM_LENGTH,
-                        NUMERIC_PRECISION,
-                        NUMERIC_SCALE,
-                        IS_NULLABLE
-                    FROM INFORMATION_SCHEMA.COLUMNS
-                    WHERE TABLE_SCHEMA=%s
-                        AND TABLE_NAME=%s
-                    ORDER BY ORDINAL_POSITION
-                    """,
-                    (schema, table),
+    def extract_tables(hook, output_directory):
+        with open(output_directory / "tables.sql", "w", encoding="utf-8",) as f:
+            tables = hook.get_records("""
+                    SELECT TABLE_SCHEMA, TABLE_NAME
+                    FROM INFORMATION_SCHEMA.TABLES
+                    WHERE TABLE_TYPE='BASE TABLE'
+                    ORDER BY TABLE_SCHEMA, TABLE_NAME
+                    """
                 )
 
-            ddl = f"\nCREATE TABLE [{schema}].[{table}] (\n"
+            for schema, table in tables:
+                cols = hook.get_records("""
+                        SELECT
+                            COLUMN_NAME,
+                            DATA_TYPE,
+                            CHARACTER_MAXIMUM_LENGTH,
+                            NUMERIC_PRECISION,
+                            NUMERIC_SCALE,
+                            IS_NULLABLE
+                        FROM INFORMATION_SCHEMA.COLUMNS
+                        WHERE TABLE_SCHEMA=%s
+                            AND TABLE_NAME=%s
+                        ORDER BY ORDINAL_POSITION
+                        """,
+                        (schema, table),
+                    )
 
-            definitions = []
+                ddl = f"\nCREATE TABLE [{schema}].[{table}] (\n"
 
-            for (col_name, dtype, char_max_len, numeric_precision, numeric_scale, is_nullable) in cols:
-                if dtype in {"varchar", "nvarchar", "char", "nchar",}:
-                    if char_max_len == -1:
-                        dtype += "(MAX)"
-                    else:
-                        dtype += f"({char_max_len})"
-                elif dtype in {"decimal", "numeric"}:
-                    dtype += f"({numeric_precision},{numeric_scale})"
+                definitions = []
 
-                nullable = "NULL" if is_nullable == "YES" else "NOT NULL"
+                for (col_name, dtype, char_max_len, numeric_precision, numeric_scale, is_nullable) in cols:
+                    if dtype in {"varchar", "nvarchar", "char", "nchar",}:
+                        if char_max_len == -1:
+                            dtype += "(MAX)"
+                        else:
+                            dtype += f"({char_max_len})"
+                    elif dtype in {"decimal", "numeric"}:
+                        dtype += f"({numeric_precision},{numeric_scale})"
 
-                definitions.append(f"[{col_name}] {dtype} {nullable}")
+                    nullable = "NULL" if is_nullable == "YES" else "NOT NULL"
 
-            ddl += ",\n".join(f"    {d}" for d in definitions)
-            ddl += "\n);\nGO\n"
+                    definitions.append(f"[{col_name}] {dtype} {nullable}")
 
-            f.write(ddl)
+                ddl += ",\n".join(f"    {d}" for d in definitions)
+                ddl += "\n);\nGO\n"
+
+                f.write(ddl)
 
     conn_id = "{{ params.conn_id }}"
 
