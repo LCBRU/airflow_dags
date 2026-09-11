@@ -43,24 +43,18 @@ def schema_export():
 
         hook = get_hook(conn_id)
 
-        sql ="""
-        SELECT name
-        FROM sys.databases
-        WHERE database_id > 4
-          AND state_desc = 'ONLINE'
-        ORDER BY name
-        """
-
-        rows = hook.get_records(sql)
+        rows = hook.get_records("""
+            SELECT name
+            FROM sys.databases
+            WHERE database_id > 4
+            AND state_desc = 'ONLINE'
+            ORDER BY name
+            """)
 
         return [row[0] for row in rows]
 
     @task
-    def export_database(
-        database: str,
-        conn_id: str,
-        output_dir: str,
-    ) -> str:
+    def export_database(database: str, conn_id: str, output_dir: str) -> str:
 
         hook = get_hook(conn_id)
 
@@ -84,115 +78,55 @@ def schema_export():
             exist_ok=True,
         )
 
-        with db_hook.get_conn() as conn:
-            cursor = conn.cursor()
+        with open(outfile, "w", encoding="utf-8",) as f:
+            extract_tables(db_hook, f)
 
-            with open(
-                outfile,
-                "w",
-                encoding="utf-8",
-            ) as f:
-
-                extract_tables(db_hook, cursor, f)
         return str(outfile)
 
-    def extract_tables(hook, cursor, f):
-        cursor.execute(
-                    """
-                    SELECT TABLE_SCHEMA,
-                           TABLE_NAME
-                    FROM INFORMATION_SCHEMA.TABLES
-                    WHERE TABLE_TYPE='BASE TABLE'
-                    ORDER BY TABLE_SCHEMA,
-                             TABLE_NAME
-                    """
-                )
-
-        tables = cursor.fetchall()
+    def extract_tables(hook, f):
+        tables = hook.get_records("""
+                SELECT TABLE_SCHEMA, TABLE_NAME
+                FROM INFORMATION_SCHEMA.TABLES
+                WHERE TABLE_TYPE='BASE TABLE'
+                ORDER BY TABLE_SCHEMA, TABLE_NAME
+                """
+            )
 
         for schema, table in tables:
-            cursor.execute(
-                        """
-                        SELECT
-                            COLUMN_NAME,
-                            DATA_TYPE,
-                            CHARACTER_MAXIMUM_LENGTH,
-                            NUMERIC_PRECISION,
-                            NUMERIC_SCALE,
-                            IS_NULLABLE
-                        FROM INFORMATION_SCHEMA.COLUMNS
-                        WHERE TABLE_SCHEMA=%s
-                          AND TABLE_NAME=%s
-                        ORDER BY ORDINAL_POSITION
-                        """,
-                        (schema, table),
-                    )
-
             cols = hook.get_records("""
-                        SELECT
-                            COLUMN_NAME,
-                            DATA_TYPE,
-                            CHARACTER_MAXIMUM_LENGTH,
-                            NUMERIC_PRECISION,
-                            NUMERIC_SCALE,
-                            IS_NULLABLE
-                        FROM INFORMATION_SCHEMA.COLUMNS
-                        WHERE TABLE_SCHEMA=%s
-                          AND TABLE_NAME=%s
-                        ORDER BY ORDINAL_POSITION
-                        """,
-                        (schema, table),
+                    SELECT
+                        COLUMN_NAME,
+                        DATA_TYPE,
+                        CHARACTER_MAXIMUM_LENGTH,
+                        NUMERIC_PRECISION,
+                        NUMERIC_SCALE,
+                        IS_NULLABLE
+                    FROM INFORMATION_SCHEMA.COLUMNS
+                    WHERE TABLE_SCHEMA=%s
+                        AND TABLE_NAME=%s
+                    ORDER BY ORDINAL_POSITION
+                    """,
+                    (schema, table),
                 )
 
-            ddl = (
-                        f"\nCREATE TABLE "
-                        f"[{schema}].[{table}] (\n"
-                    )
+            ddl = f"\nCREATE TABLE [{schema}].[{table}] (\n"
 
             definitions = []
 
             for (col_name, dtype, char_max_len, numeric_precision, numeric_scale, is_nullable) in cols:
-                if dtype in {
-                            "varchar",
-                            "nvarchar",
-                            "char",
-                            "nchar",
-                        }:
-                    if (
-                                char_max_len
-                                == -1
-                            ):
+                if dtype in {"varchar", "nvarchar", "char", "nchar",}:
+                    if char_max_len == -1:
                         dtype += "(MAX)"
                     else:
-                        dtype += (
-                                    f"({char_max_len})"
-                                )
+                        dtype += f"({char_max_len})"
+                elif dtype in {"decimal", "numeric"}:
+                    dtype += f"({numeric_precision},{numeric_scale})"
 
-                elif dtype in {
-                            "decimal",
-                            "numeric",
-                        }:
-                    dtype += (
-                                f"({numeric_precision},"
-                                f"{numeric_scale})"
-                            )
+                nullable = "NULL" if is_nullable == "YES" else "NOT NULL"
 
-                nullable = (
-                            "NULL"
-                            if is_nullable == "YES"
-                            else "NOT NULL"
-                        )
+                definitions.append(f"[{col_name}] {dtype} {nullable}")
 
-                definitions.append(
-                            f"[{col_name}] "
-                            f"{dtype} {nullable}"
-                        )
-
-            ddl += ",\n".join(
-                        f"    {d}"
-                        for d in definitions
-                    )
-
+            ddl += ",\n".join(f"    {d}" for d in definitions)
             ddl += "\n);\nGO\n"
 
             f.write(ddl)
