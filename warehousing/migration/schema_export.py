@@ -50,7 +50,7 @@ def schema_export():
 
         hook = get_hook(conn_id, database)
 
-        output_directory = Path(output_dir)/ database
+        output_directory = Path(output_dir)/ conn_id / database
         output_directory.mkdir(parents=True, exist_ok=True)
 
         extract_tables(hook, output_directory)
