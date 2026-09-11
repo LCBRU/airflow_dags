@@ -37,7 +37,7 @@ def schema_export():
         hook = get_hook(conn_id)
 
         rows = hook.get_records("""
-            SELECT TOP 4 name
+            SELECT name
             FROM sys.databases
             WHERE database_id > 4
                 AND state_desc = 'ONLINE'
