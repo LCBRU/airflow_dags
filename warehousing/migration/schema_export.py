@@ -54,6 +54,7 @@ def schema_export():
         output_directory.mkdir(parents=True, exist_ok=True)
 
         extract_tables(hook, output_directory)
+        export_primary_keys(hook, output_directory)
 
     def extract_tables(hook, output_directory):
         with open(output_directory / "tables.sql", "w", encoding="utf-8",) as f:
@@ -103,6 +104,40 @@ def schema_export():
                 ddl += "\n);\nGO\n"
 
                 f.write(ddl)
+
+    def export_primary_keys(hook, output_directory):
+        with open(output_directory / "primary_keys.sql", "w", encoding="utf-8",) as f:
+            pks = hook.get_records("""
+                    SELECT
+                        tc.TABLE_SCHEMA,
+                        tc.TABLE_NAME,
+                        kcu.COLUMN_NAME,
+                        kcu.CONSTRAINT_NAME
+                    FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS tc
+                    JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS kcu
+                        ON tc.CONSTRAINT_NAME = kcu.CONSTRAINT_NAME
+                    WHERE tc.CONSTRAINT_TYPE = 'PRIMARY KEY'
+                    ORDER BY tc.TABLE_SCHEMA, tc.TABLE_NAME, kcu.ORDINAL_POSITION
+                    """
+                )
+
+            pks = {}
+
+            for schema, table, column, constraint_name in pks:
+                key = (schema, table, constraint_name)
+
+                pks.setdefault(key, []).append(column)
+
+            for key, cols in pks.items():        
+                schema, table, constraint = key
+
+                sql = f"""
+                ALTER TABLE [{schema}].[{table}]
+                ADD CONSTRAINT [{constraint}]
+                PRIMARY KEY ({','.join(f'[{c}]' for c in cols)});
+                GO
+                """
+                f.write(sql)
 
     conn_id = "{{ params.conn_id }}"
 
