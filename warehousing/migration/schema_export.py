@@ -109,7 +109,7 @@ def schema_export(conn_id: str):
 
     def export_primary_keys(hook, output_directory):
         with open(output_directory / "primary_keys.sql", "w", encoding="utf-8",) as f:
-            pks = hook.get_records("""
+            records = hook.get_records("""
                     SELECT
                         tc.TABLE_SCHEMA,
                         tc.TABLE_NAME,
@@ -125,7 +125,7 @@ def schema_export(conn_id: str):
 
             pks = {}
 
-            for schema, table, column, constraint_name in pks:
+            for schema, table, column, constraint_name in records:
                 key = (schema, table, constraint_name)
 
                 pks.setdefault(key, []).append(column)
