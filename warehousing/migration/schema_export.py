@@ -1,3 +1,7 @@
+import hashlib
+import shutil
+
+from pathlib import Path
 from __future__ import annotations
 
 from pathlib import Path
@@ -5,6 +9,8 @@ from pathlib import Path
 from airflow.sdk import dag, task
 from airflow.hooks.base import BaseHook
 from airflow.providers.common.sql.hooks.sql import DbApiHook
+from airflow.providers.smtp.operators.smtp import EmailOperator
+from tools import default_dag_args, error_emails
 
 
 def get_hook(conn_id: str, database: str | None = None) -> DbApiHook:
@@ -25,6 +31,86 @@ def get_hook(conn_id: str, database: str | None = None) -> DbApiHook:
 BACKUP_DIRECTORY = '/backup/dwh_schema/'
 
 @task
+def clear_output_directory(conn_id: str, output_dir: str) -> None:
+    target_dir = Path(output_dir) / conn_id
+
+    if target_dir.exists():
+        shutil.rmtree(target_dir)
+
+    target_dir.mkdir(parents=True, exist_ok=True)
+
+
+@task
+def create_archive(conn_id: str, output_dir: str) -> str:
+    source_dir = Path(output_dir) / conn_id
+
+    archive_path = shutil.make_archive(
+        str(source_dir),
+        "zip",
+        root_dir=source_dir,
+    )
+
+    return archive_path
+
+
+@task
+def create_archive_hash(zip_path: str) -> dict[str, str | bool]:
+    zip_file = Path(zip_path)
+    hash_file = zip_file.with_suffix(".zip.sha256")
+    previous_hash_file = zip_file.with_suffix(".zip.previous.sha256")
+
+    if hash_file.is_file():
+        shutil.copy2(hash_file, previous_hash_file)
+
+    sha256 = hashlib.sha256()
+
+    with zip_file.open("rb") as file:
+        for chunk in iter(lambda: file.read(1024 * 1024), b""):
+            sha256.update(chunk)
+
+    current_hash = sha256.hexdigest()
+
+    previous_hash = (
+        previous_hash_file.read_text(encoding="utf-8").strip()
+        if previous_hash_file.exists()
+        else None
+    )
+
+    hash_file.write_text(
+        f"{current_hash}  {zip_file.name}\n",
+        encoding="utf-8",
+    )
+
+    return {
+        "zip_path": str(zip_file),
+        "current_hash": current_hash,
+        "previous_hash_file": str(previous_hash_file),
+        "changed": current_hash != previous_hash,
+    }
+
+
+@task.branch
+def choose_email_task(hash_result: dict[str, str | bool]) -> str:
+    if hash_result["changed"]:
+        return "email_changed_archive"
+
+    return "archive_unchanged"
+
+
+@task
+def archive_unchanged() -> None:
+    pass
+
+
+@task
+def record_emailed_hash(hash_result: dict[str, str | bool]) -> None:
+    Path(str(hash_result["previous_hash_file"])).write_text(
+        str(hash_result["current_hash"]),
+        encoding="utf-8",
+    )
+
+
+@task
 def get_databases(conn_id: str) -> list[str]:
 
     hook = get_hook(conn_id)
@@ -38,8 +124,9 @@ def get_databases(conn_id: str) -> list[str]:
 
     return [row[0] for row in rows]
 
+
 @task
-def export_database(database: str, conn_id: str, output_dir: str) -> str:
+def export_database(database: str, conn_id: str, output_dir: str):
 
     hook = get_hook(conn_id, database)
 
@@ -53,6 +140,7 @@ def export_database(database: str, conn_id: str, output_dir: str) -> str:
     export_triggers(hook, output_directory)
     export_foreign_keys(hook, output_directory)
     export_sqlserver_agent_jobs(hook, output_directory)
+
 
 def extract_tables(hook, output_directory):
     with open(output_directory / "tables.sql", "w", encoding="utf-8",) as f:
@@ -103,6 +191,7 @@ def extract_tables(hook, output_directory):
 
             f.write(ddl)
 
+
 def export_primary_keys(hook, output_directory):
     with open(output_directory / "primary_keys.sql", "w", encoding="utf-8",) as f:
         records = hook.get_records("""
@@ -137,6 +226,7 @@ def export_primary_keys(hook, output_directory):
             """
             f.write(sql)
 
+
 def export_views(hook, output_directory):
     with open(output_directory / "views.sql", "w", encoding="utf-8",) as f:
         views = hook.get_records("""
@@ -154,6 +244,7 @@ def export_views(hook, output_directory):
             f.write("\n")
             f.write(definition)
             f.write("\nGO\n")
+
 
 def export_stored_procedures(hook, output_directory):
     with open(output_directory / "stored_procedures.sql", "w", encoding="utf-8",) as f:
@@ -173,6 +264,7 @@ def export_stored_procedures(hook, output_directory):
             f.write(definition)
             f.write("\nGO\n")
 
+
 def export_triggers(hook, output_directory):
     with open(output_directory / "triggers.sql", "w", encoding="utf-8",) as f:
         triggers = hook.get_records("""
@@ -191,6 +283,7 @@ def export_triggers(hook, output_directory):
             f.write(f"\n-- Trigger: {name}\n")
             f.write(definition)
             f.write("\nGO\n")
+
 
 def export_foreign_keys(hook, output_directory):
     with open(output_directory / "foreign_keys.sql", "w", encoding="utf-8",) as f:
@@ -230,6 +323,7 @@ def export_foreign_keys(hook, output_directory):
             GO
             """
             f.write(sql)
+
 
 def export_sqlserver_agent_jobs(hook, output_directory):
     with open(output_directory / "sqlserver_agent_jobs.sql", "w", encoding="utf-8") as f:
@@ -322,14 +416,51 @@ def build_schema_export_dag(conn_id: str):
         schedule=None,
     )
     def schema_export():
-        export_database.partial(
+        clear = clear_output_directory(
+            conn_id=conn_id,
+            output_dir=BACKUP_DIRECTORY,
+        )
+
+        databases = get_databases(conn_id)
+
+        exports = export_database.partial(
             conn_id=conn_id,
             output_dir=BACKUP_DIRECTORY,
         ).expand(
-            database=get_databases(conn_id),
+            database=databases,
         )
 
-    return schema_export()
+        archive = create_archive(
+            conn_id=conn_id,
+            output_dir=BACKUP_DIRECTORY,
+        )
+
+        hash_result = create_archive_hash(archive)
+        branch = choose_email_task(hash_result)
+
+        email_archive = EmailOperator(
+            task_id="email_changed_archive",
+            to=error_emails,
+            subject=f"Schema export changed: {conn_id}",
+            html_content=(
+                f"<p>The schema export for <strong>{conn_id}</strong> "
+                "has changed.</p>"
+                "<p>The new ZIP archive is attached.</p>"
+            ),
+            files=[archive],
+            conn_id="smtp_default",
+        )
+
+        unchanged = archive_unchanged()
+
+        record_hash = record_emailed_hash(hash_result)
+
+        clear >> databases
+        exports >> archive
+        archive >> hash_result >> branch
+        branch >> [email_archive, unchanged]
+        email_archive >> record_hash
+
 
 build_schema_export_dag("DWH")
 build_schema_export_dag("LEGACY_DWH")
