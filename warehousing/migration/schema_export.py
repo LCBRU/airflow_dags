@@ -2,9 +2,6 @@ import hashlib
 import shutil
 
 from pathlib import Path
-from __future__ import annotations
-
-from pathlib import Path
 
 from airflow.sdk import dag, task
 from airflow.hooks.base import BaseHook
