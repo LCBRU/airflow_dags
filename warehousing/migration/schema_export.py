@@ -460,6 +460,8 @@ def build_schema_export_dag(conn_id: str):
         branch >> [email_archive, unchanged]
         email_archive >> record_hash
 
+    return schema_export()
+
 
 build_schema_export_dag("DWH")
 build_schema_export_dag("LEGACY_DWH")
