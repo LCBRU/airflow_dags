@@ -439,7 +439,7 @@ def build_schema_export_dag(conn_id: str):
 
         email_archive = EmailOperator(
             task_id="email_changed_archive",
-            to=error_emails,
+            to="richard.bramley5@nhs.net",
             from_email="richard.a.bramley@uhl-tr.nhs.uk",
             subject=f"New DWH Schema Export for {conn_id}",
             html_content=(
