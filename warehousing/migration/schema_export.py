@@ -441,12 +441,8 @@ def build_schema_export_dag(conn_id: str):
             task_id="email_changed_archive",
             to="richard.bramley5@nhs.net",
             from_email="richard.a.bramley@uhl-tr.nhs.uk",
-            subject=f"New DWH Schema Export for {conn_id}",
-            html_content=(
-                f"<p>The schema export for <strong>{conn_id}</strong> "
-                "has changed.</p>"
-                "<p>The new ZIP archive is attached.</p>"
-            ),
+            subject=f"Schema Export for {conn_id} Changed",
+            html_content=(f"<p>The schema export for <strong>{conn_id}</strong> has changed.</p>"),
             files=[archive],
             conn_id="smtp_default",
         )
