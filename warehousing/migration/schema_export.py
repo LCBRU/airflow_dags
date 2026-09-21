@@ -100,6 +100,8 @@ def record_emailed_hash(zip_path: str) -> None:
     previous_hash_file = Path(zip_path).with_suffix(".zip.previous.sha256")
     current_hash = zip_file_hash(Path(zip_path))
 
+    print(f"Recording hash {current_hash} to {previous_hash_file}")
+
     previous_hash_file.write_text(
         str(current_hash),
         encoding="utf-8",
