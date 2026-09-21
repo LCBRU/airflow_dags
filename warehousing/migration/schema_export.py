@@ -58,9 +58,6 @@ def create_archive_hash(zip_path: str) -> dict[str, str | bool]:
     hash_file = zip_file.with_suffix(".zip.sha256")
     previous_hash_file = zip_file.with_suffix(".zip.previous.sha256")
 
-    if hash_file.is_file():
-        shutil.copy2(hash_file, previous_hash_file)
-
     sha256 = hashlib.sha256()
 
     with zip_file.open("rb") as file:
