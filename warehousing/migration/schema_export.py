@@ -419,7 +419,7 @@ def build_schema_export_dag(conn_id: str):
             conn_id=conn_id,
             output_dir=BACKUP_DIRECTORY,
         ).expand(
-            database=databases,
+            database=databases[0:2],
         )
 
         archive = create_archive(
