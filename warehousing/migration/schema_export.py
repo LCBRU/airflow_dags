@@ -447,7 +447,7 @@ def build_schema_export_dag(conn_id: str):
                 "has changed.</p>"
                 "<p>The new ZIP archive is attached.</p>"
             ),
-            files=[archive],
+            # files=[archive],
             conn_id="smtp_default",
         )
 
