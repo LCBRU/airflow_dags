@@ -55,11 +55,17 @@ def create_archive(conn_id: str, output_dir: str) -> str:
 def zip_file_hash(zip_path: Path) -> str:
     sha256 = hashlib.sha256()
 
+    print(f"Calculating hash for {zip_path}")
+
     with zip_path.open("rb") as file:
         for chunk in iter(lambda: file.read(1024 * 1024), b""):
             sha256.update(chunk)
 
-    return sha256.hexdigest()
+    result = sha256.hexdigest()
+
+    print(f"Hash for {zip_path}: {result}")
+    
+    return result
 
 
 def previous_zip_file_hash(zip_path: Path) -> str | None:
