@@ -108,7 +108,7 @@ def get_databases(conn_id: str) -> list[str]:
     hook = get_hook(conn_id)
 
     rows = hook.get_records("""
-        SELECT name
+        SELECT TOP 3 name
         FROM sys.databases
         WHERE database_id > 4
             AND state_desc = 'ONLINE'
@@ -419,7 +419,7 @@ def build_schema_export_dag(conn_id: str):
             conn_id=conn_id,
             output_dir=BACKUP_DIRECTORY,
         ).expand(
-            database=databases[0:2],
+            database=databases,
         )
 
         archive = create_archive(
