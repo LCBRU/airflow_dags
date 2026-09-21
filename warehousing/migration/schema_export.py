@@ -75,10 +75,14 @@ def previous_zip_file_hash(zip_path: Path) -> str | None:
 def choose_email_task(zip_path: str) -> str:
     previous_hash = previous_zip_file_hash(Path(zip_path))
 
+    print(f"Previous hash: {previous_hash}")
+
     if previous_hash is None:
         return "email_changed_archive"
 
     current_hash = zip_file_hash(Path(zip_path))
+
+    print(f"Current hash: {current_hash}")
 
     if current_hash != previous_hash:
         return "email_changed_archive"
