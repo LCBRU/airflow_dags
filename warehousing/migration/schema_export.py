@@ -456,8 +456,7 @@ def build_schema_export_dag(conn_id: str):
         record_hash = record_emailed_hash(target_dir)
 
         clear >> databases
-        exports >> archive
-        archive >> branch
+        exports >> branch
         branch >> [archive, unchanged]
         archive >> email_archive >> record_hash
 
