@@ -120,7 +120,7 @@ def get_databases(conn_id: str) -> list[str]:
     hook = get_hook(conn_id)
 
     rows = hook.get_records("""
-        SELECT TOP 3 name
+        SELECT name
         FROM sys.databases
         WHERE database_id > 4
             AND state_desc = 'ONLINE'
