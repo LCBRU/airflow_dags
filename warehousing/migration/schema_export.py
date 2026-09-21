@@ -84,14 +84,14 @@ def choose_email_task(target_dir: str) -> str:
     print(f"Previous hash: {previous_hash}")
 
     if previous_hash is None:
-        return "email_changed_archive"
+        return "create_archive"
 
     current_hash = zip_file_hash(target_dir)
 
     print(f"Current hash: {current_hash}")
 
     if current_hash != previous_hash:
-        return "email_changed_archive"
+        return "create_archive"
 
     return "archive_unchanged"
 
@@ -102,7 +102,7 @@ def archive_unchanged() -> None:
 
 
 @task
-def record_emailed_hash(target_dir) -> None:
+def record_emailed_hash(target_dir: str) -> None:
     previous_hash_file = Path(target_dir).with_suffix(".zip.previous.sha256")
     current_hash = zip_file_hash(target_dir)
 
@@ -433,9 +433,9 @@ def build_schema_export_dag(conn_id: str):
             database=databases,
         )
 
-        archive = create_archive(target_dir)
-
         branch = choose_email_task(target_dir)
+
+        archive = create_archive(target_dir)
 
         email_archive = EmailOperator(
             task_id="email_changed_archive",
@@ -447,7 +447,7 @@ def build_schema_export_dag(conn_id: str):
                 "has changed.</p>"
                 "<p>The new ZIP archive is attached.</p>"
             ),
-            # files=[archive],
+            files=[archive],
             conn_id="smtp_default",
         )
 
@@ -458,8 +458,8 @@ def build_schema_export_dag(conn_id: str):
         clear >> databases
         exports >> archive
         archive >> branch
-        branch >> [email_archive, unchanged]
-        email_archive >> record_hash
+        branch >> [archive, unchanged]
+        archive >> email_archive >> record_hash
 
     return schema_export()
 
