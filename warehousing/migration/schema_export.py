@@ -40,7 +40,7 @@ def clear_output_directory(conn_id: str, output_dir: str) -> None:
 
 
 @task
-def create_archive(conn_id: str, output_dir: str) -> Path:
+def create_archive(conn_id: str, output_dir: str) -> str:
     source_dir = Path(output_dir) / conn_id
 
     archive_path = shutil.make_archive(
@@ -49,7 +49,7 @@ def create_archive(conn_id: str, output_dir: str) -> Path:
         root_dir=source_dir,
     )
 
-    return Path(archive_path)
+    return archive_path
 
 
 def zip_file_hash(zip_path: Path) -> str:
@@ -72,13 +72,13 @@ def previous_zip_file_hash(zip_path: Path) -> str | None:
 
 
 @task.branch
-def choose_email_task(zip_path: Path) -> str:
-    previous_hash = previous_zip_file_hash(zip_path)
+def choose_email_task(zip_path: str) -> str:
+    previous_hash = previous_zip_file_hash(Path(zip_path))
 
     if previous_hash is None:
         return "email_changed_archive"
 
-    current_hash = zip_file_hash(zip_path)
+    current_hash = zip_file_hash(Path(zip_path))
 
     if current_hash != previous_hash:
         return "email_changed_archive"
@@ -92,9 +92,9 @@ def archive_unchanged() -> None:
 
 
 @task
-def record_emailed_hash(zip_path: Path) -> None:
-    previous_hash_file = zip_path.with_suffix(".zip.previous.sha256")
-    current_hash = zip_file_hash(zip_path)
+def record_emailed_hash(zip_path: str) -> None:
+    previous_hash_file = Path(zip_path).with_suffix(".zip.previous.sha256")
+    current_hash = zip_file_hash(Path(zip_path))
 
     previous_hash_file.write_text(
         str(current_hash),
