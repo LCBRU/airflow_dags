@@ -30,9 +30,8 @@ def get_hook(conn_id: str, database: str | None = None) -> DbApiHook:
 BACKUP_DIRECTORY = '/backup/dwh_schema/'
 
 @task
-def clear_output_directory(conn_id: str, output_dir: str) -> None:
-    target_dir = Path(output_dir) / conn_id
-
+def clear_output_directory(target_dir: str) -> None:
+    target_dir = Path(target_dir)
     if target_dir.exists():
         shutil.rmtree(target_dir)
 
@@ -40,36 +39,37 @@ def clear_output_directory(conn_id: str, output_dir: str) -> None:
 
 
 @task
-def create_archive(conn_id: str, output_dir: str) -> str:
-    source_dir = Path(output_dir) / conn_id
-
+def create_archive(target_dir: str) -> str:
     archive_path = shutil.make_archive(
-        str(source_dir),
+        target_dir,
         "zip",
-        root_dir=source_dir,
+        root_dir=target_dir,
     )
 
     return archive_path
 
 
-def zip_file_hash(zip_path: Path) -> str:
+def zip_file_hash(target_dir: str) -> str:
     sha256 = hashlib.sha256()
 
-    print(f"Calculating hash for {zip_path}")
+    print(f"Calculating hash for {target_dir}")
 
-    with zip_path.open("rb") as file:
-        for chunk in iter(lambda: file.read(1024 * 1024), b""):
-            sha256.update(chunk)
+    # create a repeatable zip for all the files in the directory recursively, sorted by name
+    for file in sorted(Path(target_dir).glob("**/*")):
+        if file.is_file():
+            with open(file, "rb") as f:
+                while chunk := f.read(8192):
+                    sha256.update(chunk)
 
     result = sha256.hexdigest()
 
-    print(f"Hash for {zip_path}: {result}")
-    
+    print(f"Hash for {target_dir}: {result}")
+
     return result
 
 
-def previous_zip_file_hash(zip_path: Path) -> str | None:
-    previous_hash_file = zip_path.with_suffix(".zip.previous.sha256")
+def previous_zip_file_hash(target_dir: str) -> str | None:
+    previous_hash_file = Path(target_dir).with_suffix(".zip.previous.sha256")
 
     if not previous_hash_file.exists():
         return None
@@ -78,15 +78,15 @@ def previous_zip_file_hash(zip_path: Path) -> str | None:
 
 
 @task.branch
-def choose_email_task(zip_path: str) -> str:
-    previous_hash = previous_zip_file_hash(Path(zip_path))
+def choose_email_task(target_dir: str) -> str:
+    previous_hash = previous_zip_file_hash(target_dir)
 
     print(f"Previous hash: {previous_hash}")
 
     if previous_hash is None:
         return "email_changed_archive"
 
-    current_hash = zip_file_hash(Path(zip_path))
+    current_hash = zip_file_hash(target_dir)
 
     print(f"Current hash: {current_hash}")
 
@@ -102,9 +102,9 @@ def archive_unchanged() -> None:
 
 
 @task
-def record_emailed_hash(zip_path: str) -> None:
-    previous_hash_file = Path(zip_path).with_suffix(".zip.previous.sha256")
-    current_hash = zip_file_hash(Path(zip_path))
+def record_emailed_hash(target_dir) -> None:
+    previous_hash_file = Path(target_dir).with_suffix(".zip.previous.sha256")
+    current_hash = zip_file_hash(target_dir)
 
     print(f"Recording hash {current_hash} to {previous_hash_file}")
 
@@ -420,10 +420,9 @@ def build_schema_export_dag(conn_id: str):
         schedule=None,
     )
     def schema_export():
-        clear = clear_output_directory(
-            conn_id=conn_id,
-            output_dir=BACKUP_DIRECTORY,
-        )
+        target_dir = str(Path(BACKUP_DIRECTORY) / conn_id)
+
+        clear = clear_output_directory(target_dir)
 
         databases = get_databases(conn_id)
 
@@ -434,12 +433,9 @@ def build_schema_export_dag(conn_id: str):
             database=databases,
         )
 
-        archive = create_archive(
-            conn_id=conn_id,
-            output_dir=BACKUP_DIRECTORY,
-        )
+        archive = create_archive(target_dir)
 
-        branch = choose_email_task(archive)
+        branch = choose_email_task(target_dir)
 
         email_archive = EmailOperator(
             task_id="email_changed_archive",
@@ -457,7 +453,7 @@ def build_schema_export_dag(conn_id: str):
 
         unchanged = archive_unchanged()
 
-        record_hash = record_emailed_hash(archive)
+        record_hash = record_emailed_hash(target_dir)
 
         clear >> databases
         exports >> archive
