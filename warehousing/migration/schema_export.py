@@ -439,7 +439,7 @@ def build_schema_export_dag(conn_id: str):
 
         email_archive = EmailOperator(
             task_id="email_changed_archive",
-            to="richard.bramley5@nhs.net",
+            to=error_emails,
             from_email="richard.a.bramley@uhl-tr.nhs.uk",
             subject=f"Schema Export for {conn_id} Changed",
             html_content=(f"<p>The schema export for <strong>{conn_id}</strong> has changed.</p>"),
