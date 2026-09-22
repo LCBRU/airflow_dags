@@ -10,6 +10,7 @@ from airflow.hooks.base import BaseHook
 from airflow.providers.common.sql.hooks.sql import DbApiHook
 from airflow.providers.smtp.operators.smtp import EmailOperator
 from tools import default_dag_args, error_emails
+from warehousing.schedules import SCHEDULE_SCHEMA_EXPORT
 
 
 def get_hook(conn_id: str, database: str | None = None) -> DbApiHook:
@@ -417,7 +418,8 @@ def build_schema_export_dag(conn_id: str):
 
     @dag(
         dag_id=f"schema_export_{conn_id}",
-        schedule=None,
+        default_args=default_dag_args,
+        schedule=SCHEDULE_SCHEMA_EXPORT,
     )
     def schema_export():
         target_dir = str(Path(BACKUP_DIRECTORY) / conn_id)
