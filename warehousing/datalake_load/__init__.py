@@ -10,6 +10,7 @@ from tools import default_dag_args, email_notification_callback
 from airflow.decorators import task_group
 from airflow.models.baseoperator import chain
 from airflow.sdk import task
+from warehousing.schedules import SCHEDULE_DATALAKE_LOAD
 
 
 @task(on_failure_callback=email_notification_callback)
@@ -203,7 +204,7 @@ servers = [
 with DAG(
     dag_id="Copy_live_DB_to_DWH",
     default_args=default_dag_args,
-    schedule=os.environ.get('SCHEDULE_DATALAKE_LOAD', None) or None,
+    schedule=SCHEDULE_DATALAKE_LOAD,
     template_searchpath=['/opt/airflow/dags/warehousing/datalake_load/sql/'],
 ):
     @task_group(group_id='create_databases')
