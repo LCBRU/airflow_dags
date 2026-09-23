@@ -143,7 +143,6 @@ def export_database(database: str, conn_id: str, output_dir: str):
     export_stored_procedures(hook, output_directory)
     export_triggers(hook, output_directory)
     export_foreign_keys(hook, output_directory)
-    export_sqlserver_agent_jobs(hook, output_directory)
 
 
 def extract_tables(hook, output_directory):
@@ -329,8 +328,10 @@ def export_foreign_keys(hook, output_directory):
             f.write(sql)
 
 
-def export_sqlserver_agent_jobs(hook, output_directory):
-    with open(output_directory / "sqlserver_agent_jobs.sql", "w", encoding="utf-8") as f:
+def export_sqlserver_agent_jobs(target_dir):
+    with open(target_dir / "sqlserver_agent_jobs.sql", "w", encoding="utf-8") as f:
+
+        hook = get_hook(conn_id)
 
         jobs = hook.get_records("""
             SELECT
@@ -433,6 +434,8 @@ def build_schema_export_dag(conn_id: str):
             database=databases,
         )
 
+        export_sqlserver_agent_jobs(target_dir)
+    
         branch = choose_email_task(target_dir)
 
         archive = create_archive(target_dir)
