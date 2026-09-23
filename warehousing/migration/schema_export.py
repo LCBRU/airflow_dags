@@ -329,7 +329,7 @@ def export_foreign_keys(hook, output_directory):
             f.write(sql)
 
 
-def export_sqlserver_agent_jobs(target_dir):
+def export_sqlserver_agent_jobs(target_dir, conn_id):
     target_dir = Path(target_dir)
 
     with open(target_dir / "sqlserver_agent_jobs.sql", "w", encoding="utf-8") as f:
@@ -438,7 +438,7 @@ def build_schema_export_dag(conn_id: str):
             database=databases,
         )
 
-        export_sqlserver_agent_jobs(target_dir)
+        export_sqlserver_agent_jobs(target_dir, conn_id)
     
         branch = choose_email_task(target_dir)
 
