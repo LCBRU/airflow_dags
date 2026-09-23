@@ -330,6 +330,8 @@ def export_foreign_keys(hook, output_directory):
 
 
 def export_sqlserver_agent_jobs(target_dir):
+    target_dir = Path(target_dir)
+
     with open(target_dir / "sqlserver_agent_jobs.sql", "w", encoding="utf-8") as f:
 
         hook = get_hook(conn_id)
