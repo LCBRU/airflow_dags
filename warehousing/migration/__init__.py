@@ -4,12 +4,13 @@ from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from tools import default_dag_args
 import warehousing.migration.reports
 import warehousing.migration.schema_export
+from warehousing.schedules import SCHEDULE_BACKUP
 
 
 with DAG(
     dag_id="migration_processing",
     default_args=default_dag_args,
-    schedule=os.environ.get('SCHEDULE_BACKUP', None) or None,
+    schedule=SCHEDULE_BACKUP,
 ):
     legacydwh_update_databases = SQLExecuteQueryOperator(
         task_id="legacy_update_databases",

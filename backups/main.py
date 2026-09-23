@@ -8,6 +8,7 @@ from tools import default_dag_args, email_notification_callback
 from warehousing.database import LIVE_DB_CONNECTION_NAME, OPS_DB_CONNECTION_NAME, MySqlConnection
 from dateutil.relativedelta import relativedelta
 from airflow.sdk import task
+from warehousing.schedules import SCHEDULE_BACKUP
 
 
 BACKUP_DIRECTORY = '/backup/live_db/'
@@ -159,7 +160,7 @@ servers = [
 
 with DAG(
     dag_id="backup",
-    schedule=os.environ.get('SCHEDULE_BACKUP', None) or None,
+    schedule=SCHEDULE_BACKUP,
     default_args=default_dag_args,
 ):
 

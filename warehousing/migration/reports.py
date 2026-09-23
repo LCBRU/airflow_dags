@@ -4,12 +4,13 @@ from airflow.providers.common.sql.hooks.sql import DbApiHook
 from airflow.sdk import task
 from airflow.utils.email import send_email
 from tools import default_dag_args, error_emails
+from warehousing.schedules import SCHEDULE_BACKUP
 
 
 with DAG(
     dag_id="migration_reports",
     default_args=default_dag_args,
-    schedule=os.environ.get('SCHEDULE_BACKUP', None) or None,
+    schedule=SCHEDULE_BACKUP,
 ):
     
     @task
