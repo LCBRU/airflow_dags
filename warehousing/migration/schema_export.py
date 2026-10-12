@@ -420,6 +420,7 @@ def build_schema_export_dag(conn_id: str):
         dag_id=f"schema_export_{conn_id}",
         default_args=default_dag_args,
         schedule=SCHEDULE_SCHEMA_EXPORT,
+        max_active_runs=1,
     )
     def schema_export():
         target_dir = str(Path(BACKUP_DIRECTORY) / conn_id)
