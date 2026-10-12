@@ -16,5 +16,5 @@ with DAG(
     load_patients_from_dwrad = SQLExecuteQueryOperator(
         task_id="load_patients_from_dwrad",
         conn_id="LEGACY_DWH",
-        sql="EXEC uhldwh.dwbriccs.brc.load_patients_dwrad;",
+        sql="EXEC uhldwhsql.dwbriccs.brc.load_patients_dwrad;",
     )
