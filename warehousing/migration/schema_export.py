@@ -460,10 +460,8 @@ def build_schema_export_dag(conn_id: str):
 
         record_hash = record_emailed_hash(target_dir)
 
-        clear >> databases
-        clear >> jobs
-        databases >> exports
-        exports >> branch
+        clear >> jobs >> branch
+        clear >> databases >> exports >> branch
         branch >> [archive, unchanged]
         archive >> email_archive >> record_hash
 
