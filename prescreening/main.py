@@ -22,10 +22,10 @@ with DAG(
         sql="EXEC dwbriccs.brc.load_patients_dwrepo;",
     )
 
-    load_patient_details = SQLExecuteQueryOperator(
-        task_id="load_patient_details",
-        conn_id="UHLDWH",
-        sql="EXEC dwbriccs.brc.load_patient_details;",
-    )
+    # load_patient_details = SQLExecuteQueryOperator(
+    #     task_id="load_patient_details",
+    #     conn_id="UHLDWH",
+    #     sql="EXEC dwbriccs.brc.load_patient_details;",
+    # )
 
-    load_patients_from_dwrad >> load_patients_from_dwrepo >> load_patient_details
+    # load_patients_from_dwrad >> load_patients_from_dwrepo >> load_patient_details
