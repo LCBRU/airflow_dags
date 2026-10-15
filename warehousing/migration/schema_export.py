@@ -289,6 +289,7 @@ def export_triggers(hook, output_directory):
             f.write("\nGO\n")
 
 
+@task
 def export_foreign_keys(hook, output_directory):
     with open(output_directory / "foreign_keys.sql", "w", encoding="utf-8",) as f:
         records = hook.get_records("""
@@ -439,7 +440,7 @@ def build_schema_export_dag(conn_id: str):
             database=databases,
         )
 
-        export_sqlserver_agent_jobs(target_dir, conn_id)
+        jobs = export_sqlserver_agent_jobs(target_dir, conn_id)
     
         branch = choose_email_task(target_dir)
 
@@ -460,6 +461,8 @@ def build_schema_export_dag(conn_id: str):
         record_hash = record_emailed_hash(target_dir)
 
         clear >> databases
+        clear >> jobs
+        databases >> exports
         exports >> branch
         branch >> [archive, unchanged]
         archive >> email_archive >> record_hash
