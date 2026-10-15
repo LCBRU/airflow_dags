@@ -1,11 +1,8 @@
-from datetime import datetime
-
 from airflow import DAG
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 
 from tools import default_dag_args
 from warehousing.schedules import SCHEDULE_PRESCREEING
-
 
 with DAG(
     dag_id="load_patient_data",
@@ -15,6 +12,6 @@ with DAG(
 
     load_patients_from_dwrad = SQLExecuteQueryOperator(
         task_id="load_patients_from_dwrad",
-        conn_id="LEGACY_DWH",
+        conn_id="DWH",
         sql="EXEC uhldwhsql.dwbriccs.brc.load_patients_dwrad;",
     )
