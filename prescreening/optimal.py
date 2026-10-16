@@ -14,7 +14,7 @@ with DAG(
     search_optimal_study = SQLExecuteQueryOperator(
         task_id="search_optimal_study",
         conn_id="UHLDWH",
-        sql="EXEC dwbriccs.brc.LCBRU_search_Optimal_study;",
+        sql="EXEC dwbriccs.dbo.LCBRU_search_Optimal_study;",
     )
 
     email_notification = EmailOperator(
