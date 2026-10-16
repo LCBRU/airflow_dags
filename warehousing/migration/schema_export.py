@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import hashlib
 import shutil
-
 from pathlib import Path
 
-from airflow.sdk import dag, task
 from airflow.hooks.base import BaseHook
 from airflow.providers.common.sql.hooks.sql import DbApiHook
 from airflow.providers.smtp.operators.smtp import EmailOperator
+from airflow.sdk import dag, task
+
 from tools import default_dag_args, error_emails
 from warehousing.schedules import SCHEDULE_SCHEMA_EXPORT
 
