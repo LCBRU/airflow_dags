@@ -19,7 +19,7 @@ with DAG(
 
     email_notification = EmailOperator(
         task_id="email_notification",
-        to=["richard.bramly5@nhs.net"],
+        to=["richard.bramley5@nhs.net"],
         from_email="richard.a.bramley@uhl-tr.nhs.uk",
         subject="Optimal Study Prescreening Completed",
         html_content=("<p>The optimal study prescreening has completed. Run the spreadsheet refresh data and email Lana.</p>"),
