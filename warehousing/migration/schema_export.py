@@ -234,7 +234,7 @@ def export_primary_keys(hook, output_directory):
 def export_views(hook, output_directory):
     with open(output_directory / "views.sql", "w", encoding="utf-8",) as f:
         views = hook.get_records("""
-                SELECT m.definition
+                SELECT s.name as schema_name, o.name as view_name, m.definition
                 FROM sys.views o
                 JOIN sys.schemas s
                     ON o.schema_id=s.schema_id
@@ -244,8 +244,9 @@ def export_views(hook, output_directory):
                 """
             )
 
-        for definition, in views:
-            f.write("\n")
+        for schema_name, view_name, definition in views:
+            f.write(f"\n-- Schema: {schema_name}\n")
+            f.write(f"-- View: {view_name}\n")
             f.write(definition)
             f.write("\nGO\n")
 
@@ -253,7 +254,7 @@ def export_views(hook, output_directory):
 def export_stored_procedures(hook, output_directory):
     with open(output_directory / "stored_procedures.sql", "w", encoding="utf-8",) as f:
         sps = hook.get_records("""
-                SELECT m.definition
+                SELECT s.name as schema_name, o.name as procedure_name, m.definition
                 FROM sys.procedures o
                 JOIN sys.schemas s
                     ON o.schema_id=s.schema_id
@@ -263,8 +264,9 @@ def export_stored_procedures(hook, output_directory):
                 """
             )
 
-        for definition, in sps:
-            f.write("\n")
+        for schema_name, procedure_name, definition in sps:
+            f.write(f"\n-- Schema: {schema_name}\n")
+            f.write(f"-- Procedure: {procedure_name}\n")
             f.write(definition)
             f.write("\nGO\n")
 
