@@ -33,7 +33,9 @@ with DAG(
                 7,0,'-'),
                 5,0,'-'))
             , user, event, pk, description, legacy, change_reason, project_id, Field_name, value, descrip, keepone
-            FROM datalake_redcap6170_briccs.dbo.redcap_log_eventsplitted;
+            FROM datalake_redcap6170_briccs.dbo.redcap_log_eventsplitted
+
+            UNION ALL
 
             SELECT log_event_id, event_id, CONVERT(datetime,
                 STUFF(STUFF(STUFF(STUFF(STUFF(
@@ -47,7 +49,7 @@ with DAG(
             FROM datalake_redcap6170_briccs.dbo.redcap_log_eventsplitted
             EXCEPT
             SELECT log_event_id, event_id, ts, user, event, pk, description, legacy, change_reason, project_id, Field_name, value, descrip, keepone
-            FROM stg_redcap.dbo.redcap_log_eventsplitted;
+            FROM stg_redcap.dbo.redcap_log_eventsplitted
 
             ) x
         """)
