@@ -4,6 +4,7 @@ from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from tools import default_dag_args
 import warehousing.migration.reports
 import warehousing.migration.schema_export
+import warehousing.migration.staging_vs_datalake
 from warehousing.schedules import SCHEDULE_BACKUP
 
 
