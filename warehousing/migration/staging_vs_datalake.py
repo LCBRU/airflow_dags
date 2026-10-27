@@ -18,7 +18,7 @@ with DAG(
         hook = DbApiHook.get_hook(conn_id="LEGACY_DWH")
         hook.schema = "warehouse_central"
         
-        records = hook.get_records("""
+        record = hook.get_first("""
             SELECT CASE WHEN EXISTS
             (
                 SELECT log_event_id, event_id, ts, user as c, event, pk, description, legacy, change_reason, project_id, Field_name, value, descrip, keepone
@@ -59,22 +59,20 @@ with DAG(
             ) THEN 1 ELSE 0 END AS mismatch
             ;
         """)
-        
-        html = """
-        <html>
-        <body>
-            <h1>Differences Between DataLake and Staging for redcap_log_eventsplitted in REDCap UHL Internal</h1>
-            <table>
-                <tr><th>Database Name</th><th>Status</th></tr>
-            </table>
-        </body>
-        </html>
-        """
-        
-        send_email(
-            to=error_emails,
-            subject="Differences Between DataLake and Staging",
-            html_content=html,
-        )
+
+        if record and record[0] == 1:
+            html = """
+            <html>
+            <body>
+                <h1>Differences Between DataLake and Staging for redcap_log_eventsplitted in REDCap UHL Internal</h1>
+            </body>
+            </html>
+            """
+            
+            send_email(
+                to=error_emails,
+                subject="Differences Between DataLake and Staging",
+                html_content=html,
+            )
 
     staging_vs_datalake_report()
