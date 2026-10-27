@@ -19,7 +19,7 @@ with DAG(
         hook.schema = "warehouse_central"
         
         records = hook.get_records("""
-            SELECT TOP 1 1
+            SELECT TOP 1 'Differences Found' as status
             FROM (
             SELECT log_event_id, event_id, ts, user, event, pk, description, legacy, change_reason, project_id, Field_name, value, descrip, keepone
             FROM stg_redcap.dbo.redcap_log_eventsplitted
@@ -31,7 +31,7 @@ with DAG(
                 11,0,':'),
                 9,0,' '),
                 7,0,'-'),
-                5,0,'-'))
+                5,0,'-')) AS ts
             , user, event, pk, description, legacy, change_reason, project_id, Field_name, value, descrip, keepone
             FROM datalake_redcap6170_briccs.dbo.redcap_log_eventsplitted
 
@@ -44,7 +44,7 @@ with DAG(
                 11,0,':'),
                 9,0,' '),
                 7,0,'-'),
-                5,0,'-'))
+                5,0,'-')) AS ts
             , user, event, pk, description, legacy, change_reason, project_id, Field_name, value, descrip, keepone
             FROM datalake_redcap6170_briccs.dbo.redcap_log_eventsplitted
             EXCEPT
