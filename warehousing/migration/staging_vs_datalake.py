@@ -24,15 +24,21 @@ with DAG(
                 SELECT log_event_id, event_id, ts, user as c, event, pk, description, legacy, change_reason, project_id, Field_name, value, descrip, keepone
                 FROM stg_redcap.dbo.redcap_log_eventsplitted
                 EXCEPT
-                SELECT log_event_id, event_id, CONVERT(datetime,
-                    STUFF(STUFF(STUFF(STUFF(STUFF(
-                    CAST(ts AS varchar(14)),
-                    13,0,':'),
-                    11,0,':'),
-                    9,0,' '),
-                    7,0,'-'),
-                    5,0,'-')) as ts
-                , user as c, event, pk, description, legacy, change_reason, project_id, Field_name, value, descrip, keepone
+                SELECT
+                    log_event_id,
+                    event_id,
+                    CONVERT(datetime, STUFF(STUFF(STUFF(STUFF(STUFF(CAST(ts AS varchar(14)),13,0,':'),11,0,':'),9,0,' '),7,0,'-'),5,0,'-')) as ts,
+                    user as c,
+                    event,
+                    pk,
+                    description,
+                    legacy,
+                    change_reason,
+                    project_id,
+                    Field_name,
+                    value,
+                    descrip,
+                    keepone
                 FROM datalake_redcap6170_briccs.dbo.redcap_log_eventsplitted
 
                 /*
@@ -65,11 +71,6 @@ with DAG(
         </html>
         """
         
-        for row in records:
-            html += f"<tr><td>{row[0]}</td><td>{row[1]}</td></tr>"
-        
-        html += "</table></body></html>"
-
         send_email(
             to=error_emails,
             subject="Differences Between DataLake and Staging",
