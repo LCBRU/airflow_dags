@@ -1,11 +1,9 @@
-import os
-from airflow.sdk import DAG, task
 from airflow.providers.common.sql.hooks.sql import DbApiHook
-from airflow.sdk import task
+from airflow.sdk import DAG, task
 from airflow.utils.email import send_email
+
 from tools import default_dag_args, error_emails
 from warehousing.schedules import SCHEDULE_BACKUP
-
 
 with DAG(
     dag_id="staging_vs_datalake",
@@ -39,7 +37,6 @@ with DAG(
 
     def except_query_has_differences(query1, query2):
         hook = DbApiHook.get_hook(conn_id="LEGACY_DWH")
-        hook.schema = "warehouse_central"
         
         record = hook.get_first(f"""
             SELECT CASE WHEN EXISTS ({query1} EXCEPT {query2}) THEN 1 ELSE 0 END AS mismatch;
