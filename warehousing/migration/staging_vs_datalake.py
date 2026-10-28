@@ -60,6 +60,25 @@ STG_REDCAP_METADATA_QUERY = """
 """
 
 
+STG_REDCAP_EVENTS_METADATA_QUERY = """
+    SELECT
+        [event_id],
+        [descript]
+    FROM {database}.dbo.{table}
+"""
+
+
+STG_REDCAP_DATA_QUERY = """
+    SELECT
+        [project_id],
+        [event_id],
+        [record],
+        [field_name],
+        [value]
+    FROM {database}.dbo.{table}
+"""
+
+
 STG_REDCAP_LOG_EVENTSPLITTED_QUERY = """
     SELECT log_event_id, event_id, ts, user as c, event, pk, description, legacy, change_reason, project_id, Field_name, value
     FROM {database}.dbo.{table}
@@ -84,6 +103,46 @@ DATALAKE_REDCAP_LOG_EVENTSPLITTED_QUERY = """
 """
 
 
+STG_REDCAP_LOG_EVENT_QUERY = """
+    SELECT
+        log_event_id,
+        project_id,
+        ts,
+        user as c,
+        ip,
+        page,
+        event,
+        object_type,
+        pk,
+        event_id,
+        data_values,
+        description,
+        legacy,
+        change_reason
+    FROM {database}.dbo.{table}
+"""
+
+
+DATALAKE_REDCAP_LOG_EVENT_QUERY = """
+    SELECT
+        log_event_id,
+        project_id,
+        CONVERT(datetime, STUFF(STUFF(STUFF(STUFF(STUFF(CAST(ts AS varchar(14)),13,0,':'),11,0,':'),9,0,' '),7,0,'-'),5,0,'-')) as ts,
+        user as c,
+        ip,
+        page,
+        event,
+        object_type,
+        pk,
+        event_id,
+        data_values,
+        description,
+        legacy,
+        change_reason
+    FROM {database}.dbo.{table}
+"""
+
+
 TABLE_QUERIES = {
     "redcap_log_eventsplitted": {
         "staging_query": STG_REDCAP_LOG_EVENTSPLITTED_QUERY,
@@ -102,16 +161,16 @@ TABLE_QUERIES = {
         "datalake_query": STG_REDCAP_STANDARD_QUERY,
     },
     "redcap_data": {
-        "staging_query": STG_REDCAP_STANDARD_QUERY,
-        "datalake_query": STG_REDCAP_STANDARD_QUERY,
+        "staging_query": STG_REDCAP_DATA_QUERY,
+        "datalake_query": STG_REDCAP_DATA_QUERY,
     },
     "redcap_log_event": {
-        "staging_query": STG_REDCAP_STANDARD_QUERY,
-        "datalake_query": STG_REDCAP_STANDARD_QUERY,
+        "staging_query": STG_REDCAP_LOG_EVENT_QUERY,
+        "datalake_query": DATALAKE_REDCAP_LOG_EVENT_QUERY,
     },
     "redcap_events_metadata": {
-        "staging_query": STG_REDCAP_STANDARD_QUERY,
-        "datalake_query": STG_REDCAP_STANDARD_QUERY,
+        "staging_query": STG_REDCAP_EVENTS_METADATA_QUERY,
+        "datalake_query": STG_REDCAP_EVENTS_METADATA_QUERY,
     },
 }
 
