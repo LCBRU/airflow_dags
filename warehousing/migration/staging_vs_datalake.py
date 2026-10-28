@@ -11,6 +11,37 @@ STG_REDCAP_STANDARD_QUERY = """
 """
 
 
+STG_REDCAP_METADATA_QUERY = """
+    SELECT
+        [project_id],
+        [field_name],
+        [field_phi],
+        [form_name],
+        [form_menu_description],
+        [field_order],
+        [field_units],
+        [element_preceding_header],
+        [element_type],
+        [element_label],
+        [element_enum],
+        [element_note],
+        [element_validation_type],
+        [element_validation_min],
+        [element_validation_max],
+        [element_validation_checktype],
+        [branching_logic],
+        [field_req],
+        [edoc_id],
+        [edoc_display_img],
+        [custom_alignment],
+        [stop_actions],
+        [question_num],
+        [grid_name],
+        [misc]
+    FROM {database}.dbo.{table}
+"""
+
+
 STG_REDCAP_LOG_EVENTSPLITTED_QUERY = """
     SELECT log_event_id, event_id, ts, user as c, event, pk, description, legacy, change_reason, project_id, Field_name, value, descrip, keepone
     FROM {database}.dbo.{table}
@@ -42,8 +73,8 @@ TABLE_QUERIES = {
         "datalake_query": DATALAKE_REDCAP_LOG_EVENTSPLITTED_QUERY,
     },
     "redcap_metadata": {
-        "staging_query": STG_REDCAP_STANDARD_QUERY,
-        "datalake_query": STG_REDCAP_STANDARD_QUERY,
+        "staging_query": STG_REDCAP_METADATA_QUERY,
+        "datalake_query": STG_REDCAP_METADATA_QUERY,
     }
 }
 
