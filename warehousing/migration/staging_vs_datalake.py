@@ -63,7 +63,7 @@ STG_REDCAP_METADATA_QUERY = """
 STG_REDCAP_EVENTS_METADATA_QUERY = """
     SELECT
         [event_id],
-        [descript]
+        [descrip]
     FROM {database}.dbo.{table}
 """
 
