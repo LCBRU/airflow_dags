@@ -49,7 +49,7 @@ def queries_differ(query1, query2):
 
 
 @task.branch
-def should_send_email(target_dir: str) -> str:
+def should_send_email() -> str:
     if queries_differ(STG_REDCAP_LOG_EVENTSPLITTED_QUERY, DATALAKE_REDCAP_LOG_EVENTSPLITTED_QUERY):
         return "send_email"
     else:
