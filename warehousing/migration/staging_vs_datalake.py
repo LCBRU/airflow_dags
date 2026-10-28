@@ -7,9 +7,20 @@ from warehousing.schedules import SCHEDULE_BACKUP
 
 CHECKS = [
     {"database": "redcap_uhl", "table": "redcap_log_eventsplitted"},
-    {"database": "redcap_survey", "table": "redcap_log_eventsplitted"},
-    {"database": "redcap_uol", "table": "redcap_log_eventsplitted"},
     {"database": "redcap_uhl", "table": "redcap_metadata"},
+    {"database": "redcap_uhl", "table": "redcap_project_civicrm_case_type"},
+    {"database": "redcap_uhl", "table": "redcap_projects"},
+    {"database": "redcap_survey", "table": "redcap_log_eventsplitted"},
+    {"database": "redcap_survey", "table": "redcap_data"},
+    {"database": "redcap_survey", "table": "redcap_log_event"},
+    {"database": "redcap_survey", "table": "redcap_metadata"},
+    {"database": "redcap_uol", "table": "redcap_log_eventsplitted"},
+    {"database": "redcap_uol", "table": "redcap_data"},
+    {"database": "redcap_uol", "table": "redcap_events_metadata"},
+    {"database": "redcap_uol", "table": "redcap_log_event"},
+    {"database": "redcap_uol", "table": "redcap_log_eventsplitted"},
+    {"database": "redcap_uol", "table": "redcap_metadata"},
+    {"database": "redcap_uol", "table": "refresh_redcap_log_eventsplitted"},
 ]
 
 
@@ -73,6 +84,7 @@ DATALAKE_REDCAP_LOG_EVENTSPLITTED_QUERY = """
     FROM {database}.dbo.{table}
 """
 
+
 TABLE_QUERIES = {
     "redcap_log_eventsplitted": {
         "staging_query": STG_REDCAP_LOG_EVENTSPLITTED_QUERY,
@@ -83,6 +95,7 @@ TABLE_QUERIES = {
         "datalake_query": STG_REDCAP_METADATA_QUERY,
     }
 }
+
 
 DATABASE_XREF = {
     "redcap_uol": {
@@ -99,6 +112,7 @@ DATABASE_XREF = {
     }
 }
 
+
 def get_queries_text(database: str, table: str) -> tuple[str, str]:
     if table in TABLE_QUERIES:
         return (
@@ -113,6 +127,7 @@ def get_queries_text(database: str, table: str) -> tuple[str, str]:
         )
     else:
         raise ValueError(f"No queries defined for {database}.{table}")
+
 
 def except_query_has_differences(query1, query2):
     hook = DbApiHook.get_hook(conn_id="LEGACY_DWH")
@@ -202,7 +217,6 @@ with DAG(
     dag_id="staging_vs_datalake_validation",
     schedule=SCHEDULE_BACKUP,
     default_args=default_dag_args,
-    catchup=False,
 ) as dag:
 
     results = compare.expand(config=CHECKS)
