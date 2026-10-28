@@ -20,7 +20,6 @@ CHECKS = [
     {"database": "redcap_uol", "table": "redcap_log_event"},
     {"database": "redcap_uol", "table": "redcap_log_eventsplitted"},
     {"database": "redcap_uol", "table": "redcap_metadata"},
-    {"database": "redcap_uol", "table": "refresh_redcap_log_eventsplitted"},
 ]
 
 
@@ -111,10 +110,6 @@ TABLE_QUERIES = {
         "datalake_query": STG_REDCAP_STANDARD_QUERY,
     },
     "redcap_events_metadata": {
-        "staging_query": STG_REDCAP_STANDARD_QUERY,
-        "datalake_query": STG_REDCAP_STANDARD_QUERY,
-    },
-    "refresh_redcap_log_eventsplitted": {
         "staging_query": STG_REDCAP_STANDARD_QUERY,
         "datalake_query": STG_REDCAP_STANDARD_QUERY,
     },
