@@ -51,7 +51,7 @@ STG_REDCAP_METADATA_QUERY = """
 
 
 STG_REDCAP_LOG_EVENTSPLITTED_QUERY = """
-    SELECT log_event_id, event_id, ts, user as c, event, pk, description, legacy, change_reason, project_id, Field_name, value, descrip, keepone
+    SELECT log_event_id, event_id, ts, user as c, event, pk, description, legacy, change_reason, project_id, Field_name, value
     FROM {database}.dbo.{table}
 """
 
@@ -69,9 +69,7 @@ DATALAKE_REDCAP_LOG_EVENTSPLITTED_QUERY = """
         change_reason,
         project_id,
         Field_name,
-        value,
-        descrip,
-        keepone
+        value
     FROM {database}.dbo.{table}
 """
 
@@ -156,6 +154,22 @@ def compare(config):
 
 
 @task
+def collect_differences(results):
+    return [
+        result
+        for result in results
+        if result.get("different", False)
+    ]
+
+
+@task.branch
+def should_send_email(failures):
+    if failures:
+        return "send_email"
+    return "no_email"
+
+
+@task
 def build_email(results):
     failures = [
         f"{r['database']}.{r['table']}"
@@ -179,23 +193,33 @@ def build_email(results):
     return html
 
 
+@task
+def no_email():
+    pass
+
+
 with DAG(
     dag_id="staging_vs_datalake_validation",
-    default_args=default_dag_args,
     schedule=SCHEDULE_BACKUP,
+    default_args=default_dag_args,
+    catchup=False,
 ) as dag:
 
     results = compare.expand(config=CHECKS)
 
-    email_content = build_email(results)
+    failures = collect_differences(results)
+
+    email_body = build_email(failures)
+
+    branch = should_send_email(failures)
 
     send_email = EmailOperator(
         task_id="send_email",
         to=error_emails,
         from_email="richard.a.bramley@uhl-tr.nhs.uk",
         subject="Differences Between DataLake and Staging",
-        html_content=email_content,
+        html_content=email_body,
         conn_id="smtp_default",
     )
 
-    email_content >> send_email
+    branch >> [send_email, no_email()]
