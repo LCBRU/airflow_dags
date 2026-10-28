@@ -1,6 +1,6 @@
-from airflow import DAG, task
 from airflow.providers.common.sql.hooks.sql import DbApiHook
 from airflow.providers.smtp.operators.smtp import EmailOperator
+from airflow.sdk import DAG, task
 
 from tools import default_dag_args, error_emails
 from warehousing.schedules import SCHEDULE_BACKUP
