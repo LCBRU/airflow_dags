@@ -5,6 +5,14 @@ from airflow.sdk import DAG, task
 from tools import default_dag_args, error_emails
 from warehousing.schedules import SCHEDULE_BACKUP
 
+CHECKS = [
+    {"database": "redcap_uhl", "table": "redcap_log_eventsplitted"},
+    {"database": "redcap_survey", "table": "redcap_log_eventsplitted"},
+    {"database": "redcap_uol", "table": "redcap_log_eventsplitted"},
+    {"database": "redcap_uhl", "table": "redcap_metadata"},
+]
+
+
 STG_REDCAP_STANDARD_QUERY = """
     SELECT *
     FROM {database}.dbo.{table}
@@ -110,55 +118,85 @@ def get_queries_text(database: str, table: str) -> tuple[str, str]:
 
 def except_query_has_differences(query1, query2):
     hook = DbApiHook.get_hook(conn_id="LEGACY_DWH")
-    
-    record = hook.get_first(f"""
-        SELECT CASE WHEN EXISTS ({query1} EXCEPT {query2}) THEN 1 ELSE 0 END AS mismatch;
-    """)
 
-    if record is None:
-        raise ValueError("Query returned no results.")
+    record = hook.get_first(
+        f"""
+        SELECT CASE
+            WHEN EXISTS ({query1} EXCEPT {query2})
+            THEN 1
+            ELSE 0
+        END AS mismatch
+        """
+    )
 
     return record[0] == 1
 
 
 def queries_differ(query1, query2):
-    return except_query_has_differences(query1, query2) or except_query_has_differences(query2, query1)
+    return (
+        except_query_has_differences(query1, query2)
+        or except_query_has_differences(query2, query1)
+    )
 
-
-@task.branch
-def should_send_email(queries: tuple[str, str]) -> str:
-    if queries_differ(queries[0], queries[1]):
-        return "send_email"
-    else:
-        return "no_email"
 
 @task
-def no_email() -> None:
-    pass
+def compare(config):
+    database = config["database"]
+    table = config["table"]
 
-def build_staging_vs_datalake_report_dag(database: str, table: str) -> DAG:
-    with DAG(
-        dag_id=f"staging_vs_datalake_{database}_{table}",
-        default_args=default_dag_args,
-        schedule=SCHEDULE_BACKUP,
-    ) as dag:
+    query1, query2 = get_queries_text(database, table)
 
-        send_email = EmailOperator(
-            task_id="send_email",
-            to=error_emails,
-            from_email="richard.a.bramley@uhl-tr.nhs.uk",
-            subject="Differences Between DataLake and Staging",
-            html_content=(f"<p>Differences Between DataLake and Staging for {database}.{table}.</p>"),
-            conn_id="smtp_default",
-        )
+    different = queries_differ(query1, query2)
 
-        should_send_email(get_queries_text(database, table)) >> [send_email, no_email()]
-
-    return dag
+    return {
+        "database": database,
+        "table": table,
+        "different": different,
+    }
 
 
-build_staging_vs_datalake_report_dag("redcap_uhl", "redcap_log_eventsplitted")
-build_staging_vs_datalake_report_dag("redcap_survey", "redcap_log_eventsplitted")
-build_staging_vs_datalake_report_dag("redcap_uol", "redcap_log_eventsplitted")
+@task
+def build_email(results):
+    failures = [
+        f"{r['database']}.{r['table']}"
+        for r in results
+        if r["different"]
+    ]
 
-build_staging_vs_datalake_report_dag("redcap_uhl", "redcap_metadata")
+    if not failures:
+        return None
+
+    html = """
+    <h3>Differences found between Staging and DataLake</h3>
+    <ul>
+    """
+
+    for failure in failures:
+        html += f"<li>{failure}</li>"
+
+    html += "</ul>"
+
+    return html
+
+
+with DAG(
+    dag_id="staging_vs_datalake_validation",
+    default_args=default_dag_args,
+    schedule=SCHEDULE_BACKUP,
+    catchup=False,
+) as dag:
+
+    results = compare.expand(config=CHECKS)
+
+    email_content = build_email(results)
+
+    send_email = EmailOperator(
+        task_id="send_email",
+        to=error_emails,
+        from_email="richard.a.bramley@uhl-tr.nhs.uk",
+        subject="Differences Between DataLake and Staging",
+        html_content=email_content,
+        conn_id="smtp_default",
+    )
+
+    email_content >> send_email
