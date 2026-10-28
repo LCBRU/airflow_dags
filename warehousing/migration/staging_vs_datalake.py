@@ -93,7 +93,31 @@ TABLE_QUERIES = {
     "redcap_metadata": {
         "staging_query": STG_REDCAP_METADATA_QUERY,
         "datalake_query": STG_REDCAP_METADATA_QUERY,
-    }
+    },
+    "redcap_project_civicrm_case_type": {
+        "staging_query": STG_REDCAP_STANDARD_QUERY,
+        "datalake_query": STG_REDCAP_STANDARD_QUERY,
+    },
+    "redcap_projects": {
+        "staging_query": STG_REDCAP_STANDARD_QUERY,
+        "datalake_query": STG_REDCAP_STANDARD_QUERY,
+    },
+    "redcap_data": {
+        "staging_query": STG_REDCAP_STANDARD_QUERY,
+        "datalake_query": STG_REDCAP_STANDARD_QUERY,
+    },
+    "redcap_log_event": {
+        "staging_query": STG_REDCAP_STANDARD_QUERY,
+        "datalake_query": STG_REDCAP_STANDARD_QUERY,
+    },
+    "redcap_events_metadata": {
+        "staging_query": STG_REDCAP_STANDARD_QUERY,
+        "datalake_query": STG_REDCAP_STANDARD_QUERY,
+    },
+    "refresh_redcap_log_eventsplitted": {
+        "staging_query": STG_REDCAP_STANDARD_QUERY,
+        "datalake_query": STG_REDCAP_STANDARD_QUERY,
+    },
 }
 
 
