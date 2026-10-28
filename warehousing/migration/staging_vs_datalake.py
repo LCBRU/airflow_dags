@@ -183,7 +183,6 @@ with DAG(
     dag_id="staging_vs_datalake_validation",
     default_args=default_dag_args,
     schedule=SCHEDULE_BACKUP,
-    catchup=False,
 ) as dag:
 
     results = compare.expand(config=CHECKS)
