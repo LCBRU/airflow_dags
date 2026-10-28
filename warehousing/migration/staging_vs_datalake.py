@@ -1,6 +1,6 @@
+from airflow import DAG, task
 from airflow.providers.common.sql.hooks.sql import DbApiHook
-from airflow.sdk import DAG, task
-from airflow.utils.email import send_email
+from airflow.providers.smtp.operators.smtp import EmailOperator
 
 from tools import default_dag_args, error_emails
 from warehousing.schedules import SCHEDULE_BACKUP
@@ -48,23 +48,16 @@ def queries_differ(query1, query2):
     return except_query_has_differences(query1, query2) or except_query_has_differences(query2, query1)
 
 
-@task
-def staging_vs_datalake_report():
+@task.branch
+def should_send_email(target_dir: str) -> str:
     if queries_differ(STG_REDCAP_LOG_EVENTSPLITTED_QUERY, DATALAKE_REDCAP_LOG_EVENTSPLITTED_QUERY):
-        html = """
-        <html>
-        <body>
-            <h1>Differences Between DataLake and Staging for redcap_log_eventsplitted in REDCap UHL Internal</h1>
-        </body>
-        </html>
-        """
-        
-        send_email(
-            to=error_emails,
-            subject="Differences Between DataLake and Staging",
-            html_content=html,
-        )
+        return "send_email"
+    else:
+        return "no_email"
 
+@task
+def no_email() -> None:
+    pass
 
 def build_staging_vs_datalake_report_dag():
     with DAG(
@@ -72,7 +65,17 @@ def build_staging_vs_datalake_report_dag():
         default_args=default_dag_args,
         schedule=SCHEDULE_BACKUP,
     ) as dag:
-        staging_vs_datalake_report()
+
+        send_email = EmailOperator(
+            task_id="send_email",
+            to=error_emails,
+            from_email="richard.a.bramley@uhl-tr.nhs.uk",
+            subject="Differences Between DataLake and Staging",
+            html_content=("<p>Differences Between DataLake and Staging for redcap_log_eventsplitted in REDCap UHL Internal.</p>"),
+            conn_id="smtp_default",
+        )
+
+        should_send_email() >> [send_email, no_email()]
 
     return dag
 
