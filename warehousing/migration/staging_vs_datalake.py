@@ -40,6 +40,10 @@ TABLE_QUERIES = {
     "redcap_log_eventsplitted": {
         "staging_query": STG_REDCAP_LOG_EVENTSPLITTED_QUERY,
         "datalake_query": DATALAKE_REDCAP_LOG_EVENTSPLITTED_QUERY,
+    },
+    "redcap_metadata": {
+        "staging_query": STG_REDCAP_STANDARD_QUERY,
+        "datalake_query": STG_REDCAP_STANDARD_QUERY,
     }
 }
 
