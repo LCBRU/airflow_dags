@@ -7,7 +7,7 @@ from warehousing.schedules import SCHEDULE_BACKUP
 
 STG_REDCAP_LOG_EVENTSPLITTED_QUERY = """
     SELECT log_event_id, event_id, ts, user as c, event, pk, description, legacy, change_reason, project_id, Field_name, value, descrip, keepone
-    FROM stg_redcap.dbo.redcap_log_eventsplitted
+    FROM {database}.dbo.redcap_log_eventsplitted
 """
 
 
@@ -27,9 +27,31 @@ DATALAKE_REDCAP_LOG_EVENTSPLITTED_QUERY = """
         value,
         descrip,
         keepone
-    FROM datalake_redcap6170_briccs.dbo.redcap_log_eventsplitted
+    FROM {database}.dbo.redcap_log_eventsplitted
 """
 
+TABLE_QUERIES = {
+    "redcap_log_eventsplitted": {
+        "staging_query": STG_REDCAP_LOG_EVENTSPLITTED_QUERY,
+        "datalake_query": DATALAKE_REDCAP_LOG_EVENTSPLITTED_QUERY,
+    }
+}
+
+DATABASE_XREF = {
+    "redcap_uol": {
+        "staging_database": "stg_redcap",
+        "datalake_database": "datalake_redcap6170_briccs",
+    },
+}
+
+def get_queries_text(database: str, table: str) -> tuple[str, str]:
+    if table in TABLE_QUERIES:
+        return (
+            TABLE_QUERIES[table]["staging_query"].format(database=DATABASE_XREF[database]["staging_database"]),
+            TABLE_QUERIES[table]["datalake_query"].format(database=DATABASE_XREF[database]["datalake_database"])
+        )
+    else:
+        raise ValueError(f"No queries defined for {database}.{table}")
 
 def except_query_has_differences(query1, query2):
     hook = DbApiHook.get_hook(conn_id="LEGACY_DWH")
@@ -49,8 +71,8 @@ def queries_differ(query1, query2):
 
 
 @task.branch
-def should_send_email() -> str:
-    if queries_differ(STG_REDCAP_LOG_EVENTSPLITTED_QUERY, DATALAKE_REDCAP_LOG_EVENTSPLITTED_QUERY):
+def should_send_email(queries: tuple[str, str]) -> str:
+    if queries_differ(queries[0], queries[1]):
         return "send_email"
     else:
         return "no_email"
@@ -59,9 +81,9 @@ def should_send_email() -> str:
 def no_email() -> None:
     pass
 
-def build_staging_vs_datalake_report_dag():
+def build_staging_vs_datalake_report_dag(database: str, table: str) -> DAG:
     with DAG(
-        dag_id="staging_vs_datalake",
+        dag_id=f"staging_vs_datalake_{database}_{table}",
         default_args=default_dag_args,
         schedule=SCHEDULE_BACKUP,
     ) as dag:
@@ -71,13 +93,13 @@ def build_staging_vs_datalake_report_dag():
             to=error_emails,
             from_email="richard.a.bramley@uhl-tr.nhs.uk",
             subject="Differences Between DataLake and Staging",
-            html_content=("<p>Differences Between DataLake and Staging for redcap_log_eventsplitted in REDCap UHL Internal.</p>"),
+            html_content=(f"<p>Differences Between DataLake and Staging for {database}.{table}.</p>"),
             conn_id="smtp_default",
         )
 
-        should_send_email() >> [send_email, no_email()]
+        should_send_email(get_queries_text(database, table)) >> [send_email, no_email()]
 
     return dag
 
 
-build_staging_vs_datalake_report_dag()
+build_staging_vs_datalake_report_dag("redcap_uol", "redcap_log_eventsplitted")
