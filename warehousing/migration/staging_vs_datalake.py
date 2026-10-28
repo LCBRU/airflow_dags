@@ -12,55 +12,50 @@ with DAG(
     default_args=default_dag_args,
     schedule=SCHEDULE_BACKUP,
 ):
-    
-    @task
-    def staging_vs_datalake_report():
+
+    STG_REDCAP_LOG_EVENTSPLITTED_QUERY = """
+        SELECT log_event_id, event_id, ts, user as c, event, pk, description, legacy, change_reason, project_id, Field_name, value, descrip, keepone
+        FROM stg_redcap.dbo.redcap_log_eventsplitted
+    """
+
+    DATALAKE_REDCAP_LOG_EVENTSPLITTED_QUERY = """
+        SELECT
+            log_event_id,
+            event_id,
+            CONVERT(datetime, STUFF(STUFF(STUFF(STUFF(STUFF(CAST(ts AS varchar(14)),13,0,':'),11,0,':'),9,0,' '),7,0,'-'),5,0,'-')) as ts,
+            user as c,
+            event,
+            pk,
+            description,
+            legacy,
+            change_reason,
+            project_id,
+            Field_name,
+            value,
+            descrip,
+            keepone
+        FROM datalake_redcap6170_briccs.dbo.redcap_log_eventsplitted
+    """
+
+    def except_query_has_differences(query1, query2):
         hook = DbApiHook.get_hook(conn_id="LEGACY_DWH")
         hook.schema = "warehouse_central"
         
-        record = hook.get_first("""
-            SELECT CASE WHEN EXISTS
-            (
-                SELECT log_event_id, event_id, ts, user as c, event, pk, description, legacy, change_reason, project_id, Field_name, value, descrip, keepone
-                FROM stg_redcap.dbo.redcap_log_eventsplitted
-                EXCEPT
-                SELECT
-                    log_event_id,
-                    event_id,
-                    CONVERT(datetime, STUFF(STUFF(STUFF(STUFF(STUFF(CAST(ts AS varchar(14)),13,0,':'),11,0,':'),9,0,' '),7,0,'-'),5,0,'-')) as ts,
-                    user as c,
-                    event,
-                    pk,
-                    description,
-                    legacy,
-                    change_reason,
-                    project_id,
-                    Field_name,
-                    value,
-                    descrip,
-                    keepone
-                FROM datalake_redcap6170_briccs.dbo.redcap_log_eventsplitted
-
-                /*
-                SELECT log_event_id, event_id, CONVERT(datetime,
-                    STUFF(STUFF(STUFF(STUFF(STUFF(
-                    CAST(ts AS varchar(14)),
-                    13,0,':'),
-                    11,0,':'),
-                    9,0,' '),
-                    7,0,'-'),
-                    5,0,'-')) as ts
-                , user, event, pk, description, legacy, change_reason, project_id, Field_name, value, descrip, keepone
-                FROM datalake_redcap6170_briccs.dbo.redcap_log_eventsplitted
-                EXCEPT
-                SELECT log_event_id, event_id, ts, user, event, pk, description, legacy, change_reason, project_id, Field_name, value, descrip, keepone
-                FROM stg_redcap.dbo.redcap_log_eventsplitted
-                */
-            ) THEN 1 ELSE 0 END AS mismatch
-            ;
+        record = hook.get_first(f"""
+            SELECT CASE WHEN EXISTS ({query1} EXCEPT {query2}) THEN 1 ELSE 0 END AS mismatch;
         """)
 
-        if record and record[0] == 1:
+        if record is None:
+            raise ValueError("Query returned no results.")
+
+        return record[0] == 1
+
+    def queries_differ(query1, query2):
+        return except_query_has_differences(query1, query2) or except_query_has_differences(query2, query1)
+    
+    @task
+    def staging_vs_datalake_report():
+        if queries_differ(STG_REDCAP_LOG_EVENTSPLITTED_QUERY, DATALAKE_REDCAP_LOG_EVENTSPLITTED_QUERY):
             html = """
             <html>
             <body>
