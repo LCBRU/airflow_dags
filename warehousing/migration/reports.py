@@ -8,7 +8,7 @@ from warehousing.schedules import SCHEDULE_BACKUP
 
 
 with DAG(
-    dag_id="migration_reports",
+    dag_id="warehousing.migration.reports",
     default_args=default_dag_args,
     schedule=SCHEDULE_BACKUP,
 ):

@@ -403,7 +403,7 @@ def no_email():
 
 
 with DAG(
-    dag_id="staging_vs_datalake_validation",
+    dag_id="warehousing.migration.staging_vs_datalake_validation",
     schedule=SCHEDULE_BACKUP,
     default_args=default_dag_args,
 ) as dag:

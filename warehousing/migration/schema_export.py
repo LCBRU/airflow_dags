@@ -132,19 +132,19 @@ def get_databases(conn_id: str) -> list[str]:
 
 
 @task
-def export_database(database: str, conn_id: str, output_dir: str):
+def export_database(database: str, conn_id: str, target_dir: str) -> None:
 
     hook = get_hook(conn_id, database)
 
-    output_directory = Path(output_dir)/ conn_id / database
-    output_directory.mkdir(parents=True, exist_ok=True)
+    output_path = Path(target_dir)
+    output_path.mkdir(parents=True, exist_ok=True)
 
-    extract_tables(hook, output_directory)
-    export_primary_keys(hook, output_directory)
-    export_views(hook, output_directory)
-    export_stored_procedures(hook, output_directory)
-    export_triggers(hook, output_directory)
-    export_foreign_keys(hook, output_directory)
+    extract_tables(hook, output_path)
+    export_primary_keys(hook, output_path)
+    export_views(hook, output_path)
+    export_stored_procedures(hook, output_path)
+    export_triggers(hook, output_path)
+    export_foreign_keys(hook, output_path)
 
 
 def extract_tables(hook, output_directory):
@@ -152,12 +152,11 @@ def extract_tables(hook, output_directory):
     tables_directory.mkdir(parents=True, exist_ok=True)
 
     tables = hook.get_records("""
-            SELECT TABLE_SCHEMA, TABLE_NAME
-            FROM INFORMATION_SCHEMA.TABLES
-            WHERE TABLE_TYPE='BASE TABLE'
-            ORDER BY TABLE_SCHEMA, TABLE_NAME
-            """
-        )
+        SELECT TABLE_SCHEMA, TABLE_NAME
+        FROM INFORMATION_SCHEMA.TABLES
+        WHERE TABLE_TYPE='BASE TABLE'
+        ORDER BY TABLE_SCHEMA, TABLE_NAME
+        """)
 
     for schema, table in tables:
         cols = hook.get_records("""
@@ -229,10 +228,10 @@ def export_primary_keys(hook, output_directory):
         schema, table, constraint = key
 
         sql = f"""
-        ALTER TABLE [{schema}].[{table}]
-        ADD CONSTRAINT [{constraint}]
-        PRIMARY KEY ({','.join(f'[{c}]' for c in cols)});
-        GO
+            ALTER TABLE [{schema}].[{table}]
+            ADD CONSTRAINT [{constraint}]
+            PRIMARY KEY ({','.join(f'[{c}]' for c in cols)});
+            GO
         """
         
         with open(primary_keys_directory / f"{schema}.{table}.sql", "w", encoding="utf-8") as pk_f:
@@ -298,8 +297,7 @@ def export_triggers(hook, output_directory):
             ON t.object_id=m.object_id
         WHERE t.parent_class = 1
         ORDER BY t.name
-        """
-        )
+        """)
 
     for name, definition in triggers:
         with open(triggers_directory / f"{name}.sql", "w", encoding="utf-8",) as f:
@@ -341,11 +339,11 @@ def export_foreign_keys(hook, output_directory):
 
     for constraint_name, schema_name, table_name, column_name, ref_schema_name, ref_table_name, ref_column_name in records:
         sql = f"""
-        ALTER TABLE [{schema_name}].[{table_name}]
-        ADD CONSTRAINT [{constraint_name}]
-        FOREIGN KEY ([{column_name}])
-        REFERENCES [{ref_schema_name}].[{ref_table_name}] ([{ref_column_name}]);
-        GO
+            ALTER TABLE [{schema_name}].[{table_name}]
+            ADD CONSTRAINT [{constraint_name}]
+            FOREIGN KEY ([{column_name}])
+            REFERENCES [{ref_schema_name}].[{ref_table_name}] ([{ref_column_name}]);
+            GO
         """
 
         with open(foreign_keys_directory / f"{constraint_name}.sql", "w", encoding="utf-8") as f:
@@ -446,7 +444,7 @@ def export_sqlserver_agent_jobs(target_dir, conn_id):
 def build_schema_export_dag(conn_id: str):
 
     @dag(
-        dag_id=f"schema_export_{conn_id}",
+        dag_id=f"warehousing.migration.schema_export_{conn_id}",
         default_args=default_dag_args,
         schedule=SCHEDULE_SCHEMA_EXPORT,
         max_active_runs=1,
@@ -460,7 +458,7 @@ def build_schema_export_dag(conn_id: str):
 
         exports = export_database.partial(
             conn_id=conn_id,
-            output_dir=BACKUP_DIRECTORY,
+            target_dir=target_dir,
         ).expand(
             database=databases,
         )

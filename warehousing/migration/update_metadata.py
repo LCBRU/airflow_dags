@@ -5,7 +5,7 @@ from tools import default_dag_args
 from warehousing.schedules import SCHEDULE_BACKUP
 
 with DAG(
-    dag_id="migration_processing",
+    dag_id="warehousing.migration.update_metadata",
     default_args=default_dag_args,
     schedule=SCHEDULE_BACKUP,
 ):
