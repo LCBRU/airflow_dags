@@ -51,6 +51,7 @@ def create_archive(target_dir: str) -> str:
     return archive_path
 
 
+@task
 def zip_file_hash(target_dir: str) -> str:
     sha256 = hashlib.sha256()
 
@@ -70,6 +71,7 @@ def zip_file_hash(target_dir: str) -> str:
     return result
 
 
+@task
 def previous_zip_file_hash(target_dir: str) -> str | None:
     previous_hash_file = Path(target_dir).with_suffix(".zip.previous.sha256")
 
@@ -80,17 +82,12 @@ def previous_zip_file_hash(target_dir: str) -> str | None:
 
 
 @task.branch
-def choose_email_task(target_dir: str) -> str:
-    previous_hash = previous_zip_file_hash(target_dir)
-
+def choose_email_task(current_hash: str, previous_hash: str | None) -> str:
     print(f"Previous hash: {previous_hash}")
+    print(f"Current hash: {current_hash}")
 
     if previous_hash is None:
         return "create_archive"
-
-    current_hash = zip_file_hash(target_dir)
-
-    print(f"Current hash: {current_hash}")
 
     if current_hash != previous_hash:
         return "create_archive"
@@ -104,14 +101,13 @@ def archive_unchanged() -> None:
 
 
 @task
-def record_emailed_hash(target_dir: str) -> None:
+def record_emailed_hash(target_dir: str, hash: str) -> None:
     previous_hash_file = Path(target_dir).with_suffix(".zip.previous.sha256")
-    current_hash = zip_file_hash(target_dir)
 
-    print(f"Recording hash {current_hash} to {previous_hash_file}")
+    print(f"Recording hash {hash} to {previous_hash_file}")
 
     previous_hash_file.write_text(
-        str(current_hash),
+        str(hash),
         encoding="utf-8",
     )
 
@@ -464,8 +460,11 @@ def build_schema_export_dag(conn_id: str):
         )
 
         jobs = export_sqlserver_agent_jobs(target_dir, conn_id)
+
+        hash = zip_file_hash(target_dir)
+        previous_hash = previous_zip_file_hash(target_dir)
     
-        branch = choose_email_task(target_dir)
+        branch = choose_email_task(hash, previous_hash)
 
         archive = create_archive(target_dir)
 
@@ -480,10 +479,12 @@ def build_schema_export_dag(conn_id: str):
 
         unchanged = archive_unchanged()
 
-        record_hash = record_emailed_hash(target_dir)
+        record_hash = record_emailed_hash(target_dir, hash)
 
-        clear >> jobs >> branch
-        clear >> databases >> exports >> branch
+        clear >> jobs >> hash
+        clear >> databases >> exports >> hash
+        hash >> branch
+        previous_hash >> branch
         branch >> [archive, unchanged]
         archive >> email_archive >> record_hash
 
