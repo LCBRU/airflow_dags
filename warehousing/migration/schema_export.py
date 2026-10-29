@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+from itertools import groupby
 import shutil
 from pathlib import Path
 
@@ -385,61 +386,61 @@ def export_sqlserver_agent_jobs(target_dir, conn_id):
         ORDER BY j.name, s.step_id;
     """)
 
-    current_job = None
-
-    for (
-        job_name,
-        step_id,
-        step_name,
-        subsystem,
-        command,
-        database_name,
-        database_user_name,
-        retry_attempts,
-        retry_interval,
-        on_success_action,
-        on_success_step_id,
-        on_fail_action,
-        on_fail_step_id,
-        output_file_name,
-        proxy_name,
-    ) in jobs:
-
-        if current_job != job_name:
-            f.write("\n" + "=" * 80 + "\n")
-            f.write(f"-- JOB: {job_name}\n")
-            f.write("=" * 80 + "\n")
-            current_job = job_name
-
+    for job_name, job_steps in groupby(jobs, key=lambda x: x[0]):
         sql = f"""
-        -- Step {step_id}: {step_name}
-        EXEC msdb.dbo.sp_add_jobstep
-            @job_name = N'{job_name.replace("'", "''")}',
-            @step_id = {step_id},
-            @step_name = N'{step_name.replace("'", "''")}',
-            @subsystem = N'{subsystem}',
-            @command = N'{command.replace("'", "''")}',
-            @database_name = N'{database_name or "master"}',
-            @database_user_name = N'{database_user_name or ""}',
-            @retry_attempts = {retry_attempts},
-            @retry_interval = {retry_interval},
-            @on_success_action = {on_success_action},
-            @on_success_step_id = {on_success_step_id},
-            @on_fail_action = {on_fail_action},
-            @on_fail_step_id = {on_fail_step_id}"""
+        ----------------------------------------------
+        -- Job: {job_name}
+        ----------------------------------------------
+        """
 
-        if output_file_name:
-            sql += f""",
-@output_file_name = N'{output_file_name.replace("'", "''")}'"""
+        for step in job_steps:
+            (
+                job_name,
+                step_id,
+                step_name,
+                subsystem,
+                command,
+                database_name,
+                database_user_name,
+                retry_attempts,
+                retry_interval,
+                on_success_action,
+                on_success_step_id,
+                on_fail_action,
+                on_fail_step_id,
+                output_file_name,
+                proxy_name
+            ) = step
+    
+            sql = f"""
+            -- Step {step_id}: {step_name}
+            EXEC msdb.dbo.sp_add_jobstep
+                @job_name = N'{job_name.replace("'", "''")}',
+                @step_id = {step_id},
+                @step_name = N'{step_name.replace("'", "''")}',
+                @subsystem = N'{subsystem}',
+                @command = N'{command.replace("'", "''")}',
+                @database_name = N'{database_name or "master"}',
+                @database_user_name = N'{database_user_name or ""}',
+                @retry_attempts = {retry_attempts},
+                @retry_interval = {retry_interval},
+                @on_success_action = {on_success_action},
+                @on_success_step_id = {on_success_step_id},
+                @on_fail_action = {on_fail_action},
+                @on_fail_step_id = {on_fail_step_id}"""
 
-        if proxy_name:
-            sql += f""",
-@proxy_name = N'{proxy_name.replace("'", "''")}'"""
+            if output_file_name:
+                sql += f""",
+    @output_file_name = N'{output_file_name.replace("'", "''")}'"""
 
-        sql += ";\nGO\n\n"
+            if proxy_name:
+                sql += f""",
+    @proxy_name = N'{proxy_name.replace("'", "''")}'"""
 
-    with open(agent_jobs_directory / f"{job_name}.sql", "w", encoding="utf-8") as f:
-        f.write(sql)
+            sql += ";\nGO\n\n"
+
+        with open(agent_jobs_directory / f"{job_name}.sql", "w", encoding="utf-8") as f:
+            f.write(sql)
 
 
 def build_schema_export_dag(conn_id: str):
