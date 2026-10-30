@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 import hashlib
-from itertools import groupby
 import shutil
+from itertools import groupby
 from pathlib import Path
 
 from airflow.hooks.base import BaseHook
 from airflow.providers.common.sql.hooks.sql import DbApiHook
 from airflow.providers.smtp.operators.smtp import EmailOperator
 from airflow.sdk import dag, task
+from werkzeug.utils import secure_filename
 
 from tools import default_dag_args, error_emails
 from warehousing.schedules import SCHEDULE_SCHEMA_EXPORT
@@ -191,7 +192,7 @@ def extract_tables(hook, output_directory):
         ddl += ",\n".join(f"    {d}" for d in definitions)
         ddl += "\n);\nGO\n"
 
-        with open(tables_directory / f"{schema}.{table}.sql", "w", encoding="utf-8",) as f:
+        with open(tables_directory / secure_filename(f"{schema}.{table}.sql"), "w", encoding="utf-8",) as f:
             f.write(ddl)
 
 
@@ -230,7 +231,7 @@ def export_primary_keys(hook, output_directory):
             GO
         """
         
-        with open(primary_keys_directory / f"{schema}.{table}.sql", "w", encoding="utf-8") as pk_f:
+        with open(primary_keys_directory / secure_filename(f"{schema}.{table}.sql"), "w", encoding="utf-8") as pk_f:
             pk_f.write(sql)
 
 
@@ -250,7 +251,7 @@ def export_views(hook, output_directory):
         )
 
     for schema_name, view_name, definition in views:
-        with open(views_directory / f"{schema_name}.{view_name}.sql", "w", encoding="utf-8",) as f:
+        with open(views_directory / secure_filename(f"{schema_name}.{view_name}.sql"), "w", encoding="utf-8",) as f:
             f.write(f"\n-- Schema: {schema_name}\n")
             f.write(f"-- View: {view_name}\n")
             f.write(definition)
@@ -273,7 +274,7 @@ def export_stored_procedures(hook, output_directory):
         )
 
     for schema_name, procedure_name, definition in sps:
-        with open(stored_procedures_directory / f"{schema_name}.{procedure_name}.sql", "w", encoding="utf-8",) as f:
+        with open(stored_procedures_directory / secure_filename(f"{schema_name}.{procedure_name}.sql"), "w", encoding="utf-8",) as f:
             f.write(f"\n-- Schema: {schema_name}\n")
             f.write(f"-- Procedure: {procedure_name}\n")
             f.write(definition)
@@ -296,7 +297,7 @@ def export_triggers(hook, output_directory):
         """)
 
     for name, definition in triggers:
-        with open(triggers_directory / f"{name}.sql", "w", encoding="utf-8",) as f:
+        with open(triggers_directory / secure_filename(f"{name}.sql"), "w", encoding="utf-8",) as f:
             f.write(f"\n-- Trigger: {name}\n")
             f.write(definition)
             f.write("\nGO\n")
@@ -342,7 +343,7 @@ def export_foreign_keys(hook, output_directory):
             GO
         """
 
-        with open(foreign_keys_directory / f"{constraint_name}.sql", "w", encoding="utf-8") as f:
+        with open(foreign_keys_directory / secure_filename(f"{constraint_name}.sql"), "w", encoding="utf-8") as f:
             f.write(sql)
 
 
@@ -433,7 +434,7 @@ def export_sqlserver_agent_jobs(target_dir, conn_id):
 
             sql += ";\nGO\n\n"
 
-        with open(agent_jobs_directory / f"{job_name}.sql", "w", encoding="utf-8") as f:
+        with open(agent_jobs_directory / secure_filename(f"{job_name}.sql"), "w", encoding="utf-8") as f:
             f.write(sql)
 
 

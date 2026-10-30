@@ -14,3 +14,4 @@ jsonlines
 sqlalchemy
 pymysql
 python-dateutil
+werkzeug
