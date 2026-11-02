@@ -133,7 +133,7 @@ def export_database(database: str, conn_id: str, target_dir: str) -> None:
 
     hook = get_hook(conn_id, database)
 
-    output_path = Path(target_dir)
+    output_path = Path(target_dir) / secure_filename(database)
     output_path.mkdir(parents=True, exist_ok=True)
 
     extract_tables(hook, output_path)
