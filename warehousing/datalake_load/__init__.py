@@ -1,21 +1,23 @@
-from datetime import datetime
-import os
 import logging
-from pathlib import Path
-from airflow import DAG
-from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from itertools import groupby
-from warehousing.database import MsSqlConnection
-from tools import default_dag_args, email_notification_callback
+from pathlib import Path
+
+from airflow import DAG
 from airflow.decorators import task_group
 from airflow.models.baseoperator import chain
+from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from airflow.sdk import task
+
+from tools import default_dag_args, email_notification_callback
+from warehousing.database import MsSqlConnection
 from warehousing.schedules import SCHEDULE_DATALAKE_LOAD
+
+logger = logging.getLogger(__name__)
 
 
 @task(on_failure_callback=email_notification_callback)
 def _create_indexes_procedure(connection_name, destination_database, source_database):
-    logging.info("_create_indexes_procedure: Started")
+    logger.info("_create_indexes_procedure: Started")
 
     create_index_template = '''
         CREATE INDEX {index_name}

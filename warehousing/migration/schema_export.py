@@ -133,7 +133,7 @@ def export_database(database: str, conn_id: str, target_dir: str) -> None:
 
     hook = get_hook(conn_id, database)
 
-    output_path = Path(target_dir) / secure_filename(database)
+    output_path = Path(target_dir) / "databases" / secure_filename(database)
     output_path.mkdir(parents=True, exist_ok=True)
 
     extract_tables(hook, output_path)
@@ -381,12 +381,12 @@ def export_sqlserver_agent_jobs(target_dir, conn_id):
         ORDER BY j.name, s.step_id;
     """)
 
+
+
     for job_name, job_steps in groupby(jobs, key=lambda x: x[0]):
-        sql = f"""
-        ----------------------------------------------
-        -- Job: {job_name}
-        ----------------------------------------------
-        """
+        sql = "----------------------------------------------"
+        sql += f"\n-- Job: {job_name}\n"
+        sql += "----------------------------------------------\n"
 
         for step in job_steps:
             (
@@ -406,31 +406,34 @@ def export_sqlserver_agent_jobs(target_dir, conn_id):
                 output_file_name,
                 proxy_name
             ) = step
-    
-            sql = f"""
-            -- Step {step_id}: {step_name}
-            EXEC msdb.dbo.sp_add_jobstep
-                @job_name = N'{job_name.replace("'", "''")}',
-                @step_id = {step_id},
-                @step_name = N'{step_name.replace("'", "''")}',
-                @subsystem = N'{subsystem}',
-                @command = N'{command.replace("'", "''")}',
-                @database_name = N'{database_name or "master"}',
-                @database_user_name = N'{database_user_name or ""}',
-                @retry_attempts = {retry_attempts},
-                @retry_interval = {retry_interval},
-                @on_success_action = {on_success_action},
-                @on_success_step_id = {on_success_step_id},
-                @on_fail_action = {on_fail_action},
-                @on_fail_step_id = {on_fail_step_id}"""
+
+            sql += f"\n-- Step {step_id}: {step_name}\n"
+
+            sql += "EXEC msdb.dbo.sp_add_jobstep"
+
+            params = []
+
+            params.append(f"@job_name = N'{job_name.replace("'", "''")}'")
+            params.append(f"@step_id = {step_id}")
+            params.append(f"@step_name = N'{step_name.replace("'", "''")}'")
+            params.append(f"@subsystem = N'{subsystem}'")
+            params.append(f"@command = N'{command.replace("'", "''")}'")
+            params.append(f"@database_name = N'{database_name or "master"}'")
+            params.append(f"@database_user_name = N'{database_user_name or ""}'")
+            params.append(f"@retry_attempts = {retry_attempts}")
+            params.append(f"@retry_interval = {retry_interval}")
+            params.append(f"@on_success_action = {on_success_action}")
+            params.append(f"@on_success_step_id = {on_success_step_id}")
+            params.append(f"@on_fail_action = {on_fail_action}")
+            params.append(f"@on_fail_step_id = {on_fail_step_id}")
 
             if output_file_name:
-                sql += f""",
-    @output_file_name = N'{output_file_name.replace("'", "''")}'"""
+                params.append(f"@output_file_name = N'{output_file_name.replace("'", "''")}'")  
 
             if proxy_name:
-                sql += f""",
-    @proxy_name = N'{proxy_name.replace("'", "''")}'"""
+                params.append(f"@proxy_name = N'{proxy_name.replace("'", "''")}'")
+
+            sql += ",\n    ".join(params)
 
             sql += ";\nGO\n\n"
 
