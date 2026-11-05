@@ -256,7 +256,7 @@ def export_views(hook, output_directory):
         with open(views_directory / secure_filename(f"{schema_name}.{view_name}.sql"), "w", encoding="utf-8",) as f:
             f.write(f"\n-- Schema: {schema_name}\n")
             f.write(f"-- View: {view_name}\n")
-            f.write(sqlglot.transpile(definition, pretty=False, dialect="tsql")[0])
+            f.write(sqlglot.transpile(definition, pretty=False, read="tsql")[0])
             f.write("\nGO\n")
 
 
@@ -279,7 +279,7 @@ def export_stored_procedures(hook, output_directory):
         with open(stored_procedures_directory / secure_filename(f"{schema_name}.{procedure_name}.sql"), "w", encoding="utf-8",) as f:
             f.write(f"\n-- Schema: {schema_name}\n")
             f.write(f"-- Procedure: {procedure_name}\n")
-            f.write(sqlglot.transpile(definition, pretty=False, dialect="tsql")[0])
+            f.write(sqlglot.transpile(definition, pretty=False, read="tsql")[0])
             f.write("\nGO\n")
 
 
@@ -301,7 +301,7 @@ def export_triggers(hook, output_directory):
     for name, definition in triggers:
         with open(triggers_directory / secure_filename(f"{name}.sql"), "w", encoding="utf-8",) as f:
             f.write(f"\n-- Trigger: {name}\n")
-            f.write(sqlglot.transpile(definition, pretty=False, dialect="tsql")[0])
+            f.write(sqlglot.transpile(definition, pretty=False, read="tsql")[0])
             f.write("\nGO\n")
 
 
