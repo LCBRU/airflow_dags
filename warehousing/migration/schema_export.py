@@ -1,11 +1,8 @@
 from __future__ import annotations
 
 import hashlib
-<<<<<<< HEAD
 import sqlparse
 from itertools import groupby
-=======
->>>>>>> e1395c166bb8efbb987b3c4caa0c43d4367a26f7
 import shutil
 from itertools import groupby
 from pathlib import Path

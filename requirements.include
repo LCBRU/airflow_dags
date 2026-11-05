@@ -14,8 +14,5 @@ jsonlines
 sqlalchemy
 pymysql
 python-dateutil
-<<<<<<< HEAD
 sqlparse
-=======
 werkzeug
->>>>>>> e1395c166bb8efbb987b3c4caa0c43d4367a26f7
