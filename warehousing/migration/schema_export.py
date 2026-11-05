@@ -32,7 +32,7 @@ def get_hook(conn_id: str, database: str | None = None) -> DbApiHook:
 
     return hook
 
-BACKUP_DIRECTORY = '/backup/dwh_schema/'
+BACKUP_DIRECTORY = '/data/dwh_schema/'
 
 @task
 def clear_output_directory(target_dir: str) -> None:
