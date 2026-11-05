@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import sqlparse
 from itertools import groupby
 import shutil
 from pathlib import Path
@@ -253,7 +254,7 @@ def export_views(hook, output_directory):
         with open(views_directory / f"{schema_name}.{view_name}.sql", "w", encoding="utf-8",) as f:
             f.write(f"\n-- Schema: {schema_name}\n")
             f.write(f"-- View: {view_name}\n")
-            f.write(definition)
+            f.write(sqlparse.format(definition, reindent=True, keyword_case="upper", strip_comments=True))
             f.write("\nGO\n")
 
 
@@ -276,7 +277,7 @@ def export_stored_procedures(hook, output_directory):
         with open(stored_procedures_directory / f"{schema_name}.{procedure_name}.sql", "w", encoding="utf-8",) as f:
             f.write(f"\n-- Schema: {schema_name}\n")
             f.write(f"-- Procedure: {procedure_name}\n")
-            f.write(definition)
+            f.write(sqlparse.format(definition, reindent=True, keyword_case="upper", strip_comments=True))
             f.write("\nGO\n")
 
 
@@ -298,7 +299,7 @@ def export_triggers(hook, output_directory):
     for name, definition in triggers:
         with open(triggers_directory / f"{name}.sql", "w", encoding="utf-8",) as f:
             f.write(f"\n-- Trigger: {name}\n")
-            f.write(definition)
+            f.write(sqlparse.format(definition, reindent=True, keyword_case="upper", strip_comments=True))
             f.write("\nGO\n")
 
 
@@ -413,7 +414,7 @@ def export_sqlserver_agent_jobs(target_dir, conn_id):
                 @step_id = {step_id},
                 @step_name = N'{step_name.replace("'", "''")}',
                 @subsystem = N'{subsystem}',
-                @command = N'{command.replace("'", "''")}',
+                @command = N'{sqlparse.format(command, reindent=True, keyword_case="upper", strip_comments=True).replace("'", "''")}',
                 @database_name = N'{database_name or "master"}',
                 @database_user_name = N'{database_user_name or ""}',
                 @retry_attempts = {retry_attempts},
