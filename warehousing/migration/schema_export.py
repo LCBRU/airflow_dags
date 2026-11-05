@@ -6,6 +6,7 @@ from itertools import groupby
 import shutil
 from itertools import groupby
 from pathlib import Path
+import re
 
 from airflow.hooks.base import BaseHook
 from airflow.providers.common.sql.hooks.sql import DbApiHook
@@ -158,21 +159,28 @@ def extract_tables(hook, output_directory):
         """)
 
     for schema, table in tables:
-        cols = hook.get_records("""
-                SELECT
-                    COLUMN_NAME,
-                    DATA_TYPE,
-                    CHARACTER_MAXIMUM_LENGTH,
-                    NUMERIC_PRECISION,
-                    NUMERIC_SCALE,
-                    IS_NULLABLE
-                FROM INFORMATION_SCHEMA.COLUMNS
-                WHERE TABLE_SCHEMA=%s
-                    AND TABLE_NAME=%s
-                ORDER BY ORDINAL_POSITION
-                """,
-                (schema, table),
-            )
+        cols = hook.get_records(
+            """
+            SELECT
+                c.COLUMN_NAME,
+                c.DATA_TYPE,
+                c.CHARACTER_MAXIMUM_LENGTH,
+                c.NUMERIC_PRECISION,
+                c.NUMERIC_SCALE,
+                c.IS_NULLABLE
+            FROM INFORMATION_SCHEMA.COLUMNS c
+            JOIN sys.tables t
+                ON t.name = c.TABLE_NAME
+            JOIN sys.schemas s
+                ON s.schema_id = t.schema_id
+                AND s.name = c.TABLE_SCHEMA
+            WHERE c.TABLE_SCHEMA = %s
+                AND c.TABLE_NAME = %s
+                AND t.is_ms_shipped = 0
+            ORDER BY c.ORDINAL_POSITION
+            """,
+            (schema, table),
+        )
 
         ddl = f"\nCREATE TABLE [{schema}].[{table}] (\n"
 
@@ -202,19 +210,31 @@ def export_primary_keys(hook, output_directory):
     primary_keys_directory = output_directory / "primary_keys"
     primary_keys_directory.mkdir(parents=True, exist_ok=True)
 
-    records = hook.get_records("""
-            SELECT
-                tc.TABLE_SCHEMA,
-                tc.TABLE_NAME,
-                kcu.COLUMN_NAME,
-                kcu.CONSTRAINT_NAME
-            FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS tc
-            JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS kcu
-                ON tc.CONSTRAINT_NAME = kcu.CONSTRAINT_NAME
-            WHERE tc.CONSTRAINT_TYPE = 'PRIMARY KEY'
-            ORDER BY tc.TABLE_SCHEMA, tc.TABLE_NAME, kcu.ORDINAL_POSITION
-            """
-        )
+    records = hook.get_records(
+        """
+        SELECT
+            tc.TABLE_SCHEMA,
+            tc.TABLE_NAME,
+            kcu.COLUMN_NAME,
+            kcu.CONSTRAINT_NAME
+        FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS tc
+        JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS kcu
+            ON tc.CONSTRAINT_NAME = kcu.CONSTRAINT_NAME
+            AND tc.TABLE_SCHEMA = kcu.TABLE_SCHEMA
+            AND tc.TABLE_NAME = kcu.TABLE_NAME
+        JOIN sys.tables t
+            ON t.name = tc.TABLE_NAME
+        JOIN sys.schemas s
+            ON s.schema_id = t.schema_id
+            AND s.name = tc.TABLE_SCHEMA
+        WHERE tc.CONSTRAINT_TYPE = 'PRIMARY KEY'
+            AND t.is_ms_shipped = 0
+        ORDER BY
+            tc.TABLE_SCHEMA,
+            tc.TABLE_NAME,
+            kcu.ORDINAL_POSITION
+        """
+    )
 
     pks = {}
 
@@ -241,19 +261,29 @@ def export_views(hook, output_directory):
     views_directory = output_directory / "views"
     views_directory.mkdir(parents=True, exist_ok=True)
 
-    views = hook.get_records("""
-            SELECT s.name as schema_name, o.name as view_name, m.definition
-            FROM sys.views o
-            JOIN sys.schemas s
-                ON o.schema_id=s.schema_id
-            JOIN sys.sql_modules m
-                ON o.object_id=m.object_id
-            ORDER BY s.name,o.name
-            """
-        )
+    views = hook.get_records(
+        """
+        SELECT
+            s.name AS schema_name,
+            v.name AS view_name,
+            m.definition
+        FROM sys.views v
+        JOIN sys.schemas s
+            ON v.schema_id = s.schema_id
+        JOIN sys.sql_modules m
+            ON v.object_id = m.object_id
+        WHERE v.is_ms_shipped = 0
+            AND s.name NOT IN ('sys', 'INFORMATION_SCHEMA')
+        ORDER BY
+            s.name,
+            v.name
+        """
+    )
 
     for schema_name, view_name, definition in views:
         with open(views_directory / secure_filename(f"{schema_name}.{view_name}.sql"), "w", encoding="utf-8",) as f:
+            definition = re.sub(r'^(#|--).*\n?', '', definition, flags=re.MULTILINE)
+
             f.write(f"\n-- Schema: {schema_name}\n")
             f.write(f"-- View: {view_name}\n")
             f.write(sqlglot.transpile(definition, pretty=False, read="tsql")[0])
@@ -264,18 +294,27 @@ def export_stored_procedures(hook, output_directory):
     stored_procedures_directory = output_directory / "stored_procedures"
     stored_procedures_directory.mkdir(parents=True, exist_ok=True)
 
-    sps = hook.get_records("""
-            SELECT s.name as schema_name, o.name as procedure_name, m.definition
-            FROM sys.procedures o
-            JOIN sys.schemas s
-                ON o.schema_id=s.schema_id
-            JOIN sys.sql_modules m
-                ON o.object_id=m.object_id
-            ORDER BY s.name,o.name
-            """
-        )
+    sps = hook.get_records(
+        """
+        SELECT
+            s.name AS schema_name,
+            p.name AS procedure_name,
+            m.definition
+        FROM sys.procedures p
+        JOIN sys.schemas s
+            ON p.schema_id = s.schema_id
+        JOIN sys.sql_modules m
+            ON p.object_id = m.object_id
+        WHERE p.is_ms_shipped = 0
+        AND s.name NOT IN ('sys', 'INFORMATION_SCHEMA')
+        ORDER BY
+            s.name,
+            p.name
+        """
+    )
 
     for schema_name, procedure_name, definition in sps:
+        definition = re.sub(r'^(#|--).*\n?', '', definition, flags=re.MULTILINE)
         with open(stored_procedures_directory / secure_filename(f"{schema_name}.{procedure_name}.sql"), "w", encoding="utf-8",) as f:
             f.write(f"\n-- Schema: {schema_name}\n")
             f.write(f"-- Procedure: {procedure_name}\n")
@@ -295,10 +334,12 @@ def export_triggers(hook, output_directory):
         JOIN sys.sql_modules m
             ON t.object_id=m.object_id
         WHERE t.parent_class = 1
+            AND t.is_ms_shipped = 0
         ORDER BY t.name
         """)
 
     for name, definition in triggers:
+        definition = re.sub(r'^(#|--).*\n?', '', definition, flags=re.MULTILINE)
         with open(triggers_directory / secure_filename(f"{name}.sql"), "w", encoding="utf-8",) as f:
             f.write(f"\n-- Trigger: {name}\n")
             f.write(sqlglot.transpile(definition, pretty=False, read="tsql")[0])
@@ -333,6 +374,7 @@ def export_foreign_keys(hook, output_directory):
             ON tab2.schema_id = sch2.schema_id
         JOIN sys.columns col2
             ON fkc.referenced_column_id = col2.column_id AND col2.object_id = tab2.object_id
+        WHERE fk.is_ms_shipped = 0
         ORDER BY sch1.name, tab1.name, fk.name, fkc.constraint_column_id;
     """)
 
