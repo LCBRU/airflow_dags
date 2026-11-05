@@ -14,5 +14,5 @@ jsonlines
 sqlalchemy
 pymysql
 python-dateutil
-sqlparse
+sqlglot
 werkzeug
