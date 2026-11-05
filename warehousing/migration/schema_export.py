@@ -453,6 +453,7 @@ def build_schema_export_dag(conn_id: str):
     )
     def schema_export():
         target_dir = str(Path(BACKUP_DIRECTORY) / conn_id)
+        target_dir.mkdir(parents=True, exist_ok=True)
 
         clear = clear_output_directory(target_dir)
 
