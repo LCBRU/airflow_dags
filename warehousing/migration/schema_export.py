@@ -1,15 +1,20 @@
 from __future__ import annotations
 
 import hashlib
+<<<<<<< HEAD
 import sqlparse
 from itertools import groupby
+=======
+>>>>>>> e1395c166bb8efbb987b3c4caa0c43d4367a26f7
 import shutil
+from itertools import groupby
 from pathlib import Path
 
 from airflow.hooks.base import BaseHook
 from airflow.providers.common.sql.hooks.sql import DbApiHook
 from airflow.providers.smtp.operators.smtp import EmailOperator
 from airflow.sdk import dag, task
+from werkzeug.utils import secure_filename
 
 from tools import default_dag_args, error_emails
 from warehousing.schedules import SCHEDULE_SCHEMA_EXPORT
@@ -133,7 +138,7 @@ def export_database(database: str, conn_id: str, target_dir: str) -> None:
 
     hook = get_hook(conn_id, database)
 
-    output_path = Path(target_dir)
+    output_path = Path(target_dir) / "databases" / secure_filename(database)
     output_path.mkdir(parents=True, exist_ok=True)
 
     extract_tables(hook, output_path)
@@ -192,7 +197,7 @@ def extract_tables(hook, output_directory):
         ddl += ",\n".join(f"    {d}" for d in definitions)
         ddl += "\n);\nGO\n"
 
-        with open(tables_directory / f"{schema}.{table}.sql", "w", encoding="utf-8",) as f:
+        with open(tables_directory / secure_filename(f"{schema}.{table}.sql"), "w", encoding="utf-8",) as f:
             f.write(ddl)
 
 
@@ -231,7 +236,7 @@ def export_primary_keys(hook, output_directory):
             GO
         """
         
-        with open(primary_keys_directory / f"{schema}.{table}.sql", "w", encoding="utf-8") as pk_f:
+        with open(primary_keys_directory / secure_filename(f"{schema}.{table}.sql"), "w", encoding="utf-8") as pk_f:
             pk_f.write(sql)
 
 
@@ -251,7 +256,7 @@ def export_views(hook, output_directory):
         )
 
     for schema_name, view_name, definition in views:
-        with open(views_directory / f"{schema_name}.{view_name}.sql", "w", encoding="utf-8",) as f:
+        with open(views_directory / secure_filename(f"{schema_name}.{view_name}.sql"), "w", encoding="utf-8",) as f:
             f.write(f"\n-- Schema: {schema_name}\n")
             f.write(f"-- View: {view_name}\n")
             f.write(sqlparse.format(definition, reindent=True, keyword_case="upper", strip_comments=True))
@@ -274,7 +279,7 @@ def export_stored_procedures(hook, output_directory):
         )
 
     for schema_name, procedure_name, definition in sps:
-        with open(stored_procedures_directory / f"{schema_name}.{procedure_name}.sql", "w", encoding="utf-8",) as f:
+        with open(stored_procedures_directory / secure_filename(f"{schema_name}.{procedure_name}.sql"), "w", encoding="utf-8",) as f:
             f.write(f"\n-- Schema: {schema_name}\n")
             f.write(f"-- Procedure: {procedure_name}\n")
             f.write(sqlparse.format(definition, reindent=True, keyword_case="upper", strip_comments=True))
@@ -297,7 +302,7 @@ def export_triggers(hook, output_directory):
         """)
 
     for name, definition in triggers:
-        with open(triggers_directory / f"{name}.sql", "w", encoding="utf-8",) as f:
+        with open(triggers_directory / secure_filename(f"{name}.sql"), "w", encoding="utf-8",) as f:
             f.write(f"\n-- Trigger: {name}\n")
             f.write(sqlparse.format(definition, reindent=True, keyword_case="upper", strip_comments=True))
             f.write("\nGO\n")
@@ -343,7 +348,7 @@ def export_foreign_keys(hook, output_directory):
             GO
         """
 
-        with open(foreign_keys_directory / f"{constraint_name}.sql", "w", encoding="utf-8") as f:
+        with open(foreign_keys_directory / secure_filename(f"{constraint_name}.sql"), "w", encoding="utf-8") as f:
             f.write(sql)
 
 
@@ -381,12 +386,12 @@ def export_sqlserver_agent_jobs(target_dir, conn_id):
         ORDER BY j.name, s.step_id;
     """)
 
+
+
     for job_name, job_steps in groupby(jobs, key=lambda x: x[0]):
-        sql = f"""
-        ----------------------------------------------
-        -- Job: {job_name}
-        ----------------------------------------------
-        """
+        sql = "----------------------------------------------"
+        sql += f"\n-- Job: {job_name}\n"
+        sql += "----------------------------------------------\n"
 
         for step in job_steps:
             (
@@ -406,35 +411,38 @@ def export_sqlserver_agent_jobs(target_dir, conn_id):
                 output_file_name,
                 proxy_name
             ) = step
-    
-            sql = f"""
-            -- Step {step_id}: {step_name}
-            EXEC msdb.dbo.sp_add_jobstep
-                @job_name = N'{job_name.replace("'", "''")}',
-                @step_id = {step_id},
-                @step_name = N'{step_name.replace("'", "''")}',
-                @subsystem = N'{subsystem}',
-                @command = N'{sqlparse.format(command, reindent=True, keyword_case="upper", strip_comments=True).replace("'", "''")}',
-                @database_name = N'{database_name or "master"}',
-                @database_user_name = N'{database_user_name or ""}',
-                @retry_attempts = {retry_attempts},
-                @retry_interval = {retry_interval},
-                @on_success_action = {on_success_action},
-                @on_success_step_id = {on_success_step_id},
-                @on_fail_action = {on_fail_action},
-                @on_fail_step_id = {on_fail_step_id}"""
+
+            sql += f"\n-- Step {step_id}: {step_name}\n"
+
+            sql += "EXEC msdb.dbo.sp_add_jobstep"
+
+            params = []
+
+            params.append(f"@job_name = N'{job_name.replace("'", "''")}'")
+            params.append(f"@step_id = {step_id}")
+            params.append(f"@step_name = N'{step_name.replace("'", "''")}'")
+            params.append(f"@subsystem = N'{subsystem}'")
+            params.append(f"@command = N'{command.replace("'", "''")}'")
+            params.append(f"@database_name = N'{database_name or "master"}'")
+            params.append(f"@database_user_name = N'{database_user_name or ""}'")
+            params.append(f"@retry_attempts = {retry_attempts}")
+            params.append(f"@retry_interval = {retry_interval}")
+            params.append(f"@on_success_action = {on_success_action}")
+            params.append(f"@on_success_step_id = {on_success_step_id}")
+            params.append(f"@on_fail_action = {on_fail_action}")
+            params.append(f"@on_fail_step_id = {on_fail_step_id}")
 
             if output_file_name:
-                sql += f""",
-    @output_file_name = N'{output_file_name.replace("'", "''")}'"""
+                params.append(f"@output_file_name = N'{output_file_name.replace("'", "''")}'")  
 
             if proxy_name:
-                sql += f""",
-    @proxy_name = N'{proxy_name.replace("'", "''")}'"""
+                params.append(f"@proxy_name = N'{proxy_name.replace("'", "''")}'")
+
+            sql += ",\n    ".join(params)
 
             sql += ";\nGO\n\n"
 
-        with open(agent_jobs_directory / f"{job_name}.sql", "w", encoding="utf-8") as f:
+        with open(agent_jobs_directory / secure_filename(f"{job_name}.sql"), "w", encoding="utf-8") as f:
             f.write(sql)
 
 
