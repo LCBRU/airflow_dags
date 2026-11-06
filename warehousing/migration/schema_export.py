@@ -132,7 +132,7 @@ def get_databases(conn_id: str) -> list[str]:
             AND state_desc = 'ONLINE'
         """)
 
-    return [row[0] for row in rows]
+    return [row[0] for row in rows[:10]]  # Limit to first 10 databases for now
 
 
 @task
