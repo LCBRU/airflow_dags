@@ -138,6 +138,8 @@ def get_databases(conn_id: str) -> list[str]:
 @task
 def export_database(database: str, conn_id: str, target_dir: str) -> None:
 
+    results = []
+
     hook = get_hook(conn_id, database)
 
     output_path = Path(target_dir) / "databases" / secure_filename(database)
@@ -145,11 +147,12 @@ def export_database(database: str, conn_id: str, target_dir: str) -> None:
 
     extract_tables(hook, output_path)
     export_primary_keys(hook, output_path)
-    export_views(hook, output_path)
-    export_stored_procedures(hook, output_path)
-    export_triggers(hook, output_path)
+    results.extend(export_views(hook, output_path))
+    results.extend(export_stored_procedures(hook, output_path))
+    results.extend(export_triggers(hook, output_path))
     export_foreign_keys(hook, output_path)
 
+    return results
 
 def extract_tables(hook, output_directory):
     tables_directory = output_directory / "tables"
@@ -262,6 +265,8 @@ def export_primary_keys(hook, output_directory):
 
 
 def export_views(hook, output_directory):
+    results = []
+
     views_directory = output_directory / "views"
     views_directory.mkdir(parents=True, exist_ok=True)
 
@@ -287,6 +292,15 @@ def export_views(hook, output_directory):
     for schema_name, view_name, definition in views:
         parsed = sqlparse.format(definition, reindent=True, keyword_case="upper", strip_comments=True)
 
+        table_names = get_tables_and_views(parsed, hook.schema, schema_name)
+        procedure_names = get_called_routines(parsed, hook.schema, schema_name)
+
+        for t in table_names:
+            results.append(('view', normalise_name(view_name, hook.database, hook.schema), "table", t))
+
+        for p in procedure_names:
+            results.append(('view', normalise_name(view_name, hook.database, hook.schema), "procedure", p))
+
         try:
             glotted = sqlglot.transpile(definition, pretty=True, read="tsql", write="tsql")[0]
         except sqlglot.errors.SqlglotError:
@@ -301,8 +315,11 @@ def export_views(hook, output_directory):
             f.write(glotted)
             f.write("\nGO\n")
 
+    return results
 
 def export_stored_procedures(hook, output_directory):
+    results = []
+
     stored_procedures_directory = output_directory / "stored_procedures"
     stored_procedures_directory.mkdir(parents=True, exist_ok=True)
 
@@ -327,6 +344,16 @@ def export_stored_procedures(hook, output_directory):
 
     for schema_name, procedure_name, definition in sps:
         parsed = sqlparse.format(definition, reindent=True, keyword_case="upper", strip_comments=True)
+
+        table_names = get_tables_and_views(parsed, hook.schema, schema_name)
+        procedure_names = get_called_routines(parsed, hook.schema, schema_name)
+
+        for t in table_names:
+            results.append(('procedure', normalise_name(procedure_name, hook.database, hook.schema), "table", t))
+
+        for p in procedure_names:
+            results.append(('procedure', normalise_name(procedure_name, hook.database, hook.schema), "procedure", p))
+
         try:
             glotted = sqlglot.transpile(definition, pretty=True, read="tsql", write="tsql")[0]
         except sqlglot.errors.SqlglotError:
@@ -341,8 +368,11 @@ def export_stored_procedures(hook, output_directory):
             f.write(glotted)
             f.write("\nGO\n")
 
+    return results
 
 def export_triggers(hook, output_directory):
+    results = []
+
     triggers_directory = output_directory / "triggers"
     triggers_directory.mkdir(parents=True, exist_ok=True)
 
@@ -359,7 +389,18 @@ def export_triggers(hook, output_directory):
         """)
 
     for name, definition in triggers:
+
         parsed = sqlparse.format(definition, reindent=True, keyword_case="upper", strip_comments=True)
+
+        table_names = get_tables_and_views(parsed, hook.schema, "dbo")
+        procedure_names = get_called_routines(parsed, hook.schema, "dbo")
+
+        for t in table_names:
+            results.append(('trigger', normalise_name(name, hook.database, hook.schema), "table", t))
+
+        for p in procedure_names:
+            results.append(('trigger', normalise_name(name, hook.database, hook.schema), "procedure", p))
+
         try:
             glotted = sqlglot.transpile(definition, pretty=True, read="tsql", write="tsql")[0]
         except sqlglot.errors.SqlglotError:
@@ -372,6 +413,112 @@ def export_triggers(hook, output_directory):
             f.write(f"\n-- Trigger: {name}\n")
             f.write(glotted)
             f.write("\nGO\n")
+
+    return results
+
+
+def remove_sql_comments(sql: str) -> str:
+    """Remove SQL Server block and line comments."""
+
+    # Remove block comments
+    sql = re.sub(r"/\*.*?\*/", " ", sql, flags=re.DOTALL)
+
+    # Remove line comments
+    sql = re.sub(r"--.*?$", "", sql, flags=re.MULTILINE)
+
+    return sql
+
+
+def clean_object_name(name: str) -> str:
+    """Normalise SQL Server object names."""
+
+    name = name.strip()
+
+    # Remove trailing punctuation
+    name = re.sub(r"[;,]$", "", name)
+
+    # Remove brackets
+    name = name.replace("[", "").replace("]", "")
+
+    return name
+
+
+def normalise_name(
+    name: str,
+    current_database: str,
+    current_schema: str
+) -> str:
+
+    parts = name.replace("[", "").replace("]", "").split(".")
+
+    if len(parts) == 1:
+        return f"{current_database}.{current_schema}.{parts[0]}"
+
+    if len(parts) == 2:
+        return f"{current_database}.{parts[0]}.{parts[1]}"
+
+    if len(parts) == 3:
+        return name.replace("[", "").replace("]", "")
+
+    return name
+
+
+def get_tables_and_views(sql: str, current_database: str, current_schema: str) -> list[str]:
+    """
+    Return tables/views referenced by a stored procedure,
+    trigger, function or view definition.
+    """
+
+    sql = remove_sql_comments(sql)
+
+    patterns = [
+        r"\bFROM\s+([#\[\]\w\.]+)",
+        r"\bJOIN\s+([#\[\]\w\.]+)",
+        r"\bINTO\s+([#\[\]\w\.]+)",
+        r"\bUPDATE\s+([#\[\]\w\.]+)",
+        r"\bMERGE\s+([#\[\]\w\.]+)",
+        r"\bDELETE\s+FROM\s+([#\[\]\w\.]+)",
+    ]
+
+    objects: set[str] = set()
+
+    for pattern in patterns:
+        for match in re.findall(pattern, sql, re.IGNORECASE):
+            obj = clean_object_name(match)
+            obj = normalise_name(obj, current_database, current_schema)
+            if obj.upper() not in {
+                "SELECT",
+                "VALUES",
+                "OPENQUERY",
+                "OPENROWSET",
+            }:
+                objects.add(obj)
+
+    return sorted(objects)
+
+
+def get_called_routines(sql: str, current_database: str, current_schema: str) -> list[str]:
+    sql = remove_sql_comments(sql)
+
+    routines = set()
+
+    # EXEC / EXECUTE
+    exec_pattern = r"\bEXEC(?:UTE)?\s+([#\[\]\w\.]+)"
+
+    # Scalar/table-valued functions
+    func_pattern = r"\b([A-Za-z0-9_\.\[\]]+)\s*\("
+
+    for m in re.findall(exec_pattern, sql, re.IGNORECASE):
+        routines.add(clean_object_name(m))
+
+    for m in re.findall(func_pattern, sql):
+        obj = clean_object_name(m)
+        obj = normalise_name(obj, current_database, current_schema)
+
+        if "." in obj:
+            routines.add(obj)
+
+    return sorted(routines)
 
 
 def export_foreign_keys(hook, output_directory):
