@@ -288,7 +288,7 @@ def export_views(hook, output_directory):
         parsed = sqlparse.format(definition, reindent=True, keyword_case="upper", strip_comments=True)
 
         try:
-            glotted = sqlglot.transpile(parsed, pretty=True, read="tsql", write="tsql")[0]
+            glotted = sqlglot.transpile(definition, pretty=True, read="tsql", write="tsql")[0]
         except sqlglot.errors.SqlglotError:
             logger.info(f"Error occurred while processing view {view_name}")
             logger.info(f"Definition: {definition}")
@@ -328,7 +328,7 @@ def export_stored_procedures(hook, output_directory):
     for schema_name, procedure_name, definition in sps:
         parsed = sqlparse.format(definition, reindent=True, keyword_case="upper", strip_comments=True)
         try:
-            glotted = sqlglot.transpile(parsed, pretty=True, read="tsql", write="tsql")[0]
+            glotted = sqlglot.transpile(definition, pretty=True, read="tsql", write="tsql")[0]
         except sqlglot.errors.SqlglotError:
             logger.info(f"Error occurred while processing procedure {procedure_name}")
             logger.info(f"Definition: {definition}")
@@ -361,7 +361,7 @@ def export_triggers(hook, output_directory):
     for name, definition in triggers:
         parsed = sqlparse.format(definition, reindent=True, keyword_case="upper", strip_comments=True)
         try:
-            glotted = sqlglot.transpile(parsed, pretty=True, read="tsql", write="tsql")[0]
+            glotted = sqlglot.transpile(definition, pretty=True, read="tsql", write="tsql")[0]
         except sqlglot.errors.SqlglotError:
             logger.info(f"Error occurred while processing trigger {name}")
             logger.info(f"Definition: {definition}")
