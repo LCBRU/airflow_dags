@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import logging
 import re
 import shutil
 from itertools import groupby
@@ -18,6 +19,7 @@ from tools import default_dag_args, error_emails
 from warehousing.schedules import SCHEDULE_SCHEMA_EXPORT
 
 sqlparse.engine.grouping.MAX_GROUPING_TOKENS = None
+logger = logging.getLogger(__name__)
 
 
 def get_hook(conn_id: str, database: str | None = None) -> DbApiHook:
@@ -288,8 +290,8 @@ def export_views(hook, output_directory):
         try:
             glotted = sqlglot.transpile(definition, pretty=True, read="tsql", write="tsql")[0]
         except sqlglot.errors.SqlglotError:
-            print(f"Error occurred while processing view {view_name}")
-            print(definition)
+            logger.info(f"Error occurred while processing view {view_name}")
+            logger.info(f"Definition: {definition}")
             raise
 
         with open(views_directory / secure_filename(f"{schema_name}.{view_name}.sql"), "w", encoding="utf-8",) as f:
@@ -327,8 +329,8 @@ def export_stored_procedures(hook, output_directory):
         try:
             glotted = sqlglot.transpile(definition, pretty=True, read="tsql", write="tsql")[0]
         except sqlglot.errors.SqlglotError:
-            print(f"Error occurred while processing procedure {procedure_name}")
-            print(definition)
+            logger.info(f"Error occurred while processing procedure {procedure_name}")
+            logger.info(f"Definition: {definition}")
             raise
 
         with open(stored_procedures_directory / secure_filename(f"{schema_name}.{procedure_name}.sql"), "w", encoding="utf-8",) as f:
@@ -359,8 +361,8 @@ def export_triggers(hook, output_directory):
         try:
             glotted = sqlglot.transpile(definition, pretty=True, read="tsql", write="tsql")[0]
         except sqlglot.errors.SqlglotError:
-            print(f"Error occurred while processing trigger {name}")
-            print(definition)
+            logger.info(f"Error occurred while processing trigger {name}")
+            logger.info(f"Definition: {definition}")
             raise
 
         with open(triggers_directory / secure_filename(f"{name}.sql"), "w", encoding="utf-8",) as f:
