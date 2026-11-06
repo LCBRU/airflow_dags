@@ -285,13 +285,14 @@ def export_views(hook, output_directory):
     )
 
     for schema_name, view_name, definition in views:
-        definition = sqlparse.format(definition, reindent=True, keyword_case="upper", strip_comments=True)
+        parsed = sqlparse.format(definition, reindent=True, keyword_case="upper", strip_comments=True)
 
         try:
-            glotted = sqlglot.transpile(definition, pretty=True, read="tsql", write="tsql")[0]
+            glotted = sqlglot.transpile(parsed, pretty=True, read="tsql", write="tsql")[0]
         except sqlglot.errors.SqlglotError:
             logger.info(f"Error occurred while processing view {view_name}")
             logger.info(f"Definition: {definition}")
+            logger.info(f"Parsed: {parsed}")
             raise
 
         with open(views_directory / secure_filename(f"{schema_name}.{view_name}.sql"), "w", encoding="utf-8",) as f:
@@ -325,12 +326,13 @@ def export_stored_procedures(hook, output_directory):
     )
 
     for schema_name, procedure_name, definition in sps:
-        definition = sqlparse.format(definition, reindent=True, keyword_case="upper", strip_comments=True)
+        parsed = sqlparse.format(definition, reindent=True, keyword_case="upper", strip_comments=True)
         try:
-            glotted = sqlglot.transpile(definition, pretty=True, read="tsql", write="tsql")[0]
+            glotted = sqlglot.transpile(parsed, pretty=True, read="tsql", write="tsql")[0]
         except sqlglot.errors.SqlglotError:
             logger.info(f"Error occurred while processing procedure {procedure_name}")
             logger.info(f"Definition: {definition}")
+            logger.info(f"Parsed: {parsed}")
             raise
 
         with open(stored_procedures_directory / secure_filename(f"{schema_name}.{procedure_name}.sql"), "w", encoding="utf-8",) as f:
@@ -357,12 +359,13 @@ def export_triggers(hook, output_directory):
         """)
 
     for name, definition in triggers:
-        definition = sqlparse.format(definition, reindent=True, keyword_case="upper", strip_comments=True)
+        parsed = sqlparse.format(definition, reindent=True, keyword_case="upper", strip_comments=True)
         try:
-            glotted = sqlglot.transpile(definition, pretty=True, read="tsql", write="tsql")[0]
+            glotted = sqlglot.transpile(parsed, pretty=True, read="tsql", write="tsql")[0]
         except sqlglot.errors.SqlglotError:
             logger.info(f"Error occurred while processing trigger {name}")
             logger.info(f"Definition: {definition}")
+            logger.info(f"Parsed: {parsed}")
             raise
 
         with open(triggers_directory / secure_filename(f"{name}.sql"), "w", encoding="utf-8",) as f:
