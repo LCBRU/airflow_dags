@@ -301,18 +301,10 @@ def export_views(hook, output_directory):
         for p in procedure_names:
             results.append(('view', normalise_name(view_name, hook.database, hook.schema), "procedure", p))
 
-        try:
-            glotted = sqlglot.transpile(definition, pretty=True, read="tsql", write="tsql")[0]
-        except sqlglot.errors.SqlglotError:
-            logger.info(f"Error occurred while processing view {view_name}")
-            logger.info(f"Definition: {definition}")
-            logger.info(f"Parsed: {parsed}")
-            raise
-
         with open(views_directory / secure_filename(f"{schema_name}.{view_name}.sql"), "w", encoding="utf-8",) as f:
             f.write(f"\n-- Schema: {schema_name}\n")
             f.write(f"-- View: {view_name}\n")
-            f.write(glotted)
+            f.write(parsed)
             f.write("\nGO\n")
 
     return results
@@ -354,18 +346,10 @@ def export_stored_procedures(hook, output_directory):
         for p in procedure_names:
             results.append(('procedure', normalise_name(procedure_name, hook.database, hook.schema), "procedure", p))
 
-        try:
-            glotted = sqlglot.transpile(definition, pretty=True, read="tsql", write="tsql")[0]
-        except sqlglot.errors.SqlglotError:
-            logger.info(f"Error occurred while processing procedure {procedure_name}")
-            logger.info(f"Definition: {definition}")
-            logger.info(f"Parsed: {parsed}")
-            raise
-
         with open(stored_procedures_directory / secure_filename(f"{schema_name}.{procedure_name}.sql"), "w", encoding="utf-8",) as f:
             f.write(f"\n-- Schema: {schema_name}\n")
             f.write(f"-- Procedure: {procedure_name}\n")
-            f.write(glotted)
+            f.write(parsed)
             f.write("\nGO\n")
 
     return results
@@ -401,17 +385,9 @@ def export_triggers(hook, output_directory):
         for p in procedure_names:
             results.append(('trigger', normalise_name(name, hook.database, hook.schema), "procedure", p))
 
-        try:
-            glotted = sqlglot.transpile(definition, pretty=True, read="tsql", write="tsql")[0]
-        except sqlglot.errors.SqlglotError:
-            logger.info(f"Error occurred while processing trigger {name}")
-            logger.info(f"Definition: {definition}")
-            logger.info(f"Parsed: {parsed}")
-            raise
-
         with open(triggers_directory / secure_filename(f"{name}.sql"), "w", encoding="utf-8",) as f:
             f.write(f"\n-- Trigger: {name}\n")
-            f.write(glotted)
+            f.write(parsed)
             f.write("\nGO\n")
 
     return results
