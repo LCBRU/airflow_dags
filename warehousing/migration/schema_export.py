@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 import hashlib
 import logging
 import re
@@ -636,6 +637,26 @@ def export_sqlserver_agent_jobs(target_dir, conn_id):
             f.write(sql)
 
 
+@task
+def write_reference_csv(exports, target_dir):
+    csv_file = Path(target_dir) / "object_references.csv"
+
+    with open(csv_file, "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow([
+            "object_type",
+            "object_name",
+            "referenced_object_type",
+            "referenced_object_name",
+        ])
+
+        # exports is a list of results from all mapped export_database tasks
+        for database_result in exports:
+            for row in database_result:
+                writer.writerow(row)
+
+    return str(csv_file)
+
 def build_schema_export_dag(conn_id: str):
 
     @dag(
@@ -660,12 +681,7 @@ def build_schema_export_dag(conn_id: str):
             database=databases,
         )
 
-        # write exports to a CSV file
-        csv_file = target_path / "object_references.csv"
-        with open(csv_file, "w", encoding="utf-8") as f:
-            f.write("object_type,object_name,referenced_object_type,referenced_object_name\n")
-            f.writelines(f"{object_type},{object_name},{referenced_object_type},{referenced_object_name}\n" for object_type, object_name, referenced_object_type, referenced_object_name in exports)
-
+        csv_file = write_reference_csv(exports, target_dir)
 
         jobs = export_sqlserver_agent_jobs(target_dir, conn_id)
 
@@ -690,7 +706,7 @@ def build_schema_export_dag(conn_id: str):
         record_hash = record_emailed_hash(target_dir, hash)
 
         clear >> jobs >> hash
-        clear >> databases >> exports >> hash
+        clear >> databases >> exports >> csv_file >> hash
         hash >> branch
         previous_hash >> branch
         branch >> [archive, unchanged]
