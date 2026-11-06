@@ -283,14 +283,16 @@ def export_views(hook, output_directory):
     )
 
     for schema_name, view_name, definition in views:
-        with open(views_directory / secure_filename(f"{schema_name}.{view_name}.sql"), "w", encoding="utf-8",) as f:
-            # definition = re.sub(r'^(#|--).*\n?', '', definition, flags=re.MULTILINE)
-            # definition = sqlglot.transpile(definition, pretty=False, read="tsql")[0]
+        definition = sqlparse.format(definition, reindent=True, keyword_case="upper", strip_comments=True)
 
-            definition = sqlparse.format(definition, reindent=True, keyword_case="upper", strip_comments=True)
-
+        try:
             glotted = sqlglot.transpile(definition, pretty=True, read="tsql", write="tsql")[0]
+        except sqlglot.errors.SqlglotError:
+            print(f"Error occurred while processing view {view_name}")
+            print(definition)
+            raise
 
+        with open(views_directory / secure_filename(f"{schema_name}.{view_name}.sql"), "w", encoding="utf-8",) as f:
             f.write(f"\n-- Schema: {schema_name}\n")
             f.write(f"-- View: {view_name}\n")
             f.write(glotted)
@@ -321,11 +323,13 @@ def export_stored_procedures(hook, output_directory):
     )
 
     for schema_name, procedure_name, definition in sps:
-        # definition = re.sub(r'^(#|--).*\n?', '', definition, flags=re.MULTILINE)
-        # definition = sqlglot.transpile(definition, pretty=False, read="tsql")[0]
-
         definition = sqlparse.format(definition, reindent=True, keyword_case="upper", strip_comments=True)
-        glotted = sqlglot.transpile(definition, pretty=True, read="tsql", write="tsql")[0]
+        try:
+            glotted = sqlglot.transpile(definition, pretty=True, read="tsql", write="tsql")[0]
+        except sqlglot.errors.SqlglotError:
+            print(f"Error occurred while processing procedure {procedure_name}")
+            print(definition)
+            raise
 
         with open(stored_procedures_directory / secure_filename(f"{schema_name}.{procedure_name}.sql"), "w", encoding="utf-8",) as f:
             f.write(f"\n-- Schema: {schema_name}\n")
@@ -351,11 +355,13 @@ def export_triggers(hook, output_directory):
         """)
 
     for name, definition in triggers:
-        # definition = re.sub(r'^(#|--).*\n?', '', definition, flags=re.MULTILINE)
-        # definition = sqlglot.transpile(definition, pretty=False, read="tsql")[0]
-
         definition = sqlparse.format(definition, reindent=True, keyword_case="upper", strip_comments=True)
-        glotted = sqlglot.transpile(definition, pretty=True, read="tsql", write="tsql")[0]
+        try:
+            glotted = sqlglot.transpile(definition, pretty=True, read="tsql", write="tsql")[0]
+        except sqlglot.errors.SqlglotError:
+            print(f"Error occurred while processing trigger {name}")
+            print(definition)
+            raise
 
         with open(triggers_directory / secure_filename(f"{name}.sql"), "w", encoding="utf-8",) as f:
             f.write(f"\n-- Trigger: {name}\n")
