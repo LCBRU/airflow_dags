@@ -684,6 +684,13 @@ def build_schema_export_dag(conn_id: str):
             database=databases,
         )
 
+        # write exports to a CSV file
+        csv_file = target_path / "object_references.csv"
+        with open(csv_file, "w", encoding="utf-8") as f:
+            f.write("object_type,object_name,referenced_object_type,referenced_object_name\n")
+            f.writelines(f"{object_type},{object_name},{referenced_object_type},{referenced_object_name}\n" for object_type, object_name, referenced_object_type, referenced_object_name in exports)
+
+
         jobs = export_sqlserver_agent_jobs(target_dir, conn_id)
 
         hash = zip_file_hash(target_dir)
