@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import hashlib
-import sqlglot
-from itertools import groupby
+import re
 import shutil
 from itertools import groupby
 from pathlib import Path
-import re
 
+import sqlglot
+import sqlparse
 from airflow.hooks.base import BaseHook
 from airflow.providers.common.sql.hooks.sql import DbApiHook
 from airflow.providers.smtp.operators.smtp import EmailOperator
@@ -16,6 +16,8 @@ from werkzeug.utils import secure_filename
 
 from tools import default_dag_args, error_emails
 from warehousing.schedules import SCHEDULE_SCHEMA_EXPORT
+
+sqlparse.engine.grouping.MAX_GROUPING_TOKENS = None
 
 
 def get_hook(conn_id: str, database: str | None = None) -> DbApiHook:
@@ -282,11 +284,14 @@ def export_views(hook, output_directory):
 
     for schema_name, view_name, definition in views:
         with open(views_directory / secure_filename(f"{schema_name}.{view_name}.sql"), "w", encoding="utf-8",) as f:
-            definition = re.sub(r'^(#|--).*\n?', '', definition, flags=re.MULTILINE)
+            # definition = re.sub(r'^(#|--).*\n?', '', definition, flags=re.MULTILINE)
+            # definition = sqlglot.transpile(definition, pretty=False, read="tsql")[0]
+
+            definition = sqlparse.format(definition, reindent=True, keyword_case="upper", strip_comments=True)
 
             f.write(f"\n-- Schema: {schema_name}\n")
             f.write(f"-- View: {view_name}\n")
-            f.write(sqlglot.transpile(definition, pretty=False, read="tsql")[0])
+            f.write(definition)
             f.write("\nGO\n")
 
 
@@ -314,11 +319,15 @@ def export_stored_procedures(hook, output_directory):
     )
 
     for schema_name, procedure_name, definition in sps:
-        definition = re.sub(r'^(#|--).*\n?', '', definition, flags=re.MULTILINE)
+        # definition = re.sub(r'^(#|--).*\n?', '', definition, flags=re.MULTILINE)
+        # definition = sqlglot.transpile(definition, pretty=False, read="tsql")[0]
+
+        definition = sqlparse.format(definition, reindent=True, keyword_case="upper", strip_comments=True)
+
         with open(stored_procedures_directory / secure_filename(f"{schema_name}.{procedure_name}.sql"), "w", encoding="utf-8",) as f:
             f.write(f"\n-- Schema: {schema_name}\n")
             f.write(f"-- Procedure: {procedure_name}\n")
-            f.write(sqlglot.transpile(definition, pretty=False, read="tsql")[0])
+            f.write(definition)
             f.write("\nGO\n")
 
 
@@ -339,10 +348,14 @@ def export_triggers(hook, output_directory):
         """)
 
     for name, definition in triggers:
-        definition = re.sub(r'^(#|--).*\n?', '', definition, flags=re.MULTILINE)
+        # definition = re.sub(r'^(#|--).*\n?', '', definition, flags=re.MULTILINE)
+        # definition = sqlglot.transpile(definition, pretty=False, read="tsql")[0]
+
+        definition = sqlparse.format(definition, reindent=True, keyword_case="upper", strip_comments=True)
+
         with open(triggers_directory / secure_filename(f"{name}.sql"), "w", encoding="utf-8",) as f:
             f.write(f"\n-- Trigger: {name}\n")
-            f.write(sqlglot.transpile(definition, pretty=False, read="tsql")[0])
+            f.write(definition)
             f.write("\nGO\n")
 
 
