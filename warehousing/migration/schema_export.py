@@ -297,10 +297,10 @@ def export_views(hook, output_directory):
         procedure_names = get_called_routines(parsed, hook.schema, schema_name)
 
         for t in table_names:
-            results.append(('view', normalise_name(view_name, hook.database, hook.schema), "table", t))
+            results.append(('view', normalise_name(view_name, hook.schema, schema_name), "table", t))
 
         for p in procedure_names:
-            results.append(('view', normalise_name(view_name, hook.database, hook.schema), "procedure", p))
+            results.append(('view', normalise_name(view_name, hook.schema, schema_name), "procedure", p))
 
         with open(views_directory / secure_filename(f"{schema_name}.{view_name}.sql"), "w", encoding="utf-8",) as f:
             f.write(f"\n-- Schema: {schema_name}\n")
@@ -342,10 +342,10 @@ def export_stored_procedures(hook, output_directory):
         procedure_names = get_called_routines(parsed, hook.schema, schema_name)
 
         for t in table_names:
-            results.append(('procedure', normalise_name(procedure_name, hook.database, hook.schema), "table", t))
+            results.append(('procedure', normalise_name(procedure_name, hook.schema, schema_name), "table", t))
 
         for p in procedure_names:
-            results.append(('procedure', normalise_name(procedure_name, hook.database, hook.schema), "procedure", p))
+            results.append(('procedure', normalise_name(procedure_name, hook.schema, schema_name), "procedure", p))
 
         with open(stored_procedures_directory / secure_filename(f"{schema_name}.{procedure_name}.sql"), "w", encoding="utf-8",) as f:
             f.write(f"\n-- Schema: {schema_name}\n")
@@ -381,10 +381,10 @@ def export_triggers(hook, output_directory):
         procedure_names = get_called_routines(parsed, hook.schema, "dbo")
 
         for t in table_names:
-            results.append(('trigger', normalise_name(name, hook.database, hook.schema), "table", t))
+            results.append(('trigger', normalise_name(name, hook.schema, "dbo"), "table", t))
 
         for p in procedure_names:
-            results.append(('trigger', normalise_name(name, hook.database, hook.schema), "procedure", p))
+            results.append(('trigger', normalise_name(name, hook.schema, "dbo"), "procedure", p))
 
         with open(triggers_directory / secure_filename(f"{name}.sql"), "w", encoding="utf-8",) as f:
             f.write(f"\n-- Trigger: {name}\n")
