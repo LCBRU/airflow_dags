@@ -1,22 +1,29 @@
 import logging
 import os
 import pathlib
-from datetime import datetime, date, timedelta, timezone
 import subprocess
+from datetime import UTC, date, datetime, timedelta
+
 from airflow import DAG
-from tools import default_dag_args, email_notification_callback
-from warehousing.database import LIVE_DB_CONNECTION_NAME, OPS_DB_CONNECTION_NAME, MySqlConnection
-from dateutil.relativedelta import relativedelta
 from airflow.sdk import task
+from dateutil.relativedelta import relativedelta
+
+from tools import default_dag_args, email_notification_callback
+from warehousing.database import (
+    LIVE_DB_CONNECTION_NAME,
+    OPS_DB_CONNECTION_NAME,
+    MySqlConnection,
+)
 from warehousing.schedules import SCHEDULE_BACKUP
 
+logger = logging.getLogger(__name__)
 
 BACKUP_DIRECTORY = '/backup/live_db/'
 
 
 @task(on_failure_callback=email_notification_callback)
 def _backup_database(conn, db):
-    logging.info("_backup_database: Started")
+    logger.info("_backup_database: Started")
 
     dump = subprocess.Popen(
         [
@@ -34,7 +41,7 @@ def _backup_database(conn, db):
         text=True,
     )
 
-    backup_dir = pathlib.Path(BACKUP_DIRECTORY) / f"{datetime.now():%Y%m%d}"
+    backup_dir = pathlib.Path(BACKUP_DIRECTORY) / conn.host / f"{datetime.now():%Y%m%d}"
     backup_dir.mkdir(parents=True, exist_ok=True)
 
     with open(pathlib.Path(backup_dir / f"{db}_{datetime.now():%Y%m%d_%H%M%S}.sql.gz"), "w") as zipfile:
@@ -47,14 +54,14 @@ def _backup_database(conn, db):
             stdout=zipfile,
         )
 
-    output, errors = zip.communicate()
-    logging.error(errors)
-    logging.info("_backup_database: Ended")
+    _, errors = zip.communicate()
+    logger.error(errors)
+    logger.info("_backup_database: Ended")
 
 
 @task(on_failure_callback=email_notification_callback)
 def _cleanup_old_backups():
-    logging.info("_cleanup_old_backups: Started")
+    logger.info("_cleanup_old_backups: Started")
 
     backup_dir = pathlib.Path(BACKUP_DIRECTORY)
     backup_dir.mkdir(parents=True, exist_ok=True)
@@ -65,53 +72,53 @@ def _cleanup_old_backups():
     oldest_monthly = today - relativedelta(months=12)
     oldest_yearly = today - relativedelta(years=5)
 
-    logging.info(f"Oldest daily date: {oldest_daily!r}")
-    logging.info(f"Oldest weekly date: {oldest_weekly!r}")
-    logging.info(f"Oldest monthly date: {oldest_monthly!r}")
-    logging.info(f"Oldest yearly date: {oldest_yearly!r}")
+    logger.info(f"Oldest daily date: {oldest_daily!r}")
+    logger.info(f"Oldest weekly date: {oldest_weekly!r}")
+    logger.info(f"Oldest monthly date: {oldest_monthly!r}")
+    logger.info(f"Oldest yearly date: {oldest_yearly!r}")
 
     to_delete = []
 
     for f in [f for f in backup_dir.glob('**/*') if f.is_file()]:
-        modifield_date = datetime.fromtimestamp(f.stat().st_mtime, tz=timezone.utc).date()
+        modifield_date = datetime.fromtimestamp(f.stat().st_mtime, tz=UTC).date()
 
         if modifield_date >= oldest_daily:
-            logging.info(f"Keeping file {f} because it's younger than daily oldest daily date")
+            logger.info(f"Keeping file {f} because it's younger than daily oldest daily date")
             continue
     
         if modifield_date >= oldest_weekly and modifield_date.weekday() == 0:
-            logging.info(f"Keeping file {f} because it's younger than daily oldest weekly date")
+            logger.info(f"Keeping file {f} because it's younger than daily oldest weekly date")
             continue
 
         if modifield_date >= oldest_monthly and modifield_date.day == 1:
-            logging.info(f"Keeping file {f} because it's younger than daily oldest monthly date")
+            logger.info(f"Keeping file {f} because it's younger than daily oldest monthly date")
             continue
 
         if modifield_date >= oldest_yearly and modifield_date.day == 1 and modifield_date.month == 1:
-            logging.info(f"Keeping file {f} because it's younger than daily oldest yearly date")
+            logger.info(f"Keeping file {f} because it's younger than daily oldest yearly date")
             continue
 
         to_delete.append(f)
 
     for f in to_delete:
-        logging.info(f"Deleted file: {f}")
+        logger.info(f"Deleted file: {f}")
         f.unlink()
 
     for d in [d for d in backup_dir.glob('**/*') if d.is_dir()]:
         is_empty = not any(d.iterdir())
         if is_empty:
-            logging.info(f"Deleted empty directory: {d}")
+            logger.info(f"Deleted empty directory: {d}")
             os.rmdir(d)
         else:
-            logging.info(f"Keeping directory: {d}")
+            logger.info(f"Keeping directory: {d}")
 
 
-    logging.info("_cleanup_old_backups: Ended")
+    logger.info("_cleanup_old_backups: Ended")
 
 
 servers = [
     {
-        'conn_name': LIVE_DB_CONNECTION_NAME,
+        'conn_name': LIVE_DB_CONNECTION_NAME, # db02
         'exclude': {
             'information_schema',
             'mysql',
@@ -126,29 +133,25 @@ servers = [
         }
     },
     {
-        'conn_name': OPS_DB_CONNECTION_NAME,
+        'conn_name': OPS_DB_CONNECTION_NAME, # db01
         'exclude': {
-            'information_schema',
-            'mysql',
-            'performance_schema',
-            'reporting',
-            'scratch',
-            'sys',
-            'uol_crf_redcap',
-            'uol_easyas_redcap',
-            'uol_openspecimen',
-            'uol_survey_redcap',
             'briccs',
             'briccs_northampton',
             'civicrmlive_docker4716',
             'drupallive_docker4716',
             'identity',
+            'information_schema',
+            'mysql',
+            'performance_schema',
             'redcap6170_briccs',
             'redcap6170_briccsext',
             'redcap_genvasc',
             'redcap_national',
             'redcap_test',
             'redcap_dev',
+            'reporting',
+            'scratch',
+            'sys',
             'uol_crf_redcap',
             'uol_easyas_redcap',
             'uol_openspecimen',
