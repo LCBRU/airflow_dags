@@ -133,7 +133,7 @@ def get_databases(conn_id: str) -> list[str]:
             AND state_desc = 'ONLINE'
         """)
 
-    return [row[0] for row in rows[:10]]  # Limit to first 10 databases for now
+    return [row[0] for row in rows]
 
 
 @task
@@ -483,18 +483,18 @@ def get_called_routines(sql: str, current_database: str, current_schema: str) ->
     # EXEC / EXECUTE
     exec_pattern = r"\bEXEC(?:UTE)?\s+([#\[\]\w\.]+)"
 
-    # Scalar/table-valued functions
-    func_pattern = r"\b([A-Za-z0-9_\.\[\]]+)\s*\("
-
     for m in re.findall(exec_pattern, sql, re.IGNORECASE):
         routines.add(clean_object_name(m))
 
-    for m in re.findall(func_pattern, sql):
-        obj = clean_object_name(m)
-        obj = normalise_name(obj, current_database, current_schema)
+    # # Scalar/table-valued functions
+    # func_pattern = r"\b([A-Za-z0-9_\.\[\]]+)\s*\("
 
-        if "." in obj:
-            routines.add(obj)
+    # for m in re.findall(func_pattern, sql):
+    #     obj = clean_object_name(m)
+    #     obj = normalise_name(obj, current_database, current_schema)
+
+        # if "." in obj:
+        #     routines.add(obj)
 
     return sorted(routines)
 
