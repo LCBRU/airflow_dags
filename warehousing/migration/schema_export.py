@@ -307,6 +307,7 @@ def export_stored_procedures(hook, output_directory):
             ON p.object_id = m.object_id
         WHERE p.is_ms_shipped = 0
         AND s.name NOT IN ('sys', 'INFORMATION_SCHEMA')
+        AND p.name NOT IN ('sp_alterdiagram', 'sp_creatediagram', 'sp_dropdiagram', 'sp_helpdiagramdefinition', 'sp_helpdiagrams', 'sp_renamediagram', 'sp_upgraddiagrams')
         ORDER BY
             s.name,
             p.name
