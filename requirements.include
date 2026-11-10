@@ -15,4 +15,5 @@ sqlalchemy
 pymysql
 python-dateutil
 sqlglot
+sqlparse
 werkzeug

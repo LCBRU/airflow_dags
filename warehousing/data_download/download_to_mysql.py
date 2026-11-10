@@ -128,7 +128,7 @@ def _create_database(destination_database):
     logging.info("_create_database: Started")
 
     sql = 'CREATE DATABASE {};'.format(destination_database)
-    conn = LiveDbConnection()
+    conn = LiveDbConnection() # db02
     conn.execute(sql)
 
     logging.info("_create_database: Ended")
